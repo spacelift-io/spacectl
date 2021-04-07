@@ -1,16 +1,34 @@
-name: GoSec
+name: Security
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
   schedule:
     - cron: "19 7 * * 0"
 
 jobs:
-  analyze:
+  codeql:
     name: Analyze
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: "go"
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v1
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1
+
+
+  gosec:
+    name: GoSec
     runs-on: ubuntu-latest
     env:
       GO111MODULE: on
