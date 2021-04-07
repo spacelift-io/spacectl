@@ -1,0 +1,16 @@
+name: Release
+
+on: [push]
+
+jobs:
+  release:
+    name: Release new version
+    runs-on: ubuntu-latest
+    container: golang:1.16
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@master
+
+      - name: Build release
+        run: make release

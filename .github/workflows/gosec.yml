@@ -9,7 +9,7 @@ on:
     - cron: "19 7 * * 0"
 
 jobs:
-  build:
+  analyze:
     name: Analyze
     runs-on: ubuntu-latest
     env:

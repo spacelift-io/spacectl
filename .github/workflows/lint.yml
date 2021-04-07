@@ -3,7 +3,7 @@ name: Lint
 on: [push]
 
 jobs:
-  deployment:
+  lint:
     name: Lint the code
     runs-on: ubuntu-latest
     container: golang:1.16
