@@ -9,6 +9,8 @@ import (
 	"github.com/shurcooL/graphql"
 )
 
+// FromAPIKey builds a Spacelift session from a combination of endpoint, API key
+// ID and API key secret.
 func FromAPIKey(ctx context.Context, client *http.Client) func(string, string, string) (Session, error) {
 	return func(endpoint, keyID, keySecret string) (Session, error) {
 		out := &apiKey{

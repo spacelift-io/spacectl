@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// CredentialsType represents the type of credentials being used.
 type CredentialsType uint
 
 const (
@@ -31,6 +32,7 @@ type StoredCredentials struct {
 	KeySecret   string          `json:"key_secret,omitempty"`
 }
 
+// Session creates a Spacelift Session from stored credentials.
 func (s *StoredCredentials) Session(ctx context.Context, client *http.Client) (Session, error) {
 	switch s.Type {
 	case CredentialsTypeAPIKey:

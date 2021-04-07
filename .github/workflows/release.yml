@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push: { tags: ["v*"] }
+
+jobs:
+  release:
+    name: Release new version
+    runs-on: ubuntu-latest
+    container: golang:1.16
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@master
+
+      - name: Build release
+        run: make release
+
+      - name: Release
+        uses: docker://antonyurchenko/git-release:latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRAFT_RELEASE: "true"
+          PRE_RELEASE: "false"
+          CHANGELOG_FILE: "none"
+          ALLOW_EMPTY_CHANGELOG: "true"
+          ALLOW_TAG_PREFIX: "true"
+          RELEASE_NAME_PREFIX: "Release "
+        with:
+          args: |
+            ./build/spacelift-cli-darwin-amd64.tar.gz
+            ./build/spacelift-cli-darwin-arm64.tar.gz
+            ./build/spacelift-cli-linux-amd64.tar.gz
+            ./build/spacelift-cli-linux-arm64.tar.gz
+            ./build/spacelift-cli-windows-amd64.tar.gz
+            ./LICENSE

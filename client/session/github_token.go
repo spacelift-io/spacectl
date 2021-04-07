@@ -9,6 +9,8 @@ import (
 	"github.com/shurcooL/graphql"
 )
 
+// FromGitHubToken builds a Spacelift session from a combination of endpoint,
+// and a GitHub access token.
 func FromGitHubToken(ctx context.Context, client *http.Client) func(string, string) (Session, error) {
 	return func(endpoint, accessToken string) (Session, error) {
 		out := &gitHubToken{
