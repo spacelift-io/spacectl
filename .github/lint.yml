@@ -1,0 +1,25 @@
+name: Lint
+
+on: [push]
+
+jobs:
+  deployment:
+    name: Lint the code
+    runs-on: ubuntu-latest
+    container: golang:1.16
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@master
+
+      - name: Check formatting using gofmt
+        run: gofmt -s -l -d .
+
+      - name: Check for suspicious constructs using "go vet"
+        run: go vet ./...
+
+      - name: Lint the code using "golint"
+        run: go get -u golang.org/x/lint/golint && golint -set_exit_status ./...
+      
+      - name: Run staticcheck
+        run: go get -u honnef.co/go/tools/cmd/staticcheck && staticcheck ./...

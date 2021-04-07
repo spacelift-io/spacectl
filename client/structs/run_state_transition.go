@@ -16,6 +16,7 @@ type RunStateTransition struct {
 	Username  *string  `graphql:"username"`
 }
 
+// About returns "header" information about the state transition.
 func (r *RunStateTransition) About() string {
 	parts := []string{
 		string(r.State),

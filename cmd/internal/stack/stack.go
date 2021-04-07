@@ -9,6 +9,7 @@ import (
 	"github.com/spacelift-io/spacelift-cli/cmd/internal/authenticated"
 )
 
+// Command encapsulates the stack command subtree.
 func Command() *cli.Command {
 	return &cli.Command{
 		Name:   "stack",
