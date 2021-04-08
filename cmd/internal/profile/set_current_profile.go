@@ -1,11 +1,11 @@
-package account
+package profile
 
 import (
 	"fmt"
 	"os"
 )
 
-func setCurrentAccount() error {
+func setCurrentProfile() error {
 	if _, err := os.Lstat(currentPath); err == nil {
 		if err := os.Remove(currentPath); err != nil {
 			return fmt.Errorf("failed to unlink current config file: %v", err)
@@ -13,7 +13,7 @@ func setCurrentAccount() error {
 	}
 
 	if err := os.Symlink(aliasPath, currentPath); err != nil {
-		return fmt.Errorf("could not symlink the config file for %s: %w", accountAlias, err)
+		return fmt.Errorf("could not symlink the config file for %s: %w", profileAlias, err)
 	}
 
 	return nil

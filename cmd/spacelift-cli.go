@@ -6,7 +6,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/spacelift-io/spacelift-cli/cmd/internal/account"
+	"github.com/spacelift-io/spacelift-cli/cmd/internal/profile"
 	"github.com/spacelift-io/spacelift-cli/cmd/internal/stack"
 )
 
@@ -15,7 +15,7 @@ func main() {
 		Name:  "spacelift-cli",
 		Usage: "Programmatic access to Spacelift GraphQL API",
 		Commands: []*cli.Command{
-			account.Command(),
+			profile.Command(),
 			stack.Command(),
 		},
 	}

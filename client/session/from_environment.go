@@ -18,15 +18,15 @@ const (
 
 	// EnvSpaceliftAPIKeySecret represents the name of the environment variable
 	// pointing to the Spacelift API key secret.
-	EnvSpaceliftAPIKeySecret = "SPACELIFT_API_KEY_SECRET"
+	EnvSpaceliftAPIKeySecret = "SPACELIFT_API_KEY_SECRET" // #nosec G101
 
 	// EnvSpaceliftAPIToken represents the name of the environment variable
 	// pointing to the Spacelift API token.
-	EnvSpaceliftAPIToken = "SPACELIFT_API_TOKEN"
+	EnvSpaceliftAPIToken = "SPACELIFT_API_TOKEN" // #nosec G101
 
 	// EnvSpaceliftAPIGitHubToken represents the name of the environment variable
 	// pointing to the GitHub access token used to get the Spacelift API token.
-	EnvSpaceliftAPIGitHubToken = "SPACELIFT_API_GITHUB_TOKEN"
+	EnvSpaceliftAPIGitHubToken = "SPACELIFT_API_GITHUB_TOKEN" // #nosec G101
 )
 
 // FromEnvironment creates a Spacelift session from the environment.

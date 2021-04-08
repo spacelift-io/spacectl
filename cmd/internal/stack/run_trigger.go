@@ -47,6 +47,11 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 			return nil
 		}
 
-		return runLogs(ctx, stackID, mutation.RunTrigger.ID)
+		terminal, err := runLogs(ctx, stackID, mutation.RunTrigger.ID)
+		if err != nil {
+			return err
+		}
+
+		return terminal.Error()
 	}
 }

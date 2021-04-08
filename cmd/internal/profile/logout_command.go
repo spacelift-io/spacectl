@@ -1,4 +1,4 @@
-package account
+package profile
 
 import (
 	"fmt"
@@ -9,11 +9,12 @@ import (
 
 func logoutCommand() *cli.Command {
 	return &cli.Command{
-		Name:  "logout",
-		Usage: "Log out of an existing Spacelift account",
+		Name:   "logout",
+		Usage:  "Remove Spacelift credentials for an existing profile",
+		Before: getAlias,
 		Action: func(*cli.Context) error {
 			if _, err := os.Stat(aliasPath); err != nil {
-				return fmt.Errorf("you don't seem to be logged in to %s: %v", accountAlias, err)
+				return fmt.Errorf("you don't seem to be have any Spacelift credentials associated with %s: %v", profileAlias, err)
 			}
 
 			if err := os.Remove(aliasPath); err != nil {

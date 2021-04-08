@@ -33,8 +33,19 @@ func Command() *cli.Command {
 				Usage:    "Show logs for a particular run",
 				Flags:    []cli.Flag{flagRun},
 				Action: func(cliCtx *cli.Context) error {
-					return runLogs(context.Background(), stackID, cliCtx.String(flagRun.Name))
+					_, err := runLogs(context.Background(), stackID, cliCtx.String(flagRun.Name))
+					return err
 				},
+			},
+			{
+				Category: "Run management",
+				Name:     "preview",
+				Usage:    "Start a preview (proposed run)",
+				Flags: []cli.Flag{
+					flagCommitSHA,
+					flagTail,
+				},
+				Action: runTrigger("PROPOSED", "preview"),
 			},
 			{
 				Category: "Run management",
@@ -45,16 +56,6 @@ func Command() *cli.Command {
 					flagTail,
 				},
 				Action: taskCommand,
-			},
-			{
-				Category: "Run management",
-				Name:     "test",
-				Usage:    "Create a proposed (test) run",
-				Flags: []cli.Flag{
-					flagCommitSHA,
-					flagTail,
-				},
-				Action: runTrigger("PROPOSED", "test run"),
 			},
 		},
 	}
