@@ -98,6 +98,8 @@ func loginUsingAPIKey(reader *bufio.Reader, creds *session.StoredCredentials) er
 	}
 	creds.KeySecret = strings.TrimSpace(string(keySecret))
 
+	fmt.Println()
+
 	return nil
 }
 
@@ -109,6 +111,8 @@ func loginUsingGitHubAccessToken(creds *session.StoredCredentials) error {
 		return err
 	}
 	creds.AccessToken = strings.TrimSpace(string(accessToken))
+
+	fmt.Println()
 
 	return nil
 }
