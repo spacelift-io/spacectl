@@ -19,14 +19,36 @@ We refer to each method of providing credentials as "credential providers" (like
 
 ### Authenticating using environment variables
 
-When certain variables are defined in the environment, `spacelift-cli` will try to use them as Spacelift API credentials. First, the `SPACELIFT_API_TOKEN`. IF this variable is present in the environment, it alone contains enough information to set up a Spacelift session. Hence, the CLI will look no further and attempt to use it to talk to the server. Note that these tokens are generally short-lived.
+The spacelift CLI supports the following authentication methods via the environment:
 
-If the `SPACELIFT_API_TOKEN` variable is not present, the CLI will look for the
-`SPACELIFT_API_ENDPOINT` variable. This one contains the API endpoint to talk to, essentially pointing to your account and (optionally) Spacelift server - for example, `https://mycorp.app.spacelift.io`. If this variable is not present, environment lookup fails. Otherwise, it proceeds to credentials lookup.
+- [Spacelift API tokens](#spacelift-api-tokens).
+- [GitHub tokens](#github-tokens).
+- [Spacelift API keys](#spacelift-api-keys).
 
-First, it looks for `SPACELIFT_API_GITHUB_TOKEN`. While only avaialble to accounts that use GitHub as their identity provider, this environment-based authentication method is very convenient in the context of GitHub Actions. You can read more about this approach [here](https://docs.spacelift.io/integrations/api#authenticating-with-the-api). If this variable is available, the credentials lookup terminates. Otherwise, it assumes API keys are used.
+The Spacelift CLI looks for authentication configurations in the order specified above, and will stop as soon as it finds a valid configuration. For example, if a Spacelift API token is specified, GitHub tokens and Spacelift API keys will be ignored, even if their environment variables are specified.
 
-API key credentials (id and secret) need to be provided through the `SPACELIFT_API_KEY_ID` and `SPACELIFT_API_KEY_SECRET` environment variables, respectively. You can read more about generating them [here](https://docs.spacelift.io/integrations/api#api-key-management).
+#### Spacelift API tokens
+
+Spacelift API tokens can be specified using the `SPACELIFT_API_TOKEN` environment variable. When this variable is found, the CLI ignores all the other authentication environment variables because the token contains all the information needed to authenticate.
+
+NOTE: API tokens are generally short-lived and will need to be re-created often.
+
+#### GitHub tokens
+
+GitHub tokens are only available to accounts that use GitHub as their identity provider, but are very convenient for use in GitHub actions. To use a GitHub token, set the following environment variables:
+
+- `SPACELIFT_API_ENDPOINT` - the URL to your Spacelift account, for example `https://mycorp.app.spacelift.io`.
+- `SPACELIFT_API_GITHUB_TOKEN` - a GitHub personal access token.
+
+#### Spacelift API keys
+
+To use a Spacelift API key, set the following environment variables:
+
+- `SPACELIFT_API_ENDPOINT` - the URL to your Spacelift account, for example `https://mycorp.app.spacelift.io`.
+- `SPACELIFT_API_KEY_ID` - the ID of your Spacelift API key. Available via the Spacelift application.
+- `SPACELIFT_API_KEY_SECRET` - the secret for your API key. Only available when the secret is created.
+
+More information about API authentication can be found at <https://docs.spacelift.io/integrations/api#authenticating-with-the-api>.
 
 ### Authenticating using account profiles
 
