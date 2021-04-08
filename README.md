@@ -160,7 +160,7 @@ OPTIONS:
    --help, -h   show help (default: false)
 ```
 
-This subcommand prints out (and tails) logs for an existing run or task. The exit code of the command will depend on the outcome of the run - if the run is `FINISHED`, the command succeeds (exits with `0`), otherwise it fails.
+This subcommand prints out (and tails) logs for an existing run or task. Note that for an existing run or task, the `logs` subcommand will always succeed (exit with `0`), regardless of its outcome.
 
 Note that `run` is a required parameter here and represents the unique run ID, one that looks like `01F2KB8SARWF3V2PSFYXK5D0S7`.
 

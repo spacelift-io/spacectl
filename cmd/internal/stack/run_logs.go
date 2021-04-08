@@ -12,21 +12,21 @@ import (
 	"github.com/spacelift-io/spacelift-cli/cmd/internal/authenticated"
 )
 
-func runLogs(ctx context.Context, stack, run string) (err error) {
+func runLogs(ctx context.Context, stack, run string) (terminal *structs.RunStateTransition, err error) {
 	lines := make(chan string)
 
 	go func() {
-		err = runStates(ctx, stack, run, lines)
+		terminal, err = runStates(ctx, stack, run, lines)
 	}()
 
 	for line := range lines {
 		fmt.Print(line)
 	}
 
-	return err
+	return
 }
 
-func runStates(ctx context.Context, stack, run string, sink chan<- string) error {
+func runStates(ctx context.Context, stack, run string, sink chan<- string) (*structs.RunStateTransition, error) {
 	defer func() { close(sink) }()
 
 	var query struct {
@@ -46,11 +46,11 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string) error
 
 	for {
 		if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
-			return err
+			return nil, err
 		}
 
 		if query.Stack == nil || query.Stack.Run == nil {
-			return errors.New("not found")
+			return nil, errors.New("not found")
 		}
 
 		history := query.Stack.Run.History
@@ -72,12 +72,12 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string) error
 
 			if transition.HasLogs {
 				if err := runStateLogs(ctx, stack, run, transition.State, sink); err != nil {
-					return err
+					return nil, err
 				}
 			}
 
 			if transition.Terminal {
-				return transition.Error()
+				return &transition, nil
 			}
 		}
 

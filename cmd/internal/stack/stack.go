@@ -33,7 +33,8 @@ func Command() *cli.Command {
 				Usage:    "Show logs for a particular run",
 				Flags:    []cli.Flag{flagRun},
 				Action: func(cliCtx *cli.Context) error {
-					return runLogs(context.Background(), stackID, cliCtx.String(flagRun.Name))
+					_, err := runLogs(context.Background(), stackID, cliCtx.String(flagRun.Name))
+					return err
 				},
 			},
 			{

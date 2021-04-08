@@ -42,5 +42,10 @@ func taskCommand(cliCtx *cli.Context) error {
 		return nil
 	}
 
-	return runLogs(ctx, stackID, mutation.TaskCreate.ID)
+	terminal, err := runLogs(ctx, stackID, mutation.TaskCreate.ID)
+	if err != nil {
+		return err
+	}
+
+	return terminal.Error()
 }
