@@ -23,15 +23,14 @@ const (
 // FromFile creates a session from credentials stored in a file.
 func FromFile(ctx context.Context, client *http.Client) func(path string) (Session, error) {
 	return func(path string) (Session, error) {
-		file, err := os.Open(path)
+		data, err := os.ReadFile(path)
 		if err != nil {
-			return nil, fmt.Errorf("could not open Spacelift credentials from %s: %w", path, err)
+			return nil, fmt.Errorf("could not read Spacelift credentials from %s: %w", path, err)
 		}
-		defer file.Close()
 
 		var out StoredCredentials
-		if err := json.NewDecoder(file).Decode(&out); err != nil {
-			return nil, fmt.Errorf("could not decode Spacelift credentials form %s: %w", path, err)
+		if err := json.Unmarshal(data, &out); err != nil {
+			return nil, fmt.Errorf("could not unmarshal Spacelift credentials from %s: %w", path, err)
 		}
 
 		return out.Session(ctx, client)

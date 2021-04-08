@@ -38,6 +38,16 @@ func Command() *cli.Command {
 			},
 			{
 				Category: "Run management",
+				Name:     "preview",
+				Usage:    "Start a preview (proposed run)",
+				Flags: []cli.Flag{
+					flagCommitSHA,
+					flagTail,
+				},
+				Action: runTrigger("PROPOSED", "preview"),
+			},
+			{
+				Category: "Run management",
 				Name:     "task",
 				Usage:    "Perform a task in a workspace",
 				Flags: []cli.Flag{
@@ -45,16 +55,6 @@ func Command() *cli.Command {
 					flagTail,
 				},
 				Action: taskCommand,
-			},
-			{
-				Category: "Run management",
-				Name:     "test",
-				Usage:    "Create a proposed (test) run",
-				Flags: []cli.Flag{
-					flagCommitSHA,
-					flagTail,
-				},
-				Action: runTrigger("PROPOSED", "test run"),
 			},
 		},
 	}
