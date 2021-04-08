@@ -30,20 +30,20 @@ API key credentials (id and secret) need to be provided through the `SPACELIFT_A
 
 ### Authenticating using account profiles
 
-In order to make working with multiple Spacelift accounts easy in interactive scenarios, Spacelift supports account management through the `account` family of commands:
+In order to make working with multiple Spacelift accounts easy in interactive scenarios, Spacelift supports account management through the `profile` family of commands:
 
 ```bash
-❯ spacelift-cli account --help
+❯ spacelift-cli profile
 NAME:
-   spacelift-cli account - Manage Spacelift accounts
+   spacelift-cli profile - Manage Spacelift profiles
 
 USAGE:
-   spacelift-cli account command [command options] [arguments...]
+   spacelift-cli profile command [command options] [arguments...]
 
 COMMANDS:
-   login    Log in to a Spacelift account
-   logout   Log out of an existing Spacelift account
-   select   Select one of your Spacelift accounts
+   login    Create a profile for a Spacelift account
+   logout   Remove Spacelift credentials for an existing profile
+   select   Select one of existing Spacelift profile
    help, h  Shows a list of commands or help for one command
 
 OPTIONS:
@@ -52,16 +52,16 @@ OPTIONS:
 
 Each of the subcommands requires an account **alias**, which is a short, user-friendly name for each set of credentials (account profiles). Profiles don't need to be unique - you can have multiple sets of credentials for a single account too.
 
-Account profiles don't use short-lived tokens, so GitHub access tokens and API keys are the only two supported authentication methods. In order to authenticate to your first account, type in the following (make sure to replace `${MY_ALIAS}` with the actual account alias):
+Account profiles don't use short-lived tokens, so GitHub access tokens and API keys are the only two supported authentication methods. In order to authenticate to your first profile, type in the following (make sure to replace `${MY_ALIAS}` with the actual profile alias):
 
 ```bash
-❯ spacelift-cli account login ${MY_ALIAS}
+❯ spacelift-cli profile login ${MY_ALIAS}
 Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/):
 ```
 
 In the next step, you will be asked to choose which authentication method you are going to use. Note that if your account is using [SAML-based SSO authentication](https://docs.spacelift.io/integrations/single-sign-on), then API keys are your only option. After you're done entering credentials, the CLI will validate them against the server, and assuming that they're valid, will persist them in a credentials file in `.spacelift/${MY_ALIAS}`. It will also create a symlink in `${HOME}/.spacelift/current` pointing to the current profile.
 
-You can switch between account profiles by using `spacelift-cli account select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacelift-cli account logout ${MY_ALIAS}` command.
+You can switch between account profiles by using `spacelift-cli profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacelift-cli profile logout ${MY_ALIAS}` command.
 
 ## Usage
 
