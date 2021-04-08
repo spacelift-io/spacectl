@@ -17,10 +17,11 @@ import (
 
 func loginCommand() *cli.Command {
 	return &cli.Command{
-		Name:   "login",
-		Usage:  "Create a profile for a Spacelift account",
-		Before: getAlias,
-		Action: loginAction,
+		Name:      "login",
+		Usage:     "Create a profile for a Spacelift account",
+		Before:    getAlias,
+		ArgsUsage: "<account-alias>",
+		Action:    loginAction,
 	}
 }
 

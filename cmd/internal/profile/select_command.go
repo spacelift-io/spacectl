@@ -9,9 +9,10 @@ import (
 
 func selectCommand() *cli.Command {
 	return &cli.Command{
-		Name:   "select",
-		Usage:  "Select one of existing Spacelift profile",
-		Before: getAlias,
+		Name:      "select",
+		Usage:     "Select one of existing Spacelift accounts",
+		ArgsUsage: "<account-alias>",
+		Before:    getAlias,
 		Action: func(*cli.Context) error {
 			if _, err := os.Stat(aliasPath); err != nil {
 				return fmt.Errorf("could not select profile %s: %w", profileAlias, err)
