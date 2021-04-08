@@ -8,7 +8,7 @@ on:
 
 jobs:
   codeql:
-    name: Analyze
+    name: CodeQL
     runs-on: ubuntu-latest
 
     steps:
