@@ -13,7 +13,9 @@ mv /tmp/spacelift-cli-darwin-amd64 /usr/local/bin/spacelift-cli
 
 ## Authentication
 
-Spacelift CLI is designed to work in two different contexts - a non-interactive scripting mode (eg. external CI/CD pipeline) and local interactive mode, meaning you typing things in your shell. It thus supports two types of credentials - environment variables and user profiles. Let's call these "credential providers", like AWS does. We'll look into them separately.
+Spacelift CLI is designed to work in two different contexts - a non-interactive scripting mode (eg. external CI/CD pipeline) and a local interactive mode, where you type commands into your shell. Because of this, it supports two types of credentials - environment variables and user profiles.
+
+We refer to each method of providing credentials as "credential providers" (like AWS), and details of each method are documented in the following sections.
 
 ### Authenticating using environment variables
 
@@ -24,11 +26,11 @@ If the `SPACELIFT_API_TOKEN` variable is not present, the CLI will look for the
 
 First, it looks for `SPACELIFT_API_GITHUB_TOKEN`. While only avaialble to accounts that use GitHub as their identity provider, this environment-based authentication method is very convenient in the context of GitHub Actions. You can read more about this approach [here](https://docs.spacelift.io/integrations/api#authenticating-with-the-api). If this variable is available, the credentials lookup terminates. Otherwise, it assumes API keys are used.
 
-API key credentials (id and secret) need to be provided through `SPACELIFT_API_KEY_ID` and `SPACELIFT_API_KEY_SECRET` environment variables, respectively. You can read more about generating them [here](https://docs.spacelift.io/integrations/api#api-key-management).
+API key credentials (id and secret) need to be provided through the `SPACELIFT_API_KEY_ID` and `SPACELIFT_API_KEY_SECRET` environment variables, respectively. You can read more about generating them [here](https://docs.spacelift.io/integrations/api#api-key-management).
 
 ### Authenticating using account profiles
 
-In order to make workign with multiple Spacelift accounts easy in interactive scenarios, Spacelift supports account management through the `account` family of commands:
+In order to make working with multiple Spacelift accounts easy in interactive scenarios, Spacelift supports account management through the `account` family of commands:
 
 ```bash
 ❯ spacelift-cli account --help
@@ -41,14 +43,14 @@ USAGE:
 COMMANDS:
    login    Log in to a Spacelift account
    logout   Log out of an existing Spacelift account
-   select   Select one of existing Spacelift accounts
+   select   Select one of your Spacelift accounts
    help, h  Shows a list of commands or help for one command
 
 OPTIONS:
    --help, -h  show help (default: false)
 ```
 
-Each of the subcommands requires an account **alias**, which is a short, user-friendly name for each set of credentials (account profiles). Profiles don't need to be unique - you can have multiple sets of credentials for a single account, too.
+Each of the subcommands requires an account **alias**, which is a short, user-friendly name for each set of credentials (account profiles). Profiles don't need to be unique - you can have multiple sets of credentials for a single account too.
 
 Account profiles don't use short-lived tokens, so GitHub access tokens and API keys are the only two supported authentication methods. In order to authenticate to your first account, type in the following (make sure to replace `${MY_ALIAS}` with the actual account alias):
 
@@ -115,9 +117,9 @@ This subcommand creates a [tracked run](https://docs.spacelift.io/concepts/run/t
 
 Notes:
 
-- terminating the executable (Ctrl+C) while tailing logs does not stop the run, it just stops tailing logs;
+- Terminating the executable (Ctrl+C) while tailing logs does not stop the run, it just stops tailing logs.
 
-- you cannot confirm or discard the run from the command line. If the deployment ends up in [`UNCONFIRMED`](https://docs.spacelift.io/concepts/run/tracked#unconfirmed) state, the CLI be stuck until the state machine progresses. You will need to go to the run URL and make a decision there;
+- You cannot confirm or discard the run from the command line. If the deployment ends up in [`UNCONFIRMED`](https://docs.spacelift.io/concepts/run/tracked#unconfirmed) state, the CLI be stuck until the state machine progresses. You will need to go to the run URL and make a decision there.
 
 #### `stack preview` subcommand
 
@@ -181,7 +183,7 @@ OPTIONS:
    --help, -h  show help (default: false)
 ```
 
-This subcommand starts a [task](https://docs.spacelift.io/concepts/run/task) against a stack. The command for the task itself goes after the CLI bit. It can be quoted to prevent any confusion in from shell tokenization. Example:
+This subcommand starts a [task](https://docs.spacelift.io/concepts/run/task) against a stack. The command for the task itself must be specified after all the other `spacelift-cli` command arguments. It can be quoted to prevent any confusion from shell tokenization. Example:
 
 [![asciicast](https://asciinema.org/a/pYm8lqM5XTUoG1UsDo7OL6t8B.svg)](https://asciinema.org/a/pYm8lqM5XTUoG1UsDo7OL6t8B)
 
