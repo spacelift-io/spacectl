@@ -7,8 +7,7 @@
 `spacectl` is distributed through GitHub Releases as a gzipped tarball containing a self-contained statically linked executable built from the source in this repository. Binaries can be download directly from the [Releases page](https://github.com/spacelift-io/spacectl/releases) or programmatically using `curl` or `wget`. The example below covers macOS (Intel CPU) installation of the latest available release. In order to download and install a Linux version, change `darwin` to `linux`. If you're using an ARM processor (eg. Raspberry Pi, Apple Silicon), change `amd64` to `arm64`:
 
 ```bash
-curl -s -L https://github.com/spacelift-io/spacectl/releases/latest/download/spacectl-darwin-amd64.tar.gz | tar xz -C /tmp && \
-mv /tmp/spacectl-darwin-amd64 /usr/local/bin/spacectl
+curl -s -L https://github.com/spacelift-io/spacectl/releases/latest/download/spacectl-darwin-amd64.tar.gz | sudo tar xz -C /usr/local/bin
 ```
 
 ## Authentication
