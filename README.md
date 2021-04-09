@@ -63,9 +63,10 @@ USAGE:
    spacectl profile command [command options] [arguments...]
 
 COMMANDS:
+   current  Outputs your currently selected profile
    login    Create a profile for a Spacelift account
    logout   Remove Spacelift credentials for an existing profile
-   select   Select one of existing Spacelift profile
+   select   Select one of your Spacelift account profiles
    help, h  Shows a list of commands or help for one command
 
 OPTIONS:
