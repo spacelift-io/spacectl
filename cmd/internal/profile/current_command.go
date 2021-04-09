@@ -11,7 +11,7 @@ import (
 func currentCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "current",
-		Usage: "Outputs the account you currently have selected",
+		Usage: "Outputs your currently selected profile",
 
 		// Use a space to cause the args usage to not be displayed since the `current` command
 		// doesn't accept any arguments
