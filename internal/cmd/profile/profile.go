@@ -7,7 +7,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/spacelift-io/spacelift-cli/client/session"
+	"github.com/spacelift-io/spacectl/client/session"
 )
 
 var (

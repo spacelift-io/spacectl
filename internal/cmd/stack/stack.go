@@ -5,8 +5,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/spacelift-io/spacelift-cli/cmd/internal/actions"
-	"github.com/spacelift-io/spacelift-cli/cmd/internal/authenticated"
+	"github.com/spacelift-io/spacectl/internal/cmd/actions"
+	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 // Command encapsulates the stack command subtree.

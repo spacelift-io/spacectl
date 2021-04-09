@@ -1,31 +1,31 @@
-# Spacelift CLI
+# `spacectl`, the Spacelift CLI
 
-Spacelift CLI (`spacelift-cli`) is a utility wrapping Spacelift's [GraphQL API](https://docs.spacelift.io/integrations/api) for easy programmatic access in command-line contexts - either in manual interactive mode (in your local shell), or in a predefined CI pipeline (GitHub actions, CircleCI, Jenkins etc).
+`spacectl` is a utility wrapping Spacelift's [GraphQL API](https://docs.spacelift.io/integrations/api) for easy programmatic access in command-line contexts - either in manual interactive mode (in your local shell), or in a predefined CI pipeline (GitHub actions, CircleCI, Jenkins etc).
 
 ## Installation
 
-Spacelift CLI is distributed through GitHub Releases as a gzipped tarball containing a self-contained statically linked executable built from the source in this repository. Binaries can be download directly from the [Releases page](https://github.com/spacelift-io/spacelift-cli/releases) or programmatically using `curl` or `wget`. The example below covers macOS (Intel CPU) installation of the latest available release. In order to download and install a Linux version, change `darwin` to `linux`. If you're using an ARM processor (eg. Raspberry Pi, Apple Silicon), change `amd64` to `arm64`:
+`spacectl` is distributed through GitHub Releases as a gzipped tarball containing a self-contained statically linked executable built from the source in this repository. Binaries can be download directly from the [Releases page](https://github.com/spacelift-io/spacectl/releases) or programmatically using `curl` or `wget`. The example below covers macOS (Intel CPU) installation of the latest available release. In order to download and install a Linux version, change `darwin` to `linux`. If you're using an ARM processor (eg. Raspberry Pi, Apple Silicon), change `amd64` to `arm64`:
 
 ```bash
-curl -s -L https://github.com/spacelift-io/spacelift-cli/releases/latest/download/spacelift-cli-darwin-amd64.tar.gz | tar xz -C /tmp && \
-mv /tmp/spacelift-cli-darwin-amd64 /usr/local/bin/spacelift-cli
+curl -s -L https://github.com/spacelift-io/spacectl/releases/latest/download/spacectl-darwin-amd64.tar.gz | tar xz -C /tmp && \
+mv /tmp/spacectl-darwin-amd64 /usr/local/bin/spacectl
 ```
 
 ## Authentication
 
-Spacelift CLI is designed to work in two different contexts - a non-interactive scripting mode (eg. external CI/CD pipeline) and a local interactive mode, where you type commands into your shell. Because of this, it supports two types of credentials - environment variables and user profiles.
+`spacectl` is designed to work in two different contexts - a non-interactive scripting mode (eg. external CI/CD pipeline) and a local interactive mode, where you type commands into your shell. Because of this, it supports two types of credentials - environment variables and user profiles.
 
 We refer to each method of providing credentials as "credential providers" (like AWS), and details of each method are documented in the following sections.
 
 ### Authenticating using environment variables
 
-The spacelift CLI supports the following authentication methods via the environment:
+The CLI supports the following authentication methods via the environment:
 
 - [Spacelift API tokens](#spacelift-api-tokens).
 - [GitHub tokens](#github-tokens).
 - [Spacelift API keys](#spacelift-api-keys).
 
-The Spacelift CLI looks for authentication configurations in the order specified above, and will stop as soon as it finds a valid configuration. For example, if a Spacelift API token is specified, GitHub tokens and Spacelift API keys will be ignored, even if their environment variables are specified.
+`spacectl` looks for authentication configurations in the order specified above, and will stop as soon as it finds a valid configuration. For example, if a Spacelift API token is specified, GitHub tokens and Spacelift API keys will be ignored, even if their environment variables are specified.
 
 #### Spacelift API tokens
 
@@ -55,12 +55,12 @@ More information about API authentication can be found at <https://docs.spacelif
 In order to make working with multiple Spacelift accounts easy in interactive scenarios, Spacelift supports account management through the `profile` family of commands:
 
 ```bash
-❯ spacelift-cli profile
+❯ spacectl profile
 NAME:
-   spacelift-cli profile - Manage Spacelift profiles
+   spacectl profile - Manage Spacelift profiles
 
 USAGE:
-   spacelift-cli profile command [command options] [arguments...]
+   spacectl profile command [command options] [arguments...]
 
 COMMANDS:
    login    Create a profile for a Spacelift account
@@ -77,13 +77,13 @@ Each of the subcommands requires an account **alias**, which is a short, user-fr
 Account profiles don't use short-lived tokens, so GitHub access tokens and API keys are the only two supported authentication methods. In order to authenticate to your first profile, type in the following (make sure to replace `${MY_ALIAS}` with the actual profile alias):
 
 ```bash
-❯ spacelift-cli profile login ${MY_ALIAS}
+❯ spacectl profile login ${MY_ALIAS}
 Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/):
 ```
 
 In the next step, you will be asked to choose which authentication method you are going to use. Note that if your account is using [SAML-based SSO authentication](https://docs.spacelift.io/integrations/single-sign-on), then API keys are your only option. After you're done entering credentials, the CLI will validate them against the server, and assuming that they're valid, will persist them in a credentials file in `.spacelift/${MY_ALIAS}`. It will also create a symlink in `${HOME}/.spacelift/current` pointing to the current profile.
 
-You can switch between account profiles by using `spacelift-cli profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacelift-cli profile logout ${MY_ALIAS}` command.
+You can switch between account profiles by using `spacectl profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacectl profile logout ${MY_ALIAS}` command.
 
 ## Usage
 
@@ -94,12 +94,12 @@ Currently only a small subset of operations is supported, starting with the abil
 Managing runs is currently avaialble through the `stack` subcommand:
 
 ```bash
-❯ spacelift-cli stack --id=stack-id help
+❯ spacectl stack --id=stack-id help
 NAME:
-   spacelift-cli stack - Manage a Spacelift stack
+   spacectl stack - Manage a Spacelift stack
 
 USAGE:
-   spacelift-cli stack [global options] command [command options] [arguments...]
+   spacectl stack [global options] command [command options] [arguments...]
 
 COMMANDS:
    help, h  Shows a list of commands or help for one command
@@ -119,12 +119,12 @@ Each of these operations will require user-facing stack ID (so called "slug") vi
 #### `stack deploy` subcommand
 
 ```bash
-❯ spacelift-cli stack --id=stack-id deploy --help
+❯ spacectl stack --id=stack-id deploy --help
 NAME:
-   spacelift-cli stack deploy - Start a deployment (tracked run)
+   spacectl stack deploy - Start a deployment (tracked run)
 
 USAGE:
-   spacelift-cli stack deploy [command options] [arguments...]
+   spacectl stack deploy [command options] [arguments...]
 
 CATEGORY:
    Run management
@@ -146,12 +146,12 @@ Notes:
 #### `stack preview` subcommand
 
 ```bash
-❯ spacelift-cli stack --id=stack-id preview --help
+❯ spacectl stack --id=stack-id preview --help
 NAME:
-   spacelift-cli stack preview - Start a preview (proposed run)
+   spacectl stack preview - Start a preview (proposed run)
 
 USAGE:
-   spacelift-cli stack preview [command options] [arguments...]
+   spacectl stack preview [command options] [arguments...]
 
 CATEGORY:
    Run management
@@ -167,12 +167,12 @@ This subcommand creates a [proposed run](https://docs.spacelift.io/concepts/run/
 #### `stack logs` subcommand
 
 ```bash
-❯ spacelift-cli stack --id=stack-id logs --help
+❯ spacectl stack --id=stack-id logs --help
 NAME:
-   spacelift-cli stack logs - Show logs for a particular run
+   spacectl stack logs - Show logs for a particular run
 
 USAGE:
-   spacelift-cli stack logs [command options] [arguments...]
+   spacectl stack logs [command options] [arguments...]
 
 CATEGORY:
    Run management
@@ -189,12 +189,12 @@ Note that `run` is a required parameter here and represents the unique run ID, o
 #### `stack task` subcommand
 
 ```bash
-❯ spacelift-cli stack --id=stack-id task --help
+❯ spacectl stack --id=stack-id task --help
 NAME:
-   spacelift-cli stack task - Perform a task in a workspace
+   spacectl stack task - Perform a task in a workspace
 
 USAGE:
-   spacelift-cli stack task [command options] [arguments...]
+   spacectl stack task [command options] [arguments...]
 
 CATEGORY:
    Run management
@@ -205,7 +205,7 @@ OPTIONS:
    --help, -h  show help (default: false)
 ```
 
-This subcommand starts a [task](https://docs.spacelift.io/concepts/run/task) against a stack. The command for the task itself must be specified after all the other `spacelift-cli` command arguments. It can be quoted to prevent any confusion from shell tokenization. Example:
+This subcommand starts a [task](https://docs.spacelift.io/concepts/run/task) against a stack. The command for the task itself must be specified after all the other `spacectl` command arguments. It can be quoted to prevent any confusion from shell tokenization. Example:
 
 [![asciicast](https://asciinema.org/a/pYm8lqM5XTUoG1UsDo7OL6t8B.svg)](https://asciinema.org/a/pYm8lqM5XTUoG1UsDo7OL6t8B)
 

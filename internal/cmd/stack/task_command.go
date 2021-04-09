@@ -8,7 +8,7 @@ import (
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v2"
 
-	"github.com/spacelift-io/spacelift-cli/cmd/internal/authenticated"
+	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 func taskCommand(cliCtx *cli.Context) error {

@@ -8,8 +8,8 @@ import (
 
 	"github.com/shurcooL/graphql"
 
-	"github.com/spacelift-io/spacelift-cli/client/structs"
-	"github.com/spacelift-io/spacelift-cli/cmd/internal/authenticated"
+	"github.com/spacelift-io/spacectl/client/structs"
+	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 func runLogs(ctx context.Context, stack, run string) (terminal *structs.RunStateTransition, err error) {

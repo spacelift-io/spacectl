@@ -28,9 +28,9 @@ jobs:
           RELEASE_NAME_PREFIX: "Release "
         with:
           args: |
-            ./build/spacelift-cli-darwin-amd64.tar.gz
-            ./build/spacelift-cli-darwin-arm64.tar.gz
-            ./build/spacelift-cli-linux-amd64.tar.gz
-            ./build/spacelift-cli-linux-arm64.tar.gz
-            ./build/spacelift-cli-windows-amd64.tar.gz
+            ./build/spacectl-darwin-amd64.tar.gz
+            ./build/spacectl-darwin-arm64.tar.gz
+            ./build/spacectl-linux-amd64.tar.gz
+            ./build/spacectl-linux-arm64.tar.gz
+            ./build/spacectl-windows-amd64.tar.gz
             ./LICENSE

@@ -1,4 +1,4 @@
-module github.com/spacelift-io/spacelift-cli
+module github.com/spacelift-io/spacectl
 
 go 1.16
 
