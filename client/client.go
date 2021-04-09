@@ -9,7 +9,7 @@ import (
 	"github.com/shurcooL/graphql"
 	"golang.org/x/oauth2"
 
-	"github.com/spacelift-io/spacelift-cli/client/session"
+	"github.com/spacelift-io/spacectl/client/session"
 )
 
 type client struct {

@@ -1,5 +1,5 @@
-BINARY := spacelift-cli
-PKG := github.com/spacelift-io/spacelift-cli/cmd
+BINARY := spacectl
+PKG := github.com/spacelift-io/spacectl
 BUILD_FLAGS := -a -tags netgo -ldflags '-w -extldflags "-static"'
 
 darwin:
@@ -19,7 +19,7 @@ release: build
 	cd build; tar -czf $(BINARY)-darwin-amd64.tar.gz $(BINARY)-darwin-amd64
 	cd build; tar -czf $(BINARY)-darwin-arm64.tar.gz $(BINARY)-darwin-arm64
 	cd build; tar -czf $(BINARY)-linux-amd64.tar.gz $(BINARY)-linux-amd64
-	cd build; tar -czf $(BINARY)-linux-arm64.tar.gz $(BINARY)-linux-amd64
+	cd build; tar -czf $(BINARY)-linux-arm64.tar.gz $(BINARY)-linux-arm64
 	cd build; tar -czf $(BINARY)-windows-amd64.tar.gz $(BINARY)-windows-amd64
 
 clean:
