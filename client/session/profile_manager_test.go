@@ -1,4 +1,4 @@
-package profile_test
+package session_test
 
 import (
 	"fmt"
@@ -9,8 +9,7 @@ import (
 
 	"github.com/franela/goblin"
 	. "github.com/onsi/gomega"
-	"github.com/spacelift-io/spacelift-cli/client/session"
-	"github.com/spacelift-io/spacelift-cli/cmd/internal/profile"
+	"github.com/spacelift-io/spacectl/client/session"
 )
 
 func TestProfileManager(t *testing.T) {
@@ -20,7 +19,7 @@ func TestProfileManager(t *testing.T) {
 	g.Describe("ProfileManager", func() {
 		var testDirectory string
 		var profilesDirectory string
-		var manager *profile.ProfileManager
+		var manager *session.ProfileManager
 
 		g.BeforeEach(func() {
 			var err error
@@ -30,7 +29,7 @@ func TestProfileManager(t *testing.T) {
 
 			profilesDirectory = path.Join(testDirectory, "profiles")
 
-			manager = profile.NewManager(profilesDirectory)
+			manager = session.NewProfileManager(profilesDirectory)
 		})
 
 		g.AfterEach(func() {
@@ -71,8 +70,8 @@ func TestProfileManager(t *testing.T) {
 
 			g.Describe("Create", func() {
 				g.It("sets current profile", func() {
-					testProfile := &profile.Profile{
-						Name: "test-profile",
+					testProfile := &session.Profile{
+						Alias: "test-profile",
 						Credentials: &session.StoredCredentials{
 							Type:        session.CredentialsTypeGitHubToken,
 							Endpoint:    "https://spacectl.app.spacelift.io",
@@ -85,13 +84,13 @@ func TestProfileManager(t *testing.T) {
 					currentProfile, err := manager.Current()
 
 					Expect(err).To(BeNil())
-					Expect(currentProfile.Name).To(Equal(testProfile.Name))
+					Expect(currentProfile.Alias).To(Equal(testProfile.Alias))
 				})
 
 				g.It("rejects invalid credential types", func() {
 					credentialType := session.CredentialsTypeInvalid
-					testProfile := &profile.Profile{
-						Name: "invalid-credentials",
+					testProfile := &session.Profile{
+						Alias: "invalid-credentials",
 						Credentials: &session.StoredCredentials{
 							Type: credentialType,
 						},
@@ -106,15 +105,15 @@ func TestProfileManager(t *testing.T) {
 					profileName := "github-test-profile"
 
 					g.It("creates a new profile", func() {
-						testProfile := &profile.Profile{
-							Name:        profileName,
+						testProfile := &session.Profile{
+							Alias:       profileName,
 							Credentials: createValidGitHubCredentials(),
 						}
 
 						err := manager.Create(testProfile)
 						Expect(err).To(BeNil())
 
-						savedProfile, err := manager.Get(testProfile.Name)
+						savedProfile, err := manager.Get(testProfile.Alias)
 						if err != nil {
 							g.Fail(fmt.Errorf("Failed to get the profile from the manager: %w", err))
 						}
@@ -126,8 +125,8 @@ func TestProfileManager(t *testing.T) {
 					})
 
 					g.It("rejects GitHub credentials if no access token is specified", func() {
-						testProfile := &profile.Profile{
-							Name: profileName,
+						testProfile := &session.Profile{
+							Alias: profileName,
 							Credentials: &session.StoredCredentials{
 								Type:     session.CredentialsTypeGitHubToken,
 								Endpoint: "https://spacectl.app.spacelift.io",
@@ -144,8 +143,8 @@ func TestProfileManager(t *testing.T) {
 					profileName := "api-key-profile"
 
 					g.It("creates a new profile", func() {
-						testProfile := &profile.Profile{
-							Name: profileName,
+						testProfile := &session.Profile{
+							Alias: profileName,
 							Credentials: &session.StoredCredentials{
 								Type:      session.CredentialsTypeAPIKey,
 								Endpoint:  "https://spacectl.app.spacelift.io",
@@ -157,7 +156,7 @@ func TestProfileManager(t *testing.T) {
 						err := manager.Create(testProfile)
 						Expect(err).To(BeNil())
 
-						savedProfile, err := manager.Get(testProfile.Name)
+						savedProfile, err := manager.Get(testProfile.Alias)
 						if err != nil {
 							g.Fail(fmt.Errorf("Failed to get the profile from the manager: %w", err))
 						}
@@ -170,8 +169,8 @@ func TestProfileManager(t *testing.T) {
 					})
 
 					g.It("rejects credentials if no KeyID is specified", func() {
-						testProfile := &profile.Profile{
-							Name: profileName,
+						testProfile := &session.Profile{
+							Alias: profileName,
 							Credentials: &session.StoredCredentials{
 								Type:      session.CredentialsTypeAPIKey,
 								Endpoint:  "https://spacectl.app.spacelift.io",
@@ -185,8 +184,8 @@ func TestProfileManager(t *testing.T) {
 					})
 
 					g.It("rejects credentials if no KeySecret is specified", func() {
-						testProfile := &profile.Profile{
-							Name: profileName,
+						testProfile := &session.Profile{
+							Alias: profileName,
 							Credentials: &session.StoredCredentials{
 								Type:     session.CredentialsTypeAPIKey,
 								Endpoint: "https://spacectl.app.spacelift.io",
@@ -201,7 +200,7 @@ func TestProfileManager(t *testing.T) {
 				})
 
 				g.It("fails if profile name is not specified", func() {
-					err := manager.Create(&profile.Profile{Name: ""})
+					err := manager.Create(&session.Profile{Alias: ""})
 
 					Expect(err).Should(MatchError("a profile name must be specified"))
 				})
@@ -220,7 +219,7 @@ func TestProfileManager(t *testing.T) {
 					}
 
 					for _, profileName := range invalidNames {
-						err := manager.Create(&profile.Profile{Name: profileName})
+						err := manager.Create(&session.Profile{Alias: profileName})
 
 						Expect(err).Should(MatchError(fmt.Sprintf("'%s' is not a valid profile name", profileName)))
 					}
@@ -230,8 +229,8 @@ func TestProfileManager(t *testing.T) {
 			g.Describe("Get", func() {
 				g.It("can get a profile", func() {
 					profileName := "test-profile"
-					manager.Create(&profile.Profile{
-						Name:        profileName,
+					manager.Create(&session.Profile{
+						Alias:       profileName,
 						Credentials: createValidGitHubCredentials(),
 					})
 
@@ -241,7 +240,7 @@ func TestProfileManager(t *testing.T) {
 						g.Fail(fmt.Errorf("failed to retrieve profile: %w", err))
 					}
 
-					Expect(testProfile.Name).To(Equal(profileName))
+					Expect(testProfile.Alias).To(Equal(profileName))
 				})
 
 				g.It("returns error if profile file does not exist", func() {
@@ -266,7 +265,7 @@ func TestProfileManager(t *testing.T) {
 					manager.Select("profile1")
 
 					currentProfile, _ := manager.Current()
-					Expect(currentProfile.Name).To(Equal("profile1"))
+					Expect(currentProfile.Alias).To(Equal("profile1"))
 				})
 
 				g.It("returns error if profile to select does not exist", func() {
@@ -323,9 +322,9 @@ func TestProfileManager(t *testing.T) {
 	})
 }
 
-func createValidProfile(name string) *profile.Profile {
-	return &profile.Profile{
-		Name:        name,
+func createValidProfile(name string) *session.Profile {
+	return &session.Profile{
+		Alias:       name,
 		Credentials: createValidGitHubCredentials(),
 	}
 }

@@ -15,7 +15,7 @@ func New(ctx context.Context, client *http.Client) (Session, error) {
 		return session, nil
 	}
 
-	session, fileErr := FromCurrentFile(ctx, client)
+	session, fileErr := FromCurrentProfile(ctx, client)
 	if fileErr == nil {
 		return session, nil
 	}

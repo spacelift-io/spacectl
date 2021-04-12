@@ -1,9 +1,8 @@
 package profile
 
 import (
+	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/urfave/cli/v2"
 )
@@ -17,17 +16,16 @@ func currentCommand() *cli.Command {
 		// doesn't accept any arguments
 		ArgsUsage: " ",
 		Action: func(ctx *cli.Context) error {
-			if _, err := os.Lstat(currentPath); err != nil {
-				return fmt.Errorf("no account is currently selected: %w", err)
-			}
-
-			linkTarget, err := os.Readlink(currentPath)
+			currentProfile, err := manager.Current()
 			if err != nil {
-				return fmt.Errorf("could not find the target of the current account symlink: %w", err)
+				return fmt.Errorf("could not get current profile: %w", err)
 			}
 
-			alias := filepath.Base(linkTarget)
-			fmt.Println(alias)
+			if currentProfile == nil {
+				return errors.New("no account is currently selected")
+			}
+
+			fmt.Println(currentProfile.Alias)
 
 			return nil
 		},

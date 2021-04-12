@@ -1,4 +1,4 @@
-package profile
+package session
 
 import (
 	"encoding/json"
@@ -7,12 +7,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/spacelift-io/spacelift-cli/client/session"
 )
 
 const (
-	// CurrentFileName is the name of the "current" Spacelift profile.
+	// SpaceliftConfigDirectory is the name of the Spacelift config directory.
+	SpaceliftConfigDirectory = ".spacelift"
+
+	// CurrentFileName is the name of the symlink that points at the current profile.
 	CurrentFileName = "current"
 )
 
@@ -20,10 +21,10 @@ const (
 // for accessing Spacelift.
 type Profile struct {
 	// The name of the profile.
-	Name string `json:"name,omitempty"`
+	Alias string `json:"alias,omitempty"`
 
 	// The credentials used to make Spacelift API requests.
-	Credentials *session.StoredCredentials `json:"credentials,omitempty"`
+	Credentials *StoredCredentials `json:"credentials,omitempty"`
 }
 
 // A ProfileManager is used to interact with Spacelift profiles.
@@ -35,8 +36,8 @@ type ProfileManager struct {
 	CurrentPath string
 }
 
-// NewManager creates a new ProfileManager using the specified directory to store the profile data.
-func NewManager(profilesDirectory string) *ProfileManager {
+// NewProfileManager creates a new ProfileManager using the specified directory to store the profile data.
+func NewProfileManager(profilesDirectory string) *ProfileManager {
 	return &ProfileManager{
 		ProfilesDirectory: profilesDirectory,
 		CurrentPath:       filepath.Join(profilesDirectory, CurrentFileName),
@@ -99,7 +100,7 @@ func (m *ProfileManager) Create(profile *Profile) error {
 		return err
 	}
 
-	setCurrent(m.ProfilePath(profile.Name), m)
+	setCurrentProfile(m.ProfilePath(profile.Alias), m)
 
 	return nil
 }
@@ -141,21 +142,21 @@ func validateProfile(profile *Profile) error {
 		return errors.New("profile must not be nil")
 	}
 
-	if profile.Name == "" {
+	if profile.Alias == "" {
 		return errors.New("a profile name must be specified")
 	}
 
-	if strings.Contains(profile.Name, "/") || strings.Contains(profile.Name, "\\") || profile.Name == "current" {
-		return fmt.Errorf("'%s' is not a valid profile name", profile.Name)
+	if strings.Contains(profile.Alias, "/") || strings.Contains(profile.Alias, "\\") || profile.Alias == "current" {
+		return fmt.Errorf("'%s' is not a valid profile name", profile.Alias)
 	}
 
 	switch credentialType := profile.Credentials.Type; credentialType {
-	case session.CredentialsTypeGitHubToken:
+	case CredentialsTypeGitHubToken:
 		if err := validateGitHubCredentials(profile); err != nil {
 			return err
 		}
 
-	case session.CredentialsTypeAPIKey:
+	case CredentialsTypeAPIKey:
 		if err := validateAPIKeyCredentials(profile); err != nil {
 			return err
 		}
@@ -187,8 +188,7 @@ func validateAPIKeyCredentials(profile *Profile) error {
 	return nil
 }
 
-// TODO: remove "global" function and rename this to setCurrentProfile
-func setCurrent(profilePath string, manager *ProfileManager) error {
+func setCurrentProfile(profilePath string, manager *ProfileManager) error {
 	if _, err := os.Lstat(manager.CurrentPath); err == nil {
 		if err := os.Remove(manager.CurrentPath); err != nil {
 			return fmt.Errorf("failed to unlink current config file: %v", err)
@@ -217,20 +217,20 @@ func getProfileFromPath(profilePath string) (*Profile, error) {
 }
 
 func writeProfileToFile(profile *Profile, manager *ProfileManager) error {
-	file, err := os.OpenFile(manager.ProfilePath(profile.Name), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	file, err := os.OpenFile(manager.ProfilePath(profile.Alias), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		return fmt.Errorf("could not create config file for %s: %w", manager.ProfilePath(profile.Name), err)
+		return fmt.Errorf("could not create config file for %s: %w", manager.ProfilePath(profile.Alias), err)
 	}
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 
 	if err := encoder.Encode(profile); err != nil {
-		return fmt.Errorf("could not write config file for %s: %w", manager.ProfilePath(profile.Name), err)
+		return fmt.Errorf("could not write config file for %s: %w", manager.ProfilePath(profile.Alias), err)
 	}
 
 	if err := file.Close(); err != nil {
-		return fmt.Errorf("could close the config file for %s: %w", manager.ProfilePath(profile.Name), err)
+		return fmt.Errorf("could close the config file for %s: %w", manager.ProfilePath(profile.Alias), err)
 	}
 
 	return nil

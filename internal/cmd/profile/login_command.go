@@ -2,7 +2,6 @@ package profile
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -119,21 +118,8 @@ func loginUsingGitHubAccessToken(creds *session.StoredCredentials) error {
 }
 
 func persistAccessCredentials(creds *session.StoredCredentials) error {
-	file, err := os.OpenFile(aliasPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return fmt.Errorf("could not create config file for %s: %w", profileAlias, err)
-	}
-
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
-
-	if err := encoder.Encode(creds); err != nil {
-		return fmt.Errorf("could not write config file for %s: %w", profileAlias, err)
-	}
-
-	if err := file.Close(); err != nil {
-		return fmt.Errorf("could close the config file for %s: %w", profileAlias, err)
-	}
-
-	return setCurrentProfile()
+	return manager.Create(&session.Profile{
+		Alias:       profileAlias,
+		Credentials: creds,
+	})
 }

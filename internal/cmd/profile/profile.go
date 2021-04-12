@@ -11,8 +11,7 @@ import (
 )
 
 var (
-	configDir   string
-	currentPath string
+	manager *session.ProfileManager
 )
 
 // Command encapsulates the profile command subtree.
@@ -26,11 +25,10 @@ func Command() *cli.Command {
 				return fmt.Errorf("could not get user home directory: %w", err)
 			}
 
-			configDir = filepath.Join(homeDir, session.SpaceliftConfigDirectory)
-			currentPath = filepath.Join(configDir, session.CurrentFileName)
-
-			if err := os.MkdirAll(configDir, 0700); err != nil {
-				return fmt.Errorf("could not create Spacelift config directory: %w", err)
+			configDir := filepath.Join(homeDir, session.SpaceliftConfigDirectory)
+			manager = session.NewProfileManager(configDir)
+			if err := manager.Init(); err != nil {
+				return fmt.Errorf("could not initialise profile manager: %w", err)
 			}
 
 			return nil
