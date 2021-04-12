@@ -102,11 +102,11 @@ func TestProfileManager(t *testing.T) {
 				})
 
 				g.Describe("GitHub credentials", func() {
-					profileName := "github-test-profile"
+					profileAlias := "github-test-profile"
 
 					g.It("creates a new profile", func() {
 						testProfile := &session.Profile{
-							Alias:       profileName,
+							Alias:       profileAlias,
 							Credentials: createValidGitHubCredentials(),
 						}
 
@@ -126,7 +126,7 @@ func TestProfileManager(t *testing.T) {
 
 					g.It("rejects GitHub credentials if no access token is specified", func() {
 						testProfile := &session.Profile{
-							Alias: profileName,
+							Alias: profileAlias,
 							Credentials: &session.StoredCredentials{
 								Type:     session.CredentialsTypeGitHubToken,
 								Endpoint: "https://spacectl.app.spacelift.io",
@@ -140,11 +140,11 @@ func TestProfileManager(t *testing.T) {
 				})
 
 				g.Describe("Spacelift API Key credentials", func() {
-					profileName := "api-key-profile"
+					profileAlias := "api-key-profile"
 
 					g.It("creates a new profile", func() {
 						testProfile := &session.Profile{
-							Alias: profileName,
+							Alias: profileAlias,
 							Credentials: &session.StoredCredentials{
 								Type:      session.CredentialsTypeAPIKey,
 								Endpoint:  "https://spacectl.app.spacelift.io",
@@ -170,7 +170,7 @@ func TestProfileManager(t *testing.T) {
 
 					g.It("rejects credentials if no KeyID is specified", func() {
 						testProfile := &session.Profile{
-							Alias: profileName,
+							Alias: profileAlias,
 							Credentials: &session.StoredCredentials{
 								Type:      session.CredentialsTypeAPIKey,
 								Endpoint:  "https://spacectl.app.spacelift.io",
@@ -185,7 +185,7 @@ func TestProfileManager(t *testing.T) {
 
 					g.It("rejects credentials if no KeySecret is specified", func() {
 						testProfile := &session.Profile{
-							Alias: profileName,
+							Alias: profileAlias,
 							Credentials: &session.StoredCredentials{
 								Type:     session.CredentialsTypeAPIKey,
 								Endpoint: "https://spacectl.app.spacelift.io",
@@ -199,10 +199,10 @@ func TestProfileManager(t *testing.T) {
 					})
 				})
 
-				g.It("fails if profile name is not specified", func() {
+				g.It("fails if profile alias is not specified", func() {
 					err := manager.Create(&session.Profile{Alias: ""})
 
-					Expect(err).Should(MatchError("a profile name must be specified"))
+					Expect(err).Should(MatchError("a profile alias must be specified"))
 				})
 
 				g.It("fails if profile is nil", func() {
@@ -211,8 +211,8 @@ func TestProfileManager(t *testing.T) {
 					Expect(err).Should(MatchError("profile must not be nil"))
 				})
 
-				g.It("rejects invalid profile names", func() {
-					invalidNames := []string{
+				g.It("rejects invalid profile aliases", func() {
+					invalidAliases := []string{
 						"my/profile",
 						"my\\profile",
 						"current",
@@ -220,43 +220,43 @@ func TestProfileManager(t *testing.T) {
 						"..",
 					}
 
-					for _, profileAlias := range invalidNames {
+					for _, profileAlias := range invalidAliases {
 						testProfile := createValidProfile(profileAlias)
 						err := manager.Create(testProfile)
 
-						Expect(err).Should(MatchError(fmt.Sprintf("'%s' is not a valid profile name", profileAlias)))
+						Expect(err).Should(MatchError(fmt.Sprintf("'%s' is not a valid profile alias", profileAlias)))
 					}
 				})
 			})
 
 			g.Describe("Get", func() {
 				g.It("can get a profile", func() {
-					profileName := "test-profile"
+					profileAlias := "test-profile"
 					manager.Create(&session.Profile{
-						Alias:       profileName,
+						Alias:       profileAlias,
 						Credentials: createValidGitHubCredentials(),
 					})
 
-					testProfile, err := manager.Get(profileName)
+					testProfile, err := manager.Get(profileAlias)
 
 					if err != nil {
 						g.Fail(fmt.Errorf("failed to retrieve profile: %w", err))
 					}
 
-					Expect(testProfile.Alias).To(Equal(profileName))
+					Expect(testProfile.Alias).To(Equal(profileAlias))
 				})
 
 				g.It("returns error if profile file does not exist", func() {
-					profileName := "non-existent"
-					_, err := manager.Get(profileName)
+					profileAlias := "non-existent"
+					_, err := manager.Get(profileAlias)
 
-					Expect(err).Should(MatchError(fmt.Sprintf("a profile named '%s' could not be found", profileName)))
+					Expect(err).Should(MatchError(fmt.Sprintf("a profile named '%s' could not be found", profileAlias)))
 				})
 
-				g.It("returns error if profile name is empty", func() {
+				g.It("returns error if profile alias is empty", func() {
 					_, err := manager.Get("")
 
-					Expect(err).Should(MatchError("a profile name must be specified"))
+					Expect(err).Should(MatchError("a profile alias must be specified"))
 				})
 			})
 
@@ -272,9 +272,9 @@ func TestProfileManager(t *testing.T) {
 				})
 
 				g.It("returns error if profile to select does not exist", func() {
-					profileName := "non-existent"
+					profileAlias := "non-existent"
 
-					err := manager.Select(profileName)
+					err := manager.Select(profileAlias)
 
 					Expect(err).Should(MatchError(fmt.Sprintf("could not find a profile named '%s'", "non-existent")))
 				})
@@ -296,10 +296,10 @@ func TestProfileManager(t *testing.T) {
 					Expect(err).Should(MatchError(fmt.Sprintf("no profile named '%s' exists", "non-existent")))
 				})
 
-				g.It("returns error if profile name is empty", func() {
+				g.It("returns error if profile alias is empty", func() {
 					err := manager.Delete("")
 
-					Expect(err).Should(MatchError("a profile name must be specified"))
+					Expect(err).Should(MatchError("a profile alias must be specified"))
 				})
 
 				g.It("unsets profile if it is the current profile", func() {
@@ -325,9 +325,9 @@ func TestProfileManager(t *testing.T) {
 	})
 }
 
-func createValidProfile(name string) *session.Profile {
+func createValidProfile(alias string) *session.Profile {
 	return &session.Profile{
-		Alias:       name,
+		Alias:       alias,
 		Credentials: createValidGitHubCredentials(),
 	}
 }

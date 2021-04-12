@@ -23,7 +23,7 @@ var invalidProfileAliases = []string{"/", "\\", "current", ".", ".."}
 // A Profile represents a spacectl profile which is used to store credential information
 // for accessing Spacelift.
 type Profile struct {
-	// The name of the profile.
+	// The alias (name) of the profile.
 	Alias string `json:"alias,omitempty"`
 
 	// The credentials used to make Spacelift API requests.
@@ -52,17 +52,17 @@ func (m *ProfileManager) Init() error {
 	return os.MkdirAll(m.ProfilesDirectory, 0700)
 }
 
-// Get returns the profile with the specified name.
-func (m *ProfileManager) Get(profileName string) (*Profile, error) {
-	if profileName == "" {
-		return nil, errors.New("a profile name must be specified")
+// Get returns the profile with the specified alias.
+func (m *ProfileManager) Get(profileAlias string) (*Profile, error) {
+	if profileAlias == "" {
+		return nil, errors.New("a profile alias must be specified")
 	}
 
-	if _, err := os.Stat(m.ProfilePath(profileName)); err != nil {
-		return nil, fmt.Errorf("a profile named '%s' could not be found", profileName)
+	if _, err := os.Stat(m.ProfilePath(profileAlias)); err != nil {
+		return nil, fmt.Errorf("a profile named '%s' could not be found", profileAlias)
 	}
 
-	return getProfileFromPath(m.ProfilePath(profileName))
+	return getProfileFromPath(m.ProfilePath(profileAlias))
 }
 
 // Current gets the user's currently selected profile, and returns nil if no profile is selected.
@@ -75,9 +75,9 @@ func (m *ProfileManager) Current() (*Profile, error) {
 }
 
 // Select sets the currently selected profile.
-func (m *ProfileManager) Select(profileName string) error {
-	if _, err := os.Stat(m.ProfilePath(profileName)); err != nil {
-		return fmt.Errorf("could not find a profile named '%s'", profileName)
+func (m *ProfileManager) Select(profileAlias string) error {
+	if _, err := os.Stat(m.ProfilePath(profileAlias)); err != nil {
+		return fmt.Errorf("could not find a profile named '%s'", profileAlias)
 	}
 
 	if _, err := os.Lstat(m.CurrentPath); err == nil {
@@ -86,8 +86,8 @@ func (m *ProfileManager) Select(profileName string) error {
 		}
 	}
 
-	if err := os.Symlink(m.ProfilePath(profileName), m.CurrentPath); err != nil {
-		return fmt.Errorf("could not symlink the config file for %s: %w", profileName, err)
+	if err := os.Symlink(m.ProfilePath(profileAlias), m.CurrentPath); err != nil {
+		return fmt.Errorf("could not symlink the config file for %s: %w", profileAlias, err)
 	}
 
 	return nil
@@ -108,18 +108,18 @@ func (m *ProfileManager) Create(profile *Profile) error {
 	return nil
 }
 
-// Delete removes the profile with the specified name, and un-selects it as the current profile
+// Delete removes the profile with the specified alias, and un-selects it as the current profile
 // if it was selected.
-func (m *ProfileManager) Delete(profileName string) error {
-	if profileName == "" {
-		return errors.New("a profile name must be specified")
+func (m *ProfileManager) Delete(profileAlias string) error {
+	if profileAlias == "" {
+		return errors.New("a profile alias must be specified")
 	}
 
-	if _, err := os.Stat(m.ProfilePath(profileName)); err != nil {
-		return fmt.Errorf("no profile named '%s' exists", profileName)
+	if _, err := os.Stat(m.ProfilePath(profileAlias)); err != nil {
+		return fmt.Errorf("no profile named '%s' exists", profileAlias)
 	}
 
-	if err := os.Remove(m.ProfilePath(profileName)); err != nil {
+	if err := os.Remove(m.ProfilePath(profileAlias)); err != nil {
 		return err
 	}
 
@@ -128,16 +128,16 @@ func (m *ProfileManager) Delete(profileName string) error {
 	switch {
 	case os.IsNotExist(err):
 		return nil
-	case err == nil && currentTarget == m.ProfilePath(profileName):
+	case err == nil && currentTarget == m.ProfilePath(profileAlias):
 		return os.Remove(m.CurrentPath)
 	default:
 		return err
 	}
 }
 
-// ProfilePath returns the path to the profile with the specified name.
-func (m *ProfileManager) ProfilePath(profileName string) string {
-	return filepath.Join(m.ProfilesDirectory, profileName)
+// ProfilePath returns the path to the profile with the specified alias.
+func (m *ProfileManager) ProfilePath(profileAlias string) string {
+	return filepath.Join(m.ProfilesDirectory, profileAlias)
 }
 
 func validateProfile(profile *Profile) error {
@@ -146,12 +146,12 @@ func validateProfile(profile *Profile) error {
 	}
 
 	if profile.Alias == "" {
-		return errors.New("a profile name must be specified")
+		return errors.New("a profile alias must be specified")
 	}
 
-	for _, invalidName := range invalidProfileAliases {
-		if strings.Contains(profile.Alias, invalidName) {
-			return fmt.Errorf("'%s' is not a valid profile name", profile.Alias)
+	for _, invalidAlias := range invalidProfileAliases {
+		if strings.Contains(profile.Alias, invalidAlias) {
+			return fmt.Errorf("'%s' is not a valid profile alias", profile.Alias)
 		}
 	}
 
