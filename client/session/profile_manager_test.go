@@ -9,6 +9,7 @@ import (
 
 	"github.com/franela/goblin"
 	. "github.com/onsi/gomega"
+
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
@@ -43,9 +44,7 @@ func TestProfileManager(t *testing.T) {
 				g.It("creates directory", func() {
 					manager.Init()
 
-					if _, err := os.Stat(profilesDirectory); err != nil {
-						g.Fail(fmt.Errorf("Profiles directory has not been created: %w", err))
-					}
+					Expect(profilesDirectory).Should(BeADirectory())
 				})
 			})
 		})
@@ -114,10 +113,8 @@ func TestProfileManager(t *testing.T) {
 						Expect(err).To(BeNil())
 
 						savedProfile, err := manager.Get(testProfile.Alias)
-						if err != nil {
-							g.Fail(fmt.Errorf("Failed to get the profile from the manager: %w", err))
-						}
 
+						Expect(err).To(BeNil())
 						Expect(savedProfile).ToNot(BeNil())
 						Expect(savedProfile.Credentials.Type).To(Equal(testProfile.Credentials.Type))
 						Expect(savedProfile.Credentials.Endpoint).To(Equal(testProfile.Credentials.Endpoint))
@@ -157,10 +154,8 @@ func TestProfileManager(t *testing.T) {
 						Expect(err).To(BeNil())
 
 						savedProfile, err := manager.Get(testProfile.Alias)
-						if err != nil {
-							g.Fail(fmt.Errorf("Failed to get the profile from the manager: %w", err))
-						}
 
+						Expect(err).To(BeNil())
 						Expect(savedProfile).ToNot(BeNil())
 						Expect(savedProfile.Credentials.Type).To(Equal(testProfile.Credentials.Type))
 						Expect(savedProfile.Credentials.Endpoint).To(Equal(testProfile.Credentials.Endpoint))
@@ -239,10 +234,7 @@ func TestProfileManager(t *testing.T) {
 
 					testProfile, err := manager.Get(profileAlias)
 
-					if err != nil {
-						g.Fail(fmt.Errorf("failed to retrieve profile: %w", err))
-					}
-
+					Expect(err).To(BeNil())
 					Expect(testProfile.Alias).To(Equal(profileAlias))
 				})
 
