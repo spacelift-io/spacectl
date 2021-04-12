@@ -216,12 +216,15 @@ func TestProfileManager(t *testing.T) {
 						"my/profile",
 						"my\\profile",
 						"current",
+						".",
+						"..",
 					}
 
-					for _, profileName := range invalidNames {
-						err := manager.Create(&session.Profile{Alias: profileName})
+					for _, profileAlias := range invalidNames {
+						testProfile := createValidProfile(profileAlias)
+						err := manager.Create(testProfile)
 
-						Expect(err).Should(MatchError(fmt.Sprintf("'%s' is not a valid profile name", profileName)))
+						Expect(err).Should(MatchError(fmt.Sprintf("'%s' is not a valid profile name", profileAlias)))
 					}
 				})
 			})

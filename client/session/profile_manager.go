@@ -17,6 +17,9 @@ const (
 	CurrentFileName = "current"
 )
 
+// invalidProfileAliases contains a list of strings that cannot be used as profile aliases.
+var invalidProfileAliases = []string{"/", "\\", "current", ".", ".."}
+
 // A Profile represents a spacectl profile which is used to store credential information
 // for accessing Spacelift.
 type Profile struct {
@@ -146,8 +149,10 @@ func validateProfile(profile *Profile) error {
 		return errors.New("a profile name must be specified")
 	}
 
-	if strings.Contains(profile.Alias, "/") || strings.Contains(profile.Alias, "\\") || profile.Alias == "current" {
-		return fmt.Errorf("'%s' is not a valid profile name", profile.Alias)
+	for _, invalidName := range invalidProfileAliases {
+		if strings.Contains(profile.Alias, invalidName) {
+			return fmt.Errorf("'%s' is not a valid profile name", profile.Alias)
+		}
 	}
 
 	switch credentialType := profile.Credentials.Type; credentialType {
