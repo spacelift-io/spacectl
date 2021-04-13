@@ -91,13 +91,26 @@ func TestProfileManager(t *testing.T) {
 					testProfile := &session.Profile{
 						Alias: "invalid-credentials",
 						Credentials: &session.StoredCredentials{
-							Type: credentialType,
+							Endpoint: "https://spacectl.app.spacelift.io",
+							Type:     credentialType,
 						},
 					}
 
 					err := manager.Create(testProfile)
 
 					Expect(err).Should(MatchError(fmt.Sprintf("'%d' is an invalid credential type", credentialType)))
+				})
+
+				g.Describe("All credential types", func() {
+					for _, testProfile := range createAllValidProfileTypes() {
+						g.It(fmt.Sprintf("fails if Endpoint is not specified for %s", testProfile.Alias), func() {
+							testProfile.Credentials.Endpoint = ""
+
+							err := manager.Create(testProfile)
+
+							Expect(err).Should(MatchError("'Endpoint' must be provided"))
+						})
+					}
 				})
 
 				g.Describe("GitHub credentials", func() {
@@ -141,13 +154,8 @@ func TestProfileManager(t *testing.T) {
 
 					g.It("creates a new profile", func() {
 						testProfile := &session.Profile{
-							Alias: profileAlias,
-							Credentials: &session.StoredCredentials{
-								Type:      session.CredentialsTypeAPIKey,
-								Endpoint:  "https://spacectl.app.spacelift.io",
-								KeyID:     "ABC123",
-								KeySecret: "SuperSecret",
-							},
+							Alias:       profileAlias,
+							Credentials: createValidAPIKeyCredentials(),
 						}
 
 						err := manager.Create(testProfile)
@@ -324,10 +332,32 @@ func createValidProfile(alias string) *session.Profile {
 	}
 }
 
+func createAllValidProfileTypes() []*session.Profile {
+	return []*session.Profile{
+		{
+			Alias:       "github",
+			Credentials: createValidGitHubCredentials(),
+		},
+		{
+			Alias:       "spacelift-api-key",
+			Credentials: createValidAPIKeyCredentials(),
+		},
+	}
+}
+
 func createValidGitHubCredentials() *session.StoredCredentials {
 	return &session.StoredCredentials{
 		Type:        session.CredentialsTypeGitHubToken,
 		Endpoint:    "https://spacectl.app.spacelift.io",
 		AccessToken: "abc123",
+	}
+}
+
+func createValidAPIKeyCredentials() *session.StoredCredentials {
+	return &session.StoredCredentials{
+		Type:      session.CredentialsTypeAPIKey,
+		Endpoint:  "https://spacectl.app.spacelift.io",
+		KeyID:     "ABC123",
+		KeySecret: "supersecret",
 	}
 }

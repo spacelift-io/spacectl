@@ -24,7 +24,7 @@ var invalidProfileAliases = []string{"/", "\\", "current", ".", ".."}
 // for accessing Spacelift.
 type Profile struct {
 	// The alias (name) of the profile.
-	Alias string `json:"alias,omitempty"`
+	Alias string
 
 	// The credentials used to make Spacelift API requests.
 	Credentials *StoredCredentials `json:"credentials,omitempty"`
@@ -62,7 +62,7 @@ func (m *ProfileManager) Get(profileAlias string) (*Profile, error) {
 		return nil, fmt.Errorf("a profile named '%s' could not be found", profileAlias)
 	}
 
-	return getProfileFromPath(m.ProfilePath(profileAlias))
+	return getProfileFromPath(profileAlias, m)
 }
 
 // Current gets the user's currently selected profile, and returns nil if no profile is selected.
@@ -71,7 +71,12 @@ func (m *ProfileManager) Current() (*Profile, error) {
 		return nil, nil
 	}
 
-	return getProfileFromPath(m.CurrentPath)
+	destination, err := os.Readlink(m.CurrentPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not find target that current profile file '%s' points at: %w", m.CurrentPath, err)
+	}
+
+	return getProfileFromPath(filepath.Base(destination), m)
 }
 
 // Select sets the currently selected profile.
@@ -155,6 +160,10 @@ func validateProfile(profile *Profile) error {
 		}
 	}
 
+	if profile.Credentials.Endpoint == "" {
+		return errors.New("'Endpoint' must be provided")
+	}
+
 	switch credentialType := profile.Credentials.Type; credentialType {
 	case CredentialsTypeGitHubToken:
 		if err := validateGitHubCredentials(profile); err != nil {
@@ -207,18 +216,22 @@ func setCurrentProfile(profilePath string, manager *ProfileManager) error {
 	return nil
 }
 
-func getProfileFromPath(profilePath string) (*Profile, error) {
+func getProfileFromPath(profileAlias string, manager *ProfileManager) (*Profile, error) {
+	profilePath := manager.ProfilePath(profileAlias)
 	data, err := os.ReadFile(profilePath)
 	if err != nil {
 		return nil, fmt.Errorf("could not read Spacelift profile from %s: %w", profilePath, err)
 	}
 
-	var profile Profile
-	if err := json.Unmarshal(data, &profile); err != nil {
+	var credentials StoredCredentials
+	if err := json.Unmarshal(data, &credentials); err != nil {
 		return nil, fmt.Errorf("could not unmarshal Spacelift profile from %s: %w", profilePath, err)
 	}
 
-	return &profile, nil
+	return &Profile{
+		Alias:       profileAlias,
+		Credentials: &credentials,
+	}, nil
 }
 
 func writeProfileToFile(profile *Profile, manager *ProfileManager) error {
@@ -230,7 +243,7 @@ func writeProfileToFile(profile *Profile, manager *ProfileManager) error {
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 
-	if err := encoder.Encode(profile); err != nil {
+	if err := encoder.Encode(profile.Credentials); err != nil {
 		return fmt.Errorf("could not write config file for %s: %w", manager.ProfilePath(profile.Alias), err)
 	}
 
