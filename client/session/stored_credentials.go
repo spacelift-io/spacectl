@@ -23,6 +23,11 @@ const (
 	CredentialsTypeGitHubToken
 )
 
+// String returns the string representation of the type.
+func (t CredentialsType) String() string {
+	return [...]string{"Invalid", "API Key", "GitHub"}[t]
+}
+
 // StoredCredentials is a filesystem representation of the credentials.
 type StoredCredentials struct {
 	Type        CredentialsType `json:"type,omitempty"`

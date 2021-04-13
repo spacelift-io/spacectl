@@ -34,6 +34,7 @@ func Command() *cli.Command {
 		},
 		Subcommands: []*cli.Command{
 			currentCommand(),
+			listCommand(),
 			loginCommand(),
 			logoutCommand(),
 			selectCommand(),

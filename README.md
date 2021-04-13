@@ -63,6 +63,7 @@ USAGE:
 
 COMMANDS:
    current  Outputs your currently selected profile
+   list     List all your Spacelift account profiles
    login    Create a profile for a Spacelift account
    logout   Remove Spacelift credentials for an existing profile
    select   Select one of your Spacelift account profiles

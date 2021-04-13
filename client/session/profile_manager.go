@@ -146,6 +146,31 @@ func (m *ProfileManager) ProfilePath(profileAlias string) string {
 	return filepath.Join(m.ProfilesDirectory, profileAlias)
 }
 
+// GetAll returns all the currently stored profiles, returning an empty slice if no profiles exist.
+func (m *ProfileManager) GetAll() ([]*Profile, error) {
+	entries, err := os.ReadDir(m.ProfilesDirectory)
+	if err != nil {
+		return nil, fmt.Errorf("could not read profiles from directory: %w", err)
+	}
+
+	var profiles []*Profile
+
+	for _, entry := range entries {
+		if filepath.Base(entry.Name()) == CurrentFileName {
+			continue
+		}
+
+		profile, err := m.getProfileFromPath(entry.Name())
+		if err != nil {
+			return nil, fmt.Errorf("failed to load profile from '%s': %w", entry.Name(), err)
+		}
+
+		profiles = append(profiles, profile)
+	}
+
+	return profiles, nil
+}
+
 func validateProfile(profile *Profile) error {
 	if profile == nil {
 		return errors.New("profile must not be nil")

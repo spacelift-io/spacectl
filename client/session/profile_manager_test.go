@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"sort"
 	"testing"
 
 	"github.com/franela/goblin"
@@ -312,6 +313,33 @@ func TestProfileManager(t *testing.T) {
 
 				_, err := os.Lstat(manager.CurrentPath)
 				Expect(err).To(BeNil())
+			})
+		})
+
+		g.Describe("GetAll", func() {
+			g.It("returns empty when no profiles exist", func() {
+				profiles, err := manager.GetAll()
+
+				Expect(err).To(BeNil())
+				Expect(profiles).To(BeEmpty())
+			})
+
+			g.It("returns all profiles", func() {
+				manager.Create(createValidProfile("profile-1"))
+				manager.Create(createValidProfile("profile-2"))
+				manager.Create(createValidProfile("profile-3"))
+
+				profiles, _ := manager.GetAll()
+
+				// Sort the slice to guarantee the order when comparing the results
+				sort.SliceStable(profiles, func(i int, j int) bool {
+					return profiles[i].Alias < profiles[j].Alias
+				})
+
+				Expect(len(profiles)).To(Equal(3))
+				Expect(profiles[0].Alias).To(Equal("profile-1"))
+				Expect(profiles[1].Alias).To(Equal("profile-2"))
+				Expect(profiles[2].Alias).To(Equal("profile-3"))
 			})
 		})
 	})
