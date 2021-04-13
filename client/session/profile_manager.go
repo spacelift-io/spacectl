@@ -40,16 +40,17 @@ type ProfileManager struct {
 }
 
 // NewProfileManager creates a new ProfileManager using the specified directory to store the profile data.
-func NewProfileManager(profilesDirectory string) *ProfileManager {
-	return &ProfileManager{
+func NewProfileManager(profilesDirectory string) (*ProfileManager, error) {
+	if err := os.MkdirAll(profilesDirectory, 0700); err != nil {
+		return nil, fmt.Errorf("could not create '%s' directory to store Spacelift profiles: %w", profilesDirectory, err)
+	}
+
+	manager := &ProfileManager{
 		ProfilesDirectory: profilesDirectory,
 		CurrentPath:       filepath.Join(profilesDirectory, CurrentFileName),
 	}
-}
 
-// Init initialises the profile manager, making sure it is ready to store and retrieve profiles.
-func (m *ProfileManager) Init() error {
-	return os.MkdirAll(m.ProfilesDirectory, 0700)
+	return manager, nil
 }
 
 // Get returns the profile with the specified alias.
@@ -62,7 +63,7 @@ func (m *ProfileManager) Get(profileAlias string) (*Profile, error) {
 		return nil, fmt.Errorf("a profile named '%s' could not be found", profileAlias)
 	}
 
-	return getProfileFromPath(profileAlias, m)
+	return m.getProfileFromPath(profileAlias)
 }
 
 // Current gets the user's currently selected profile, and returns nil if no profile is selected.
@@ -76,7 +77,7 @@ func (m *ProfileManager) Current() (*Profile, error) {
 		return nil, fmt.Errorf("could not find target that current profile file '%s' points at: %w", m.CurrentPath, err)
 	}
 
-	return getProfileFromPath(filepath.Base(destination), m)
+	return m.getProfileFromPath(filepath.Base(destination))
 }
 
 // Select sets the currently selected profile.
@@ -104,11 +105,11 @@ func (m *ProfileManager) Create(profile *Profile) error {
 		return err
 	}
 
-	if err := writeProfileToFile(profile, m); err != nil {
+	if err := m.writeProfileToFile(profile); err != nil {
 		return err
 	}
 
-	setCurrentProfile(m.ProfilePath(profile.Alias), m)
+	m.setCurrentProfile(m.ProfilePath(profile.Alias))
 
 	return nil
 }
@@ -202,22 +203,22 @@ func validateAPIKeyCredentials(profile *Profile) error {
 	return nil
 }
 
-func setCurrentProfile(profilePath string, manager *ProfileManager) error {
-	if _, err := os.Lstat(manager.CurrentPath); err == nil {
-		if err := os.Remove(manager.CurrentPath); err != nil {
+func (m *ProfileManager) setCurrentProfile(profilePath string) error {
+	if _, err := os.Lstat(m.CurrentPath); err == nil {
+		if err := os.Remove(m.CurrentPath); err != nil {
 			return fmt.Errorf("failed to unlink current config file: %v", err)
 		}
 	}
 
-	if err := os.Symlink(profilePath, manager.CurrentPath); err != nil {
+	if err := os.Symlink(profilePath, m.CurrentPath); err != nil {
 		return fmt.Errorf("could not symlink the config file for %s: %w", profilePath, err)
 	}
 
 	return nil
 }
 
-func getProfileFromPath(profileAlias string, manager *ProfileManager) (*Profile, error) {
-	profilePath := manager.ProfilePath(profileAlias)
+func (m *ProfileManager) getProfileFromPath(profileAlias string) (*Profile, error) {
+	profilePath := m.ProfilePath(profileAlias)
 	data, err := os.ReadFile(profilePath)
 	if err != nil {
 		return nil, fmt.Errorf("could not read Spacelift profile from %s: %w", profilePath, err)
@@ -234,21 +235,21 @@ func getProfileFromPath(profileAlias string, manager *ProfileManager) (*Profile,
 	}, nil
 }
 
-func writeProfileToFile(profile *Profile, manager *ProfileManager) error {
-	file, err := os.OpenFile(manager.ProfilePath(profile.Alias), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+func (m *ProfileManager) writeProfileToFile(profile *Profile) error {
+	file, err := os.OpenFile(m.ProfilePath(profile.Alias), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		return fmt.Errorf("could not create config file for %s: %w", manager.ProfilePath(profile.Alias), err)
+		return fmt.Errorf("could not create config file for %s: %w", m.ProfilePath(profile.Alias), err)
 	}
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 
 	if err := encoder.Encode(profile.Credentials); err != nil {
-		return fmt.Errorf("could not write config file for %s: %w", manager.ProfilePath(profile.Alias), err)
+		return fmt.Errorf("could not write config file for %s: %w", m.ProfilePath(profile.Alias), err)
 	}
 
 	if err := file.Close(); err != nil {
-		return fmt.Errorf("could close the config file for %s: %w", manager.ProfilePath(profile.Alias), err)
+		return fmt.Errorf("could close the config file for %s: %w", m.ProfilePath(profile.Alias), err)
 	}
 
 	return nil

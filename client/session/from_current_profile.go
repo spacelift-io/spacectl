@@ -16,7 +16,11 @@ func FromCurrentProfile(ctx context.Context, client *http.Client) (Session, erro
 		return nil, fmt.Errorf("could not find user home directory: %w", err)
 	}
 
-	manager := NewProfileManager(filepath.Join(userHomeDir, SpaceliftConfigDirectory))
+	manager, err := NewProfileManager(filepath.Join(userHomeDir, SpaceliftConfigDirectory))
+	if err != nil {
+		return nil, fmt.Errorf("could not create profile manager: %w", err)
+	}
+
 	currentProfile, err := manager.Current()
 	if err != nil {
 		return nil, fmt.Errorf("could not load current profile: %w", err)

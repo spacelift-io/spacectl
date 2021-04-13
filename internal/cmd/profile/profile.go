@@ -26,8 +26,7 @@ func Command() *cli.Command {
 			}
 
 			configDir := filepath.Join(homeDir, session.SpaceliftConfigDirectory)
-			manager = session.NewProfileManager(configDir)
-			if err := manager.Init(); err != nil {
+			if manager, err = session.NewProfileManager(configDir); err != nil {
 				return fmt.Errorf("could not initialise profile manager: %w", err)
 			}
 
