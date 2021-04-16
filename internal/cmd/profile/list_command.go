@@ -44,7 +44,7 @@ func listCommand() *cli.Command {
 }
 
 func getCurrentProfileString(profile *session.Profile, currentProfile *session.Profile) string {
-	if profile.Alias == currentProfile.Alias {
+	if currentProfile != nil && profile.Alias == currentProfile.Alias {
 		return "*"
 	}
 
