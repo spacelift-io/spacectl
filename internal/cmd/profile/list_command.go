@@ -1,7 +1,6 @@
 package profile
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/pterm/pterm"
@@ -16,15 +15,9 @@ func listCommand() *cli.Command {
 		Usage:     "List all your Spacelift account profiles",
 		ArgsUsage: " ",
 		Action: func(*cli.Context) error {
-			profiles, err := manager.GetAll()
-			if err != nil {
-				return fmt.Errorf("could not load Spacelift profiles: %w", err)
-			}
+			profiles := manager.GetAll()
 
-			currentProfile, err := manager.Current()
-			if err != nil {
-				return fmt.Errorf("could not get current profile: %w", err)
-			}
+			currentProfile := manager.Current()
 
 			// Make sure we output the profiles in a consistent order
 			sort.SliceStable(profiles, func(i int, j int) bool {

@@ -16,10 +16,7 @@ func currentCommand() *cli.Command {
 		// doesn't accept any arguments
 		ArgsUsage: " ",
 		Action: func(ctx *cli.Context) error {
-			currentProfile, err := manager.Current()
-			if err != nil {
-				return fmt.Errorf("could not get current profile: %w", err)
-			}
+			currentProfile := manager.Current()
 
 			if currentProfile == nil {
 				return errors.New("no account is currently selected")

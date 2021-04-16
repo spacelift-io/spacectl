@@ -13,18 +13,27 @@ const (
 	// SpaceliftConfigDirectory is the name of the Spacelift config directory.
 	SpaceliftConfigDirectory = ".spacelift"
 
-	// CurrentFileName is the name of the symlink that points at the current profile.
-	CurrentFileName = "current"
+	// ConfigFileName is the name of the file containing the spacectl config.
+	ConfigFileName = "config.json"
 )
 
 // invalidProfileAliases contains a list of strings that cannot be used as profile aliases.
 var invalidProfileAliases = []string{"/", "\\", "current", ".", ".."}
 
+// configuration is used to serialise the spacectl configuration to file.
+type configuration struct {
+	// CurrentProfileAlias contains the alias of the currently selected profile.
+	CurrentProfileAlias string `json:"currentProfileAlias,omitempty"`
+
+	// Profiles contains all the profiles.
+	Profiles map[string]*Profile `json:"profiles,omitempty"`
+}
+
 // A Profile represents a spacectl profile which is used to store credential information
 // for accessing Spacelift.
 type Profile struct {
 	// The alias (name) of the profile.
-	Alias string
+	Alias string `json:"alias,omitempty"`
 
 	// The credentials used to make Spacelift API requests.
 	Credentials *StoredCredentials `json:"credentials,omitempty"`
@@ -32,11 +41,11 @@ type Profile struct {
 
 // A ProfileManager is used to interact with Spacelift profiles.
 type ProfileManager struct {
-	// The directory that profiles are stored in.
-	ProfilesDirectory string
+	// The full path to the spacectl config file.
+	ConfigurationFile string
 
-	// The path to the currently selected profile.
-	CurrentPath string
+	// The spacectl configuration.
+	Configuration *configuration
 }
 
 // NewProfileManager creates a new ProfileManager using the specified directory to store the profile data.
@@ -46,57 +55,48 @@ func NewProfileManager(profilesDirectory string) (*ProfileManager, error) {
 	}
 
 	manager := &ProfileManager{
-		ProfilesDirectory: profilesDirectory,
-		CurrentPath:       filepath.Join(profilesDirectory, CurrentFileName),
+		ConfigurationFile: filepath.Join(profilesDirectory, ConfigFileName),
+	}
+
+	if err := manager.loadConfiguration(); err != nil {
+		return nil, fmt.Errorf("failed to load configuration information: %w", err)
 	}
 
 	return manager, nil
 }
 
-// Get returns the profile with the specified alias.
+// Get returns the profile with the specified alias, returning nil if that profile does not exist.
 func (m *ProfileManager) Get(profileAlias string) (*Profile, error) {
 	if profileAlias == "" {
 		return nil, errors.New("a profile alias must be specified")
 	}
 
-	if _, err := os.Stat(m.ProfilePath(profileAlias)); err != nil {
-		return nil, fmt.Errorf("a profile named '%s' could not be found", profileAlias)
-	}
-
-	return m.getProfileFromPath(profileAlias)
+	return m.Configuration.Profiles[profileAlias], nil
 }
 
 // Current gets the user's currently selected profile, and returns nil if no profile is selected.
-func (m *ProfileManager) Current() (*Profile, error) {
-	if _, err := os.Lstat(m.CurrentPath); os.IsNotExist(err) {
-		return nil, nil
+func (m *ProfileManager) Current() *Profile {
+	if m.Configuration.CurrentProfileAlias == "" {
+		return nil
 	}
 
-	destination, err := os.Readlink(m.CurrentPath)
-	if err != nil {
-		return nil, fmt.Errorf("could not find target that current profile file '%s' points at: %w", m.CurrentPath, err)
-	}
-
-	return m.getProfileFromPath(filepath.Base(destination))
+	return m.Configuration.Profiles[m.Configuration.CurrentProfileAlias]
 }
 
 // Select sets the currently selected profile.
 func (m *ProfileManager) Select(profileAlias string) error {
-	if _, err := os.Stat(m.ProfilePath(profileAlias)); err != nil {
+	profile, err := m.Get(profileAlias)
+	if err != nil {
+		return fmt.Errorf("could not find a profile named '%s': %w", profileAlias, err)
+	}
+
+	if profile == nil {
 		return fmt.Errorf("could not find a profile named '%s'", profileAlias)
 	}
 
-	if _, err := os.Lstat(m.CurrentPath); err == nil {
-		if err := os.Remove(m.CurrentPath); err != nil {
-			return fmt.Errorf("failed to unlink current config file: %v", err)
-		}
-	}
+	m.Configuration.CurrentProfileAlias = profileAlias
 
-	if err := os.Symlink(m.ProfilePath(profileAlias), m.CurrentPath); err != nil {
-		return fmt.Errorf("could not symlink the config file for %s: %w", profileAlias, err)
-	}
-
-	return nil
+	return m.writeConfigurationToFile()
 }
 
 // Create adds a new Spacelift profile.
@@ -105,11 +105,9 @@ func (m *ProfileManager) Create(profile *Profile) error {
 		return err
 	}
 
-	if err := m.writeProfileToFile(profile); err != nil {
-		return err
-	}
-
-	m.setCurrentProfile(m.ProfilePath(profile.Alias))
+	m.Configuration.Profiles[profile.Alias] = profile
+	m.Configuration.CurrentProfileAlias = profile.Alias
+	m.writeConfigurationToFile()
 
 	return nil
 }
@@ -121,54 +119,25 @@ func (m *ProfileManager) Delete(profileAlias string) error {
 		return errors.New("a profile alias must be specified")
 	}
 
-	if _, err := os.Stat(m.ProfilePath(profileAlias)); err != nil {
+	profile := m.Configuration.Profiles[profileAlias]
+
+	if profile == nil {
 		return fmt.Errorf("no profile named '%s' exists", profileAlias)
 	}
 
-	if err := os.Remove(m.ProfilePath(profileAlias)); err != nil {
-		return err
-	}
-
-	currentTarget, err := os.Readlink(m.CurrentPath)
-
-	switch {
-	case os.IsNotExist(err):
-		return nil
-	case err == nil && currentTarget == m.ProfilePath(profileAlias):
-		return os.Remove(m.CurrentPath)
-	default:
-		return err
-	}
-}
-
-// ProfilePath returns the path to the profile with the specified alias.
-func (m *ProfileManager) ProfilePath(profileAlias string) string {
-	return filepath.Join(m.ProfilesDirectory, profileAlias)
+	delete(m.Configuration.Profiles, profileAlias)
+	return m.writeConfigurationToFile()
 }
 
 // GetAll returns all the currently stored profiles, returning an empty slice if no profiles exist.
-func (m *ProfileManager) GetAll() ([]*Profile, error) {
-	entries, err := os.ReadDir(m.ProfilesDirectory)
-	if err != nil {
-		return nil, fmt.Errorf("could not read profiles from directory: %w", err)
-	}
-
+func (m *ProfileManager) GetAll() []*Profile {
 	var profiles []*Profile
 
-	for _, entry := range entries {
-		if filepath.Base(entry.Name()) == CurrentFileName {
-			continue
-		}
-
-		profile, err := m.getProfileFromPath(entry.Name())
-		if err != nil {
-			return nil, fmt.Errorf("failed to load profile from '%s': %w", entry.Name(), err)
-		}
-
+	for _, profile := range m.Configuration.Profiles {
 		profiles = append(profiles, profile)
 	}
 
-	return profiles, nil
+	return profiles
 }
 
 func validateProfile(profile *Profile) error {
@@ -228,53 +197,43 @@ func validateAPIKeyCredentials(profile *Profile) error {
 	return nil
 }
 
-func (m *ProfileManager) setCurrentProfile(profilePath string) error {
-	if _, err := os.Lstat(m.CurrentPath); err == nil {
-		if err := os.Remove(m.CurrentPath); err != nil {
-			return fmt.Errorf("failed to unlink current config file: %v", err)
+func (m *ProfileManager) loadConfiguration() error {
+	data, err := os.ReadFile(m.ConfigurationFile)
+	if err != nil {
+		// The config file doesn't exist - just create an empty config
+		if os.IsNotExist(err) {
+			m.Configuration = &configuration{Profiles: make(map[string]*Profile)}
+			return nil
 		}
+
+		return fmt.Errorf("could not read configuration file from '%s': %w", m.ConfigurationFile, err)
 	}
 
-	if err := os.Symlink(profilePath, m.CurrentPath); err != nil {
-		return fmt.Errorf("could not symlink the config file for %s: %w", profilePath, err)
+	var config configuration
+	if err := json.Unmarshal(data, &config); err != nil {
+		return fmt.Errorf("could not unmarshal spacectl config from '%s': %w", m.ConfigurationFile, err)
 	}
+
+	m.Configuration = &config
 
 	return nil
 }
 
-func (m *ProfileManager) getProfileFromPath(profileAlias string) (*Profile, error) {
-	profilePath := m.ProfilePath(profileAlias)
-	data, err := os.ReadFile(profilePath)
+func (m *ProfileManager) writeConfigurationToFile() error {
+	file, err := os.OpenFile(m.ConfigurationFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		return nil, fmt.Errorf("could not read Spacelift profile from %s: %w", profilePath, err)
-	}
-
-	var credentials StoredCredentials
-	if err := json.Unmarshal(data, &credentials); err != nil {
-		return nil, fmt.Errorf("could not unmarshal Spacelift profile from %s: %w", profilePath, err)
-	}
-
-	return &Profile{
-		Alias:       profileAlias,
-		Credentials: &credentials,
-	}, nil
-}
-
-func (m *ProfileManager) writeProfileToFile(profile *Profile) error {
-	file, err := os.OpenFile(m.ProfilePath(profile.Alias), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return fmt.Errorf("could not create config file for %s: %w", m.ProfilePath(profile.Alias), err)
+		return fmt.Errorf("could not create config file at '%s': %w", m.ConfigurationFile, err)
 	}
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 
-	if err := encoder.Encode(profile.Credentials); err != nil {
-		return fmt.Errorf("could not write config file for %s: %w", m.ProfilePath(profile.Alias), err)
+	if err := encoder.Encode(m.Configuration); err != nil {
+		return fmt.Errorf("could not write config file at '%s': %w", m.ConfigurationFile, err)
 	}
 
 	if err := file.Close(); err != nil {
-		return fmt.Errorf("could close the config file for %s: %w", m.ProfilePath(profile.Alias), err)
+		return fmt.Errorf("could not close the config file at '%s': %w", m.ConfigurationFile, err)
 	}
 
 	return nil
