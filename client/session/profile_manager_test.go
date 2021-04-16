@@ -72,11 +72,13 @@ func TestProfileManager(t *testing.T) {
 					},
 				}
 
-				manager.Create(testProfile)
+				err := manager.Create(testProfile)
+				Expect(err).To(BeNil())
 
 				currentProfile, err := manager.Current()
 
 				Expect(err).To(BeNil())
+				Expect(currentProfile).NotTo(BeNil())
 				Expect(currentProfile.Alias).To(Equal(testProfile.Alias))
 			})
 
@@ -262,6 +264,7 @@ func TestProfileManager(t *testing.T) {
 				manager.Select("profile1")
 
 				currentProfile, _ := manager.Current()
+				Expect(currentProfile).NotTo(BeNil())
 				Expect(currentProfile.Alias).To(Equal("profile1"))
 			})
 
