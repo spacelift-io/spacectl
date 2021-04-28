@@ -44,6 +44,8 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string) (*str
 
 	reportedStates := make(map[structs.RunState]struct{})
 
+	var backoff = time.Duration(0)
+
 	for {
 		if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 			return nil, err
@@ -62,6 +64,7 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string) (*str
 			if _, ok := reportedStates[transition.State]; ok {
 				continue
 			}
+			backoff = 0
 			reportedStates[transition.State] = struct{}{}
 
 			fmt.Println("")
@@ -81,8 +84,11 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string) (*str
 			}
 		}
 
-		// TODO: Increase the timeout every time there's nothing new.
-		time.Sleep(5 * time.Second)
+		time.Sleep(backoff * time.Second)
+
+		if backoff < 5 {
+			backoff++
+		}
 	}
 }
 
