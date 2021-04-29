@@ -30,3 +30,9 @@ var flagTail = &cli.BoolFlag{
 	Usage: "Indicate whether to tail the run",
 	Value: false,
 }
+
+var flagNoTail = &cli.BoolFlag{
+	Name:  "no-tail",
+	Usage: "Indicate whether not to tail the run",
+	Value: false,
+}

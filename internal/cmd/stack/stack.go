@@ -28,6 +28,15 @@ func Command() *cli.Command {
 				Action: runTrigger("TRACKED", "deployment"),
 			},
 			{
+				Category: "Run local preview",
+				Name:     "local-preview",
+				Usage:    "Start a preview (proposed run) based on the current directory. Respects .gitignore and .terraformignore.",
+				Flags: []cli.Flag{
+					flagNoTail,
+				},
+				Action: localPreview(),
+			},
+			{
 				Category: "Run management",
 				Name:     "logs",
 				Usage:    "Show logs for a particular run",
