@@ -13,3 +13,4 @@ spacectl
 *.out
 build
 dist
+key.*
