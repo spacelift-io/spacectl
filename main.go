@@ -8,7 +8,10 @@ import (
 
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
+	versioncmd "github.com/spacelift-io/spacectl/internal/cmd/version"
 )
+
+var version = "dev"
 
 func main() {
 	app := &cli.App{
@@ -17,6 +20,7 @@ func main() {
 		Commands: []*cli.Command{
 			profile.Command(),
 			stack.Command(),
+			versioncmd.Command(version),
 		},
 	}
 

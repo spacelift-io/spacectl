@@ -1,36 +1,39 @@
 name: Release
 
-on:
-  push: { tags: ["v*"] }
+on: { push }
 
 jobs:
-  release:
-    name: Release new version
+  goreleaser:
+    name: Release
     runs-on: ubuntu-latest
-    container: golang:1.16
 
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@master
+      - name: Checkout
+        uses: actions/checkout@v2
+        with: { fetch-depth: 0 }
 
-      - name: Build release
-        run: make release
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with: { go-version: 1.16 }
 
-      - name: Release
-        uses: docker://antonyurchenko/git-release:latest
+      - name: Import GPG key
+        id: import_gpg
+        uses: paultyng/ghaction-import-gpg@v2.1.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DRAFT_RELEASE: "true"
-          PRE_RELEASE: "false"
-          CHANGELOG_FILE: "none"
-          ALLOW_EMPTY_CHANGELOG: "true"
-          ALLOW_TAG_PREFIX: "true"
-          RELEASE_NAME_PREFIX: "Release "
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Set up release notes
+        run: |
+          echo ${{ steps.import_gpg.outputs.fingerprint }} > key.fingerprint
+          gpg --armor --export ${{ steps.import_gpg.outputs.keyid }} > key.asc
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          args: |
-            ./build/spacectl-darwin-amd64.tar.gz
-            ./build/spacectl-darwin-arm64.tar.gz
-            ./build/spacectl-linux-amd64.tar.gz
-            ./build/spacectl-linux-arm64.tar.gz
-            ./build/spacectl-windows-amd64.tar.gz
-            ./LICENSE
+          version: latest
+          args: release --rm-dist
+        env:
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
