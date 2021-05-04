@@ -57,6 +57,13 @@ func Command() *cli.Command {
 				Action: runTrigger("PROPOSED", "preview"),
 			},
 			{
+				Category: "Stack management",
+				Name:     "set-current-commit",
+				Usage:    "Set current commit on the stack",
+				Flags:    []cli.Flag{flagRequiredCommitSHA},
+				Action:   setCurrentCommit,
+			},
+			{
 				Category: "Run management",
 				Name:     "task",
 				Usage:    "Perform a task in a workspace",

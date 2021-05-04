@@ -13,6 +13,11 @@ var flagCommitSHA = &cli.StringFlag{
 	Usage: "Commit SHA for the newly created run",
 }
 
+var flagRequiredCommitSHA = &cli.StringFlag{
+	Name:  "sha",
+	Usage: "SHA of the commit to set as canonical for the stack",
+}
+
 var flagRun = &cli.StringFlag{
 	Name:     "run",
 	Usage:    "ID of the run",
