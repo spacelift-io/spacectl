@@ -19,10 +19,22 @@ func Command() *cli.Command {
 		Subcommands: []*cli.Command{
 			{
 				Category: "Run management",
+				Name:     "confirm",
+				Usage:    "Confirm an unconfirmed tracked run",
+				Flags: []cli.Flag{
+					flagRun,
+					flagRunMetadata,
+					flagTail,
+				},
+				Action: runConfirm(),
+			},
+			{
+				Category: "Run management",
 				Name:     "deploy",
 				Usage:    "Start a deployment (tracked run)",
 				Flags: []cli.Flag{
 					flagCommitSHA,
+					flagRunMetadata,
 					flagTail,
 				},
 				Action: runTrigger("TRACKED", "deployment"),
@@ -32,6 +44,7 @@ func Command() *cli.Command {
 				Name:     "local-preview",
 				Usage:    "Start a preview (proposed run) based on the current directory. Respects .gitignore and .terraformignore.",
 				Flags: []cli.Flag{
+					flagRunMetadata,
 					flagNoTail,
 				},
 				Action: localPreview(),
@@ -52,6 +65,7 @@ func Command() *cli.Command {
 				Usage:    "Start a preview (proposed run)",
 				Flags: []cli.Flag{
 					flagCommitSHA,
+					flagRunMetadata,
 					flagTail,
 				},
 				Action: runTrigger("PROPOSED", "preview"),
@@ -69,6 +83,7 @@ func Command() *cli.Command {
 				Usage:    "Perform a task in a workspace",
 				Flags: []cli.Flag{
 					flagNoInit,
+					flagRunMetadata,
 					flagTail,
 				},
 				Action: taskCommand,

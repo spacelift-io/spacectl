@@ -8,54 +8,48 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/spacelift-io/spacectl/client/headers"
-	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
+func runConfirm() cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
 		var mutation struct {
-			RunTrigger struct {
+			RunConfirm struct {
 				ID string `grapqhl:"id"`
-			} `graphql:"runTrigger(stack: $stack, commitSha: $sha, runType: $type)"`
+			} `graphql:"runConfirm(stack: $stack, run: $run)"`
 		}
 
 		variables := map[string]interface{}{
 			"stack": graphql.ID(stackID),
-			"sha":   (*graphql.String)(nil),
-			"type":  structs.NewRunType(spaceliftType),
-		}
-
-		if cliCtx.IsSet(flagCommitSHA.Name) {
-			variables["sha"] = graphql.NewString(graphql.String(cliCtx.String(flagCommitSHA.Name)))
+			"run":   graphql.ID(cliCtx.String(flagRun.Name)),
 		}
 
 		ctx := context.Background()
 
-		runCreationCtx := ctx
+		runMutationCtx := ctx
 		if cliCtx.IsSet(flagRunMetadata.Name) {
-			runCreationCtx = headers.WithHTTPHeaders(runCreationCtx, map[string]string{
+			runMutationCtx = headers.WithHTTPHeaders(runMutationCtx, map[string]string{
 				UserProvidedRunMetadataHeader: cliCtx.String(flagRunMetadata.Name),
 			})
 		}
 
-		if err := authenticated.Client.Mutate(runCreationCtx, &mutation, variables); err != nil {
+		if err := authenticated.Client.Mutate(runMutationCtx, &mutation, variables); err != nil {
 			return err
 		}
 
-		fmt.Println("You have successfully created a", humanType)
+		fmt.Println("You have successfully confirmed a deployment")
 
 		fmt.Println("The live run can be visited at", authenticated.Client.URL(
 			"/stack/%s/run/%s",
 			stackID,
-			mutation.RunTrigger.ID,
+			mutation.RunConfirm.ID,
 		))
 
 		if !cliCtx.Bool(flagTail.Name) {
 			return nil
 		}
 
-		terminal, err := runLogs(ctx, stackID, mutation.RunTrigger.ID)
+		terminal, err := runLogs(ctx, stackID, mutation.RunConfirm.ID)
 		if err != nil {
 			return err
 		}

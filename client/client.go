@@ -9,6 +9,7 @@ import (
 	"github.com/shurcooL/graphql"
 	"golang.org/x/oauth2"
 
+	"github.com/spacelift-io/spacectl/client/headers"
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
@@ -19,7 +20,7 @@ type client struct {
 
 // New returns a new instance of a Spacelift Client.
 func New(wraps *http.Client, session session.Session) Client {
-	return &client{wraps: wraps, session: session}
+	return &client{wraps: headers.WrapClient(wraps), session: session}
 }
 
 func (c *client) Mutate(ctx context.Context, mutation interface{}, variables map[string]interface{}) error {
