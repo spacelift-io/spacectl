@@ -26,7 +26,12 @@ func taskCommand(cliCtx *cli.Context) error {
 
 	ctx := context.Background()
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+	var requestOpts []graphql.RequestOption
+	if cliCtx.IsSet(flagRunMetadata.Name) {
+		requestOpts = append(requestOpts, graphql.WithHeader(UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
+	}
+
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
 		return err
 	}
 

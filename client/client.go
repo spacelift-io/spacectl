@@ -22,22 +22,22 @@ func New(wraps *http.Client, session session.Session) Client {
 	return &client{wraps: wraps, session: session}
 }
 
-func (c *client) Mutate(ctx context.Context, mutation interface{}, variables map[string]interface{}) error {
+func (c *client) Mutate(ctx context.Context, mutation interface{}, variables map[string]interface{}, opts ...graphql.RequestOption) error {
 	apiClient, err := c.apiClient(ctx)
 	if err != nil {
 		return nil
 	}
 
-	return apiClient.Mutate(ctx, mutation, variables)
+	return apiClient.Mutate(ctx, mutation, variables, opts...)
 }
 
-func (c *client) Query(ctx context.Context, query interface{}, variables map[string]interface{}) error {
+func (c *client) Query(ctx context.Context, query interface{}, variables map[string]interface{}, opts ...graphql.RequestOption) error {
 	apiClient, err := c.apiClient(ctx)
 	if err != nil {
 		return nil
 	}
 
-	return apiClient.Query(ctx, query, variables)
+	return apiClient.Query(ctx, query, variables, opts...)
 }
 
 func (c *client) URL(format string, a ...interface{}) string {

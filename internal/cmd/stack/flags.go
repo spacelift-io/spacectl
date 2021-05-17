@@ -30,6 +30,11 @@ var flagNoInit = &cli.BoolFlag{
 	Value: false,
 }
 
+var flagRunMetadata = &cli.StringFlag{
+	Name:  "run-metadata",
+	Usage: "Additional opaque metadata you will be able to access from policies handling this Run.",
+}
+
 var flagTail = &cli.BoolFlag{
 	Name:  "tail",
 	Usage: "Indicate whether to tail the run",

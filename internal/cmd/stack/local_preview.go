@@ -11,8 +11,9 @@ import (
 	"github.com/mholt/archiver/v3"
 	ignore "github.com/sabhiram/go-gitignore"
 	"github.com/shurcooL/graphql"
-	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
+
+	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 func localPreview() cli.ActionFunc {
@@ -62,11 +63,16 @@ func localPreview() cli.ActionFunc {
 		}
 
 		triggerVariables := map[string]interface{}{
-			"stack": graphql.ID(stackID),
+			"stack":     graphql.ID(stackID),
 			"workspace": graphql.ID(uploadMutation.UploadLocalWorkspace.ID),
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables); err != nil {
+		var requestOpts []graphql.RequestOption
+		if cliCtx.IsSet(flagRunMetadata.Name) {
+			requestOpts = append(requestOpts, graphql.WithHeader(UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
+		}
+
+		if err := authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {
 			return err
 		}
 
