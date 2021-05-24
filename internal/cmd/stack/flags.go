@@ -13,6 +13,12 @@ var flagCommitSHA = &cli.StringFlag{
 	Usage: "Commit SHA for the newly created run",
 }
 
+var flagNoFindRepositoryRoot = &cli.BoolFlag{
+	Name:  "no-find-repository-root",
+	Usage: "Indicate whether spacectl should avoid finding the repository root (containing a .git directory) before packaging it.",
+	Value: false,
+}
+
 var flagRequiredCommitSHA = &cli.StringFlag{
 	Name:  "sha",
 	Usage: "SHA of the commit to set as canonical for the stack",
