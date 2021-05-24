@@ -123,7 +123,7 @@ func moveToRepositoryRoot() error {
 		parent := filepath.Dir(cwd)
 
 		if parent == cwd {
-			fmt.Println("Couldn't find repository root, using local directory.")
+			fmt.Println("Couldn't find repository root, using current directory.")
 			if err := os.Chdir(startCwd); err != nil {
 				return fmt.Errorf("couldn't set current working directory: %w", err)
 			}
