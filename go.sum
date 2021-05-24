@@ -178,8 +178,8 @@ github.com/sabhiram/go-gitignore v0.0.0-20201211210132-54b8a0bf510f h1:8P2MkG70G
 github.com/sabhiram/go-gitignore v0.0.0-20201211210132-54b8a0bf510f/go.mod h1:+ePHsJ1keEjQtpvf9HHw0f4ZeJ0TLRsxhunSI2hYJSs=
 github.com/shurcooL/sanitized_anchor_name v1.0.0 h1:PdmoCO6wvbs+7yrJyMORt4/BmY5IYyJwS/kOiWx8mHo=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
-github.com/spacelift-io/archiver/v3 v3.3.1-0.20210427125142-c305b5a627ba h1:EKGvn71p8gFSqPzn/cPTbSFAOIa7z+3TmZuO6M/EWBU=
-github.com/spacelift-io/archiver/v3 v3.3.1-0.20210427125142-c305b5a627ba/go.mod h1:YnQtqsp+94Rwd0D/rk5cnLrxusUBUXg+08Ebtr1Mqao=
+github.com/spacelift-io/archiver/v3 v3.3.1-0.20210524114144-7c0457f07819 h1:KPyKFpnC7vuvZ7QSUy66GeVBR1W03JDFExgPuhIAWj0=
+github.com/spacelift-io/archiver/v3 v3.3.1-0.20210524114144-7c0457f07819/go.mod h1:YnQtqsp+94Rwd0D/rk5cnLrxusUBUXg+08Ebtr1Mqao=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
