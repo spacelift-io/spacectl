@@ -20,6 +20,12 @@ func localPreview() cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
 		ctx := context.Background()
 
+		if !cliCtx.Bool(flagNoFindRepositoryRoot.Name) {
+			if err := moveToRepositoryRoot(); err != nil {
+				return fmt.Errorf("couldn't move to repository root: %w", err)
+			}
+		}
+
 		fmt.Println("Uploading local workspace...")
 
 		var uploadMutation struct {
@@ -94,6 +100,39 @@ func localPreview() cli.ActionFunc {
 		}
 
 		return terminal.Error()
+	}
+}
+
+func moveToRepositoryRoot() error {
+	startCwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("couldn't get current working directory: %w", err)
+	}
+	for {
+		if _, err := os.Stat(".git"); err == nil {
+			return nil
+		} else if !os.IsNotExist(err) {
+			return fmt.Errorf("couldn't stat .git directory: %w", err)
+		}
+
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("couldn't get current working directory: %w", err)
+		}
+
+		parent := filepath.Dir(cwd)
+
+		if parent == cwd {
+			fmt.Println("Couldn't find repository root, using local directory.")
+			if err := os.Chdir(startCwd); err != nil {
+				return fmt.Errorf("couldn't set current working directory: %w", err)
+			}
+			return nil
+		}
+
+		if err := os.Chdir(parent); err != nil {
+			return fmt.Errorf("couldn't set current working directory: %w", err)
+		}
 	}
 }
 

@@ -42,8 +42,9 @@ func Command() *cli.Command {
 			{
 				Category: "Run local preview",
 				Name:     "local-preview",
-				Usage:    "Start a preview (proposed run) based on the current directory. Respects .gitignore and .terraformignore.",
+				Usage:    "Start a preview (proposed run) based on the current project. Respects .gitignore and .terraformignore.",
 				Flags: []cli.Flag{
+					flagNoFindRepositoryRoot,
 					flagRunMetadata,
 					flagNoTail,
 				},
