@@ -17,6 +17,6 @@ require (
 	golang.org/x/term v0.0.0-20210406210042-72f3dc4e9b72
 )
 
-replace github.com/mholt/archiver/v3 => github.com/spacelift-io/archiver/v3 v3.3.1-0.20210427125142-c305b5a627ba
+replace github.com/mholt/archiver/v3 => github.com/spacelift-io/archiver/v3 v3.3.1-0.20210524114144-7c0457f07819
 
 replace github.com/shurcooL/graphql => github.com/marcinwyszynski/graphql v0.0.0-20210505073322-ed22d920d37d
