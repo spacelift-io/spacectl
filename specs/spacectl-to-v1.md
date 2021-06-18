@@ -236,6 +236,16 @@ We should support the following commands for managing VCS agent pools:
 
 We should support the following commands for managing VCS integrations.
 
+- `spacectl bitbucket cloud`
+  - `show` - show current integration settings
+  - `setup` - configures the Bitbucket integration
+  - `update` - allows you to update your username and password
+  - `unlink` - disables the integration and removes any settings
+- `spacectl bitbucket datacenter`
+  - `show` - show current integration settings
+  - `setup` - configures the Bitbucket integration
+  - `update` - allows you to update your API Host, user facing host, token or webhook secret
+  - `unlink` - disables the integration and removes any settings
 - `spacectl github-enterprise`
   - `show` - show current integration settings
   - `setup` - configures the GitHub Enterprise integration
@@ -245,11 +255,6 @@ We should support the following commands for managing VCS integrations.
   - `show` - show current integration settings
   - `setup` - configures the GitLab integration
   - `update` - allows you to update your API Host, token or webhook secret
-  - `unlink` - disables the integration and removes any settings
-- `spacectl bitbucket`
-  - `show` - show current integration settings
-  - `setup` - configures the Bitbucket integration
-  - `update` - allows you to update your API Host, user facing host, token or webhook secret
   - `unlink` - disables the integration and removes any settings
 
 **_Questions_**:
