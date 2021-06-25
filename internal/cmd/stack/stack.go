@@ -5,6 +5,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
@@ -24,8 +25,9 @@ func Command() *cli.Command {
 					flagRunMetadata,
 					flagTail,
 				},
-				Action: runConfirm(),
-				Before: authenticated.Ensure,
+				Action:    runConfirm(),
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
@@ -37,8 +39,9 @@ func Command() *cli.Command {
 					flagRunMetadata,
 					flagTail,
 				},
-				Action: runTrigger("TRACKED", "deployment"),
-				Before: authenticated.Ensure,
+				Action:    runTrigger("TRACKED", "deployment"),
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run local preview",
@@ -50,8 +53,9 @@ func Command() *cli.Command {
 					flagRunMetadata,
 					flagNoTail,
 				},
-				Action: localPreview(),
-				Before: authenticated.Ensure,
+				Action:    localPreview(),
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
@@ -66,7 +70,8 @@ func Command() *cli.Command {
 					_, err := runLogs(context.Background(), stackID, cliCtx.String(flagRun.Name))
 					return err
 				},
-				Before: authenticated.Ensure,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
@@ -78,8 +83,9 @@ func Command() *cli.Command {
 					flagRunMetadata,
 					flagTail,
 				},
-				Action: runTrigger("PROPOSED", "preview"),
-				Before: authenticated.Ensure,
+				Action:    runTrigger("PROPOSED", "preview"),
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Stack management",
@@ -89,8 +95,9 @@ func Command() *cli.Command {
 					flagStackID,
 					flagRequiredCommitSHA,
 				},
-				Action: setCurrentCommit,
-				Before: authenticated.Ensure,
+				Action:    setCurrentCommit,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
@@ -102,8 +109,9 @@ func Command() *cli.Command {
 					flagRunMetadata,
 					flagTail,
 				},
-				Action: taskCommand,
-				Before: authenticated.Ensure,
+				Action:    taskCommand,
+				Before:    authenticated.Ensure,
+				ArgsUsage: "COMMAND",
 			},
 		},
 	}

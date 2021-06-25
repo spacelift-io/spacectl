@@ -7,13 +7,14 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/spacelift-io/spacectl/client/session"
+	"github.com/spacelift-io/spacectl/internal/cmd"
 )
 
 func listCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "list",
 		Usage:     "List all your Spacelift account profiles",
-		ArgsUsage: " ",
+		ArgsUsage: cmd.EmptyArgsUsage,
 		Action: func(*cli.Context) error {
 			profiles := manager.GetAll()
 

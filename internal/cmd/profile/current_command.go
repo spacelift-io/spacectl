@@ -4,17 +4,15 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/urfave/cli/v2"
 )
 
 func currentCommand() *cli.Command {
 	return &cli.Command{
-		Name:  "current",
-		Usage: "Outputs your currently selected profile",
-
-		// Use a space to cause the args usage to not be displayed since the `current` command
-		// doesn't accept any arguments
-		ArgsUsage: " ",
+		Name:      "current",
+		Usage:     "Outputs your currently selected profile",
+		ArgsUsage: cmd.EmptyArgsUsage,
 		Action: func(ctx *cli.Context) error {
 			currentProfile := manager.Current()
 
