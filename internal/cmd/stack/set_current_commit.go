@@ -13,6 +13,8 @@ import (
 )
 
 func setCurrentCommit(cliCtx *cli.Context) error {
+	stackID := cliCtx.String(flagStackID.Name)
+
 	var mutation struct {
 		SetCurrentCommmit struct {
 			TrackedCommit *struct {

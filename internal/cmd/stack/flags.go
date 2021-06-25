@@ -4,13 +4,13 @@ import "github.com/urfave/cli/v2"
 
 var flagStackID = &cli.StringFlag{
 	Name:     "id",
-	Usage:    "User-facing ID (slug) of the stack",
+	Usage:    "User-facing `ID` (slug) of the stack",
 	Required: true,
 }
 
 var flagCommitSHA = &cli.StringFlag{
 	Name:  "sha",
-	Usage: "Commit SHA for the newly created run",
+	Usage: "Commit `SHA` for the newly created run",
 }
 
 var flagNoFindRepositoryRoot = &cli.BoolFlag{
@@ -20,13 +20,14 @@ var flagNoFindRepositoryRoot = &cli.BoolFlag{
 }
 
 var flagRequiredCommitSHA = &cli.StringFlag{
-	Name:  "sha",
-	Usage: "SHA of the commit to set as canonical for the stack",
+	Name:     "sha",
+	Usage:    "`SHA` of the commit to set as canonical for the stack",
+	Required: true,
 }
 
 var flagRun = &cli.StringFlag{
 	Name:     "run",
-	Usage:    "ID of the run",
+	Usage:    "`ID` of the run",
 	Required: true,
 }
 

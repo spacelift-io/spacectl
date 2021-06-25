@@ -13,6 +13,8 @@ import (
 
 func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
+		stackID := cliCtx.String(flagStackID.Name)
+
 		var mutation struct {
 			RunTrigger struct {
 				ID string `grapqhl:"id"`

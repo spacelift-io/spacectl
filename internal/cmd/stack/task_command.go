@@ -12,6 +12,8 @@ import (
 )
 
 func taskCommand(cliCtx *cli.Context) error {
+	stackID := cliCtx.String(flagStackID.Name)
+
 	var mutation struct {
 		TaskCreate struct {
 			ID string `grapqhl:"id"`

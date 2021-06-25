@@ -12,6 +12,8 @@ import (
 
 func runConfirm() cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
+		stackID := cliCtx.String(flagStackID.Name)
+
 		var mutation struct {
 			RunConfirm struct {
 				ID string `grapqhl:"id"`
