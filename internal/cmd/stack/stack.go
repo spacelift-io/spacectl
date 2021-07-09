@@ -44,6 +44,16 @@ func Command() *cli.Command {
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
+				Name:  "list",
+				Usage: "List the stacks you have access to",
+				Flags: []cli.Flag{
+					cmd.FlagOutputFormat,
+				},
+				Action:    listStacks(),
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
 				Category: "Run local preview",
 				Name:     "local-preview",
 				Usage:    "Start a preview (proposed run) based on the current project. Respects .gitignore and .terraformignore.",

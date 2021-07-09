@@ -9,6 +9,7 @@ require (
 	github.com/gookit/color v1.4.2 // indirect
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/onsi/gomega v1.11.0
+	github.com/pkg/errors v0.9.1
 	github.com/pterm/pterm v0.12.13
 	github.com/sabhiram/go-gitignore v0.0.0-20201211210132-54b8a0bf510f
 	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a
