@@ -6,6 +6,76 @@
 
 `spacectl` is distributed through GitHub Releases as a zip file containing a self-contained statically linked executable built from the source in this repository. Binaries can be download directly from the [Releases page](https://github.com/spacelift-io/spacectl/releases).
 
+## Quick Start
+
+Authenticate using `spacectl profile login`:
+
+```bash
+> spacectl profile login my-account
+Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/): http://my-account.app.spacelift.tf
+Select credentials type: 1 for API key, 2 for GitHub access token: 2
+Enter GitHub access token:
+```
+
+Use spacectl :rocket::
+
+```bash
+> spacectl stack list
+Name                          | Commit   | Author        | State     | Worker Pool | Locked By
+stack-1                       | 1aa0ef62 | Adam Connelly | NONE      |             |
+stack-2                       | 1aa0ef62 | Adam Connelly | DISCARDED |             |
+```
+
+## Getting Help
+
+To list all the commands available, use `spacectl help`:
+
+```bash
+> spacectl help
+NAME:
+   spacectl - Programmatic access to Spacelift GraphQL API
+
+USAGE:
+   spacectl [global options] command [command options] [arguments...]
+
+COMMANDS:
+   profile  Manage Spacelift profiles
+   stack    Manage a Spacelift stack
+   version  Print out CLI version
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --help, -h  show help (default: false)
+```
+
+To get help about a particular command or subcommand, use the `-h` flag:
+
+```bash
+> spacectl profile -h
+NAME:
+   spacectl profile - Manage Spacelift profiles
+
+USAGE:
+   spacectl profile command [command options] [arguments...]
+
+COMMANDS:
+   current  Outputs your currently selected profile
+   list     List all your Spacelift account profiles
+   login    Create a profile for a Spacelift account
+   logout   Remove Spacelift credentials for an existing profile
+   select   Select one of your Spacelift account profiles
+   help, h  Shows a list of commands or help for one command
+
+OPTIONS:
+   --help, -h  show help (default: false)
+```
+
+## Example
+
+The following screencast shows an example of using spacectl to run a one-off task in Spacelift:
+
+[![asciicast](https://asciinema.org/a/pYm8lqM5XTUoG1UsDo7OL6t8B.svg)](https://asciinema.org/a/pYm8lqM5XTUoG1UsDo7OL6t8B)
+
 ## Authentication
 
 `spacectl` is designed to work in two different contexts - a non-interactive scripting mode (eg. external CI/CD pipeline) and a local interactive mode, where you type commands into your shell. Because of this, it supports two types of credentials - environment variables and user profiles.
@@ -81,129 +151,3 @@ Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/):
 In the next step, you will be asked to choose which authentication method you are going to use. Note that if your account is using [SAML-based SSO authentication](https://docs.spacelift.io/integrations/single-sign-on), then API keys are your only option. After you're done entering credentials, the CLI will validate them against the server, and assuming that they're valid, will persist them in a credentials file in `.spacelift/${MY_ALIAS}`. It will also create a symlink in `${HOME}/.spacelift/current` pointing to the current profile.
 
 You can switch between account profiles by using `spacectl profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacectl profile logout ${MY_ALIAS}` command.
-
-## Usage
-
-Currently only a small subset of operations is supported, starting with the ability to trigger runs and tasks and see their logs.
-
-### Run management
-
-Managing runs is currently avaialble through the `stack` subcommand:
-
-```bash
-❯ spacectl stack --id=stack-id help
-NAME:
-   spacectl stack - Manage a Spacelift stack
-
-USAGE:
-   spacectl stack [global options] command [command options] [arguments...]
-
-COMMANDS:
-   help, h  Shows a list of commands or help for one command
-   Run management:
-     deploy   Start a deployment (tracked run)
-     logs     Show logs for a particular run
-     preview  Start a preview (proposed run)
-     task     Perform a task in a workspace
-
-GLOBAL OPTIONS:
-   --id value  User-facing ID (slug) of the stack
-   --help, -h  show help (default: false)
-```
-
-Each of these operations will require user-facing stack ID (so called "slug") visible - among other places - in the stack URL in the GUI. Let's look at the operations one by one.
-
-#### `stack deploy` subcommand
-
-```bash
-❯ spacectl stack --id=stack-id deploy --help
-NAME:
-   spacectl stack deploy - Start a deployment (tracked run)
-
-USAGE:
-   spacectl stack deploy [command options] [arguments...]
-
-CATEGORY:
-   Run management
-
-OPTIONS:
-   --sha value  Commit SHA for the newly created run
-   --tail       Indicate whether to tail the run (default: false)
-   --help, -h   show help (default: false)
-```
-
-This subcommand creates a [tracked run](https://docs.spacelift.io/concepts/run/tracked) on a stack. By default, it uses the latest tracked commit, but you can also point it to an arbitrary SHA using the `--sha` flag. Also by default, this command only creates a run and prints out the URL where the run can be accessed. If the `--tail` flag is set however, run logs will be retrieved until the run terminates. If the run is tailed, the exit code of the command will depend on the outcome of the run - if the run is `FINISHED`, the command succeeds (exits with `0`), otherwise it fails.
-
-Notes:
-
-- Terminating the executable (Ctrl+C) while tailing logs does not stop the run, it just stops tailing logs.
-
-- You cannot confirm or discard the run from the command line. If the deployment ends up in [`UNCONFIRMED`](https://docs.spacelift.io/concepts/run/tracked#unconfirmed) state, the CLI be stuck until the state machine progresses. You will need to go to the run URL and make a decision there.
-
-#### `stack preview` subcommand
-
-```bash
-❯ spacectl stack --id=stack-id preview --help
-NAME:
-   spacectl stack preview - Start a preview (proposed run)
-
-USAGE:
-   spacectl stack preview [command options] [arguments...]
-
-CATEGORY:
-   Run management
-
-OPTIONS:
-   --sha value  Commit SHA for the newly created run
-   --tail       Indicate whether to tail the run (default: false)
-   --help, -h   show help (default: false)
-```
-
-This subcommand creates a [proposed run](https://docs.spacelift.io/concepts/run/proposed) on a stack. By default, it uses the latest tracked commit, but you can also point it to an arbitrary SHA using the `--sha` flag. Also by default, this command only creates a run and prints out the URL where the run can be accessed. If the `--tail` flag is set however, run logs will be retrieved until the run terminates. If the run is tailed, the exit code of the command will depend on the outcome of the run - if the run is `FINISHED`, the command succeeds (exits with `0`), otherwise it fails.
-
-#### `stack logs` subcommand
-
-```bash
-❯ spacectl stack --id=stack-id logs --help
-NAME:
-   spacectl stack logs - Show logs for a particular run
-
-USAGE:
-   spacectl stack logs [command options] [arguments...]
-
-CATEGORY:
-   Run management
-
-OPTIONS:
-   --run value  ID of the run
-   --help, -h   show help (default: false)
-```
-
-This subcommand prints out (and tails) logs for an existing run or task. Note that for an existing run or task, the `logs` subcommand will always succeed (exit with `0`), regardless of its outcome.
-
-Note that `run` is a required parameter here and represents the unique run ID, one that looks like `01F2KB8SARWF3V2PSFYXK5D0S7`.
-
-#### `stack task` subcommand
-
-```bash
-❯ spacectl stack --id=stack-id task --help
-NAME:
-   spacectl stack task - Perform a task in a workspace
-
-USAGE:
-   spacectl stack task [command options] [arguments...]
-
-CATEGORY:
-   Run management
-
-OPTIONS:
-   --noinit    Indicate whether to skip initialization for a task (default: false)
-   --tail      Indicate whether to tail the run (default: false)
-   --help, -h  show help (default: false)
-```
-
-This subcommand starts a [task](https://docs.spacelift.io/concepts/run/task) against a stack. The command for the task itself must be specified after all the other `spacectl` command arguments. It can be quoted to prevent any confusion from shell tokenization. Example:
-
-[![asciicast](https://asciinema.org/a/pYm8lqM5XTUoG1UsDo7OL6t8B.svg)](https://asciinema.org/a/pYm8lqM5XTUoG1UsDo7OL6t8B)
-
-By default, this command only creates a run and prints out the URL where the run can be accessed. If the `--tail` flag is set however (see above), run logs will be retrieved until the run terminates. If the run is tailed, the exit code of the command will depend on the outcome of the run - if the run is `FINISHED`, the command succeeds (exits with `0`), otherwise it fails.
