@@ -39,12 +39,16 @@ func GetOutputFormat(cliContext *cli.Context) (OutputFormat, error) {
 }
 
 // OutputTable outputs the specified data as a table.
-func OutputTable(data [][]string) error {
-	return pterm.
+func OutputTable(data [][]string, hasHeader bool) error {
+	printer := pterm.
 		DefaultTable.
-		WithHasHeader().
-		WithData(data).
-		Render()
+		WithData(data)
+
+	if hasHeader {
+		printer = printer.WithHasHeader()
+	}
+
+	return printer.Render()
 }
 
 // OutputJSON outputs the specified object as JSON.

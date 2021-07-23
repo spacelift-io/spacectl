@@ -134,5 +134,5 @@ func listStacksTable(ctx context.Context) error {
 		})
 	}
 
-	return cmd.OutputTable(tableData)
+	return cmd.OutputTable(tableData, true)
 }

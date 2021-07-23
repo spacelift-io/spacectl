@@ -110,6 +110,17 @@ func Command() *cli.Command {
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
+				Name:  "show",
+				Usage: "Shows detailed information about a specific stack",
+				Flags: []cli.Flag{
+					flagStackID,
+					cmd.FlagOutputFormat,
+				},
+				Action:    (&showStackCommand{}).showStack,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
 				Category: "Run management",
 				Name:     "task",
 				Usage:    "Perform a task in a workspace",

@@ -53,7 +53,7 @@ func listCommand() *cli.Command {
 					})
 				}
 
-				return cmd.OutputTable(tableData)
+				return cmd.OutputTable(tableData, true)
 
 			case cmd.OutputFormatJSON:
 				var profileList []profileListOutput
