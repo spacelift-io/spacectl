@@ -66,80 +66,80 @@ Because one of the use-cases is scripting, we want to be able to use the output 
 #### API Keys
 
 - `spacectl api-key`
-  - `list` - lists the API keys in your account
-  - `create` - creates an API key
-  - `delete` - deletes an API key
+  - [ ] `list` - lists the API keys in your account
+  - [ ] `create` - creates an API key
+  - [ ] `delete` - deletes an API key
 
 #### Audit Trail
 
 - `spacectl audit-trail`
-  - `show` - shows current audit trail settings
-  - `setup` - configures the audit trail
-  - `update` - allows you to update the webhooks endpoint, secret and status of the integration
+  - [ ] `show` - shows current audit trail settings
+  - [ ] `setup` - configures the audit trail
+  - [ ] `update` - allows you to update the webhooks endpoint, secret and status of the integration
 
 #### Modules
 
 We should support the following commands for working with Modules:
 
 - `spacectl module`
-  - `list` - lists the modules you have access to
-  - `add` - adds a new module
-  - `delete` - deletes a module
-  - `show` - outputs information about a specified module
-  - `edit` - edits the name, provider, labels and description for the module
+  - [ ] `list` - lists the modules you have access to
+  - [ ] `add` - adds a new module
+  - [ ] `delete` - deletes a module
+  - [ ] `show` - outputs information about a specified module
+  - [ ] `edit` - edits the name, provider, labels and description for the module
 
 Subcommands:
 
 - `spacectl module version`
-  - `list` - lists the versions for a specific module
-  - `create` - triggers a run to create a new version
-  - `show` - shows information about a module version
+  - [ ] `list` - lists the versions for a specific module
+  - [ ] `create` - triggers a run to create a new version
+  - [ ] `show` - shows information about a module version
 - `spacectl module pr`
-  - `list` - lists any open PRs against the module
-  - `show` - outputs information about a specified PR
+  - [ ] `list` - lists any open PRs against the module
+  - [ ] `show` - outputs information about a specified PR
 - `spacectl module environment`
-  - `show` - outputs the environment variables and attached contexts.
-  - `add` - adds a new environment variable or mounted file
-  - `edit` - updates an environment variable or mounted file
-  - `delete` - deletes an environment variable or mounted file
+  - [ ] `show` - outputs the environment variables and attached contexts.
+  - [ ] `add` - adds a new environment variable or mounted file
+  - [ ] `edit` - updates an environment variable or mounted file
+  - [ ] `delete` - deletes an environment variable or mounted file
 - `spacectl module vcs`
-  - `show` - show the module's VCS settings
-  - `edit` - edit the module's VCS settings
+  - [ ] `show` - show the module's VCS settings
+  - [ ] `edit` - edit the module's VCS settings
 - `spacectl module behavior`
-  - `show` - shows the module's behavior settings
-  - `edit` - edits the module's behavior settings
+  - [ ] `show` - shows the module's behavior settings
+  - [ ] `edit` - edits the module's behavior settings
 - `spacectl module context`
-  - `list` - lists the contexts attached to the module
-  - `attach` - attaches a context to the module
-  - `detach` - detaches a context from the module
+  - [ ] `list` - lists the contexts attached to the module
+  - [ ] `attach` - attaches a context to the module
+  - [ ] `detach` - detaches a context from the module
 - `spacectl module policy`
-  - `list` - lists the policies attached to the module
-  - `attach` - attaches a policy to the module
-  - `detach` - detaches a policy from the module
+  - [ ] `list` - lists the policies attached to the module
+  - [ ] `attach` - attaches a policy to the module
+  - [ ] `detach` - detaches a policy from the module
 - `spacectl module share`
-  - `list` - lists the accounts that the module is shared with
-  - `add` - adds an account to the list of shared accounts
-  - `remove` - removes an account from the list of shared accounts
+  - [ ] `list` - lists the accounts that the module is shared with
+  - [ ] `add` - adds an account to the list of shared accounts
+  - [ ] `remove` - removes an account from the list of shared accounts
 
 #### Policies
 
 We should support the following commands for working with policies:
 
 - `spacectl policy`
-  - `list` - lists the policies in the account
-  - `show` - shows the details of a specific policy
-  - `add` - adds a new policy
-  - `edit` - updated an existing policy
-  - `delete` - deletes a policy
+  - [ ] `list` - lists the policies in the account
+  - [ ] `show` - shows the details of a specific policy
+  - [ ] `add` - adds a new policy
+  - [ ] `edit` - updated an existing policy
+  - [ ] `delete` - deletes a policy
 
 #### Profile
 
 - `spacectl profile`
-  - `current` - shows the currently active profile
-  - `list` - lists available profiles
-  - `login` - creates a new profile
-  - `logout` - removes a profile
-  - `select` - selects one of your profiles as the current profile
+  - [ ] `current` - shows the currently active profile
+  - [ ] `list` - lists available profiles
+  - [ ] `login` - creates a new profile
+  - [ ] `logout` - removes a profile
+  - [ ] `select` - selects one of your profiles as the current profile
 
 #### Slack Settings
 
@@ -147,74 +147,74 @@ We should support the following commands for working with policies:
 settings other than viewing that it's configured and opening a browser to connect.
 
 - `spacectl slack`
-  - `show` - shows current integration settings
-  - `setup` - configures the Slack integration by launching the OAuth2 process
+  - [ ] `show` - shows current integration settings
+  - [ ] `setup` - configures the Slack integration by launching the OAuth2 process
 
 #### SSO Settings
 
 We should support the following commands for working with SSO settings.
 
 - `spacectl sso`
-  - `show` - show current SSO settings
-  - `setup` - configure the SSO settings for the account
-  - `delete` - deletes your SSO configuration
+  - [ ] `show` - show current SSO settings
+  - [ ] `setup` - configure the SSO settings for the account
+  - [ ] `delete` - deletes your SSO configuration
 
 #### Stacks
 
 We should support the following commands for working with Stacks:
 
 - `spacectl stack`
-  - `list` - lists the stacks you have access to
-  - `add` - adds a new stack
-  - `delete` - deletes a stack
-  - `show` - outputs information about a specified Stack
-  - `edit` - edits the name, labels and description for the stack
-  - `set-current-commit` - sets the current commit for the stack
+  - [x] `list` - lists the stacks you have access to
+  - [ ] `add` - adds a new stack
+  - [ ] `delete` - deletes a stack
+  - [ ] `show` - outputs information about a specified Stack
+  - [ ] `edit` - edits the name, labels and description for the stack
+  - [ ] `set-current-commit` - sets the current commit for the stack
 
 Subcommands:
 
 - `spacectl stack run`
-  - `confirm` - confirms a run awaiting approval
-  - `list` - lists the runs for your stack
-  - `trigger` - triggers a run
-  - `preview` - triggers a preview run for a specific commit
-  - `local-preview` - triggers a local-preview run using the current directory as the workspace
-  - `logs` - shows the logs for a run
-  - `show` - outputs information about a specified Run
+  - [ ] `confirm` - confirms a run awaiting approval
+  - [ ] `list` - lists the runs for your stack
+  - [ ] `trigger` - triggers a run
+  - [ ] `preview` - triggers a preview run for a specific commit
+  - [ ] `local-preview` - triggers a local-preview run using the current directory as the workspace
+  - [ ] `logs` - shows the logs for a run
+  - [ ] `show` - outputs information about a specified Run
 - `spacectl stack task`
-  - `list` - lists any tasks that have been run against the stack
-  - `perform` - performs a one-off task in a workspace
-  - `show` - outputs information about a specified Task
+  - [ ] `list` - lists any tasks that have been run against the stack
+  - [ ] `perform` - performs a one-off task in a workspace
+  - [ ] `show` - outputs information about a specified Task
 - `spacectl stack pr`
-  - `list` - lists any open PRs against the stack
-  - `show` - outputs information about a specified PR
+  - [ ] `list` - lists any open PRs against the stack
+  - [ ] `show` - outputs information about a specified PR
 - `spacectl stack environment`
-  - `show` - outputs the environment variables and attached contexts.
-  - `add` - adds a new environment variable or mounted file
-  - `edit` - updates an environment variable or mounted file
-  - `delete` - deletes an environment variable or mounted file
+  - [ ] `show` - outputs the environment variables and attached contexts.
+  - [ ] `add` - adds a new environment variable or mounted file
+  - [ ] `edit` - updates an environment variable or mounted file
+  - [ ] `delete` - deletes an environment variable or mounted file
 
 The following commands are all under the _settings_ section of the UI, but they aren't nested
 under a `settings` subcommand here to avoid too much command nesting. Alternatively we could
 just have a single settings command that does everything:
 
 - `spacectl stack vcs`
-  - `show` - show the stack's VCS settings
-  - `edit` - edit the stack's VCS settings
+  - [ ] `show` - show the stack's VCS settings
+  - [ ] `edit` - edit the stack's VCS settings
 - `spacectl stack backend`
-  - `show` - shows the stack's backend settings
-  - `edit` - edits the stack's backend settings
+  - [ ] `show` - shows the stack's backend settings
+  - [ ] `edit` - edits the stack's backend settings
 - `spacectl stack behavior`
-  - `show` - shows the stack's behavior settings
-  - `edit` - edits the stack's behavior settings
+  - [ ] `show` - shows the stack's behavior settings
+  - [ ] `edit` - edits the stack's behavior settings
 - `spacectl stack context`
-  - `list` - lists the contexts attached to the stack
-  - `attach` - attaches a context to the stack
-  - `detach` - detaches a context from the stack
+  - [ ] `list` - lists the contexts attached to the stack
+  - [ ] `attach` - attaches a context to the stack
+  - [ ] `detach` - detaches a context from the stack
 - `spacectl stack policy`
-  - `list` - lists the policies attached to the stack
-  - `attach` - attaches a policy to the stack
-  - `detach` - detaches a policy from the stack
+  - [ ] `list` - lists the policies attached to the stack
+  - [ ] `attach` - attaches a policy to the stack
+  - [ ] `detach` - detaches a policy from the stack
 
 **_Questions_**:
 
@@ -226,36 +226,36 @@ just have a single settings command that does everything:
 We should support the following commands for managing VCS agent pools:
 
 - `spacectl vcs-agent-pool`
-  - `list` - lists the VCS agent pools in the account
-  - `add` - adds a new VCS agent pool
-  - `show` - shows details of a specific agent pool
-  - `reset` - resets the credentials for an agent pool
-  - `delete` - deletes an agent pool
+  - [ ] `list` - lists the VCS agent pools in the account
+  - [ ] `add` - adds a new VCS agent pool
+  - [ ] `show` - shows details of a specific agent pool
+  - [ ] `reset` - resets the credentials for an agent pool
+  - [ ] `delete` - deletes an agent pool
 
 #### VCS Integrations
 
 We should support the following commands for managing VCS integrations.
 
 - `spacectl bitbucket cloud`
-  - `show` - show current integration settings
-  - `setup` - configures the Bitbucket integration
-  - `update` - allows you to update your username and password
-  - `unlink` - disables the integration and removes any settings
+  - [ ] `show` - show current integration settings
+  - [ ] `setup` - configures the Bitbucket integration
+  - [ ] `update` - allows you to update your username and password
+  - [ ] `unlink` - disables the integration and removes any settings
 - `spacectl bitbucket datacenter`
-  - `show` - show current integration settings
-  - `setup` - configures the Bitbucket integration
-  - `update` - allows you to update your API Host, user facing host, token or webhook secret
-  - `unlink` - disables the integration and removes any settings
+  - [ ] `show` - show current integration settings
+  - [ ] `setup` - configures the Bitbucket integration
+  - [ ] `update` - allows you to update your API Host, user facing host, token or webhook secret
+  - [ ] `unlink` - disables the integration and removes any settings
 - `spacectl github-enterprise`
-  - `show` - show current integration settings
-  - `setup` - configures the GitHub Enterprise integration
-  - `update` - allows you to update your API Host, private key or webhook secret
-  - `unlink` - disables the integration and removes any settings
+  - [ ] `show` - show current integration settings
+  - [ ] `setup` - configures the GitHub Enterprise integration
+  - [ ] `update` - allows you to update your API Host, private key or webhook secret
+  - [ ] `unlink` - disables the integration and removes any settings
 - `spacectl gitlab`
-  - `show` - show current integration settings
-  - `setup` - configures the GitLab integration
-  - `update` - allows you to update your API Host, token or webhook secret
-  - `unlink` - disables the integration and removes any settings
+  - [ ] `show` - show current integration settings
+  - [ ] `setup` - configures the GitLab integration
+  - [ ] `update` - allows you to update your API Host, token or webhook secret
+  - [ ] `unlink` - disables the integration and removes any settings
 
 **_Questions_**:
 
@@ -269,8 +269,8 @@ We should support the following commands for managing VCS integrations.
 We should support the following commands for managing worker pools:
 
 - `spacectl worker-pool`
-  - `list` - lists the worker pools in the account
-  - `add` - adds a new worker pool - `spacectl` could take care of the CSR part automatically
-  - `show` - shows details of a specific worker pool
-  - `reset` - resets the credentials for a worker pool
-  - `delete` - deletes a worker pool
+  - [ ] `list` - lists the worker pools in the account
+  - [ ] `add` - adds a new worker pool - `spacectl` could take care of the CSR part automatically
+  - [ ] `show` - shows details of a specific worker pool
+  - [ ] `reset` - resets the credentials for a worker pool
+  - [ ] `delete` - deletes a worker pool
