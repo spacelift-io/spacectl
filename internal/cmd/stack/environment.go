@@ -1,7 +1,6 @@
 package stack
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -17,6 +16,11 @@ import (
 // ConfigType is a type of configuration element.
 type ConfigType string
 
+const (
+	fileTypeConfig   = ConfigType("FILE_MOUNT")
+	envVarTypeConfig = ConfigType("ENVIRONMENT_VARIABLE")
+)
+
 // ConfigInput represents the input required to create or update a config
 // element.
 type ConfigInput struct {
@@ -28,7 +32,7 @@ type ConfigInput struct {
 
 func setVar(cliCtx *cli.Context) error {
 	if nArgs := cliCtx.NArg(); nArgs != 2 {
-		return fmt.Errorf("expecting environment setenv as two arguments, got %d instead", nArgs)
+		return fmt.Errorf("expected two arguments to `environment setenv` but got %d", nArgs)
 	}
 
 	envName := cliCtx.Args().Get(0)
@@ -48,13 +52,13 @@ func setVar(cliCtx *cli.Context) error {
 		"stack": graphql.ID(stackID),
 		"config": ConfigInput{
 			ID:        graphql.ID(envName),
-			Type:      ConfigType("ENVIRONMENT_VARIABLE"),
+			Type:      envVarTypeConfig,
 			Value:     graphql.String(envValue),
 			WriteOnly: graphql.Boolean(cliCtx.Bool(flagEnvironmentWriteOnly.Name)),
 		},
 	}
 
-	if err := authenticated.Client.Mutate(context.Background(), &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
 		return err
 	}
 
@@ -92,7 +96,7 @@ func mountFile(cliCtx *cli.Context) error {
 			return fmt.Errorf("couldn't read file from %s: %w", filePath, err)
 		}
 	default:
-		return fmt.Errorf("expecting environment mount as max two arguments, got %d instead", nArgs)
+		return fmt.Errorf("expected max two arguments to `environment mount` but got %d", nArgs)
 	}
 
 	var mutation struct {
@@ -107,13 +111,13 @@ func mountFile(cliCtx *cli.Context) error {
 		"stack": graphql.ID(stackID),
 		"config": ConfigInput{
 			ID:        graphql.ID(envName),
-			Type:      ConfigType("FILE_MOUNT"),
+			Type:      fileTypeConfig,
 			Value:     graphql.String(base64.StdEncoding.EncodeToString(fileContent)),
 			WriteOnly: graphql.Boolean(cliCtx.Bool(flagEnvironmentWriteOnly.Name)),
 		},
 	}
 
-	if err := authenticated.Client.Mutate(context.Background(), &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
 		return err
 	}
 
@@ -143,7 +147,7 @@ func deleteEnvironment(cliCtx *cli.Context) error {
 		"id":    graphql.ID(envName),
 	}
 
-	if err := authenticated.Client.Mutate(context.Background(), &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
 		return err
 	}
 
