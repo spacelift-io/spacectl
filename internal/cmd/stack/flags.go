@@ -13,6 +13,12 @@ var flagCommitSHA = &cli.StringFlag{
 	Usage: "Commit `SHA` for the newly created run",
 }
 
+var flagEnvironmentWriteOnly = &cli.BoolFlag{
+	Name:  "write-only",
+	Usage: "Indicates whether the content can be read back outside a Run",
+	Value: false,
+}
+
 var flagNoFindRepositoryRoot = &cli.BoolFlag{
 	Name:  "no-find-repository-root",
 	Usage: "Indicate whether spacectl should avoid finding the repository root (containing a .git directory) before packaging it.",

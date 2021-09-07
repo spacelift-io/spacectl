@@ -110,6 +110,44 @@ func Command() *cli.Command {
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
+				Name:  "environment",
+				Usage: "Manage Stack`s environment`",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "setvar",
+						Usage: "Sets an environment variable.",
+						Flags: []cli.Flag{
+							flagStackID,
+							flagEnvironmentWriteOnly,
+						},
+						Action:    setVar,
+						Before:    authenticated.Ensure,
+						ArgsUsage: "NAME VALUE",
+					},
+					{
+						Name:  "mount",
+						Usage: "Mount a file from existing file or STDIN.",
+						Flags: []cli.Flag{
+							flagStackID,
+							flagEnvironmentWriteOnly,
+						},
+						Action:    mountFile,
+						Before:    authenticated.Ensure,
+						ArgsUsage: "RELATIVE_PATH_TO_MOUNT [FILE_PATH]",
+					},
+					{
+						Name:  "delete",
+						Usage: "Deletes an environment variable or mounted file.",
+						Flags: []cli.Flag{
+							flagStackID,
+						},
+						Action:    deleteEnvironment,
+						Before:    authenticated.Ensure,
+						ArgsUsage: "NAME",
+					},
+				},
+			},
+			{
 				Name:  "show",
 				Usage: "Shows detailed information about a specific stack",
 				Flags: []cli.Flag{
