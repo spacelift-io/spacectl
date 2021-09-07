@@ -99,7 +99,8 @@ Subcommands:
   - [ ] `show` - outputs information about a specified PR
 - `spacectl module environment`
   - [ ] `show` - outputs the environment variables and attached contexts.
-  - [ ] `set` - sets an environment variable or mounted file
+  - [ ] `setvar` - sets an environment variable
+  - [ ] `mount` - mounts a file from existing file or STDIN
   - [ ] `delete` - deletes an environment variable or mounted file
 - `spacectl module vcs`
   - [ ] `show` - show the module's VCS settings
@@ -189,7 +190,8 @@ Subcommands:
   - [ ] `show` - outputs information about a specified PR
 - `spacectl stack environment`
   - [ ] `show` - outputs the environment variables and attached contexts.
-  - [x] `set` - sets an environment variable or mounted file
+  - [x] `setvar` - sets an environment variable
+  - [x] `mount` - mounts a file from existing file or STDIN
   - [x] `delete` - deletes an environment variable or mounted file
 
 The following commands are all under the _settings_ section of the UI, but they aren't nested

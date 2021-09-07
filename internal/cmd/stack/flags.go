@@ -8,21 +8,15 @@ var flagStackID = &cli.StringFlag{
 	Required: true,
 }
 
+var flagCommitSHA = &cli.StringFlag{
+	Name:  "sha",
+	Usage: "Commit `SHA` for the newly created run",
+}
+
 var flagEnvironmentWriteOnly = &cli.BoolFlag{
 	Name:  "write-only",
 	Usage: "Indicates whether the content can be read back outside a Run",
 	Value: false,
-}
-
-var flagEnvironmentFile = &cli.BoolFlag{
-	Name:  "file",
-	Usage: "Mount file to the workspace instead of setting environment variable.",
-	Value: false,
-}
-
-var flagCommitSHA = &cli.StringFlag{
-	Name:  "sha",
-	Usage: "Commit `SHA` for the newly created run",
 }
 
 var flagNoFindRepositoryRoot = &cli.BoolFlag{

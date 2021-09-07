@@ -114,16 +114,26 @@ func Command() *cli.Command {
 				Usage: "Manage Stack`s environment`",
 				Subcommands: []*cli.Command{
 					{
-						Name:  "set",
-						Usage: "Sets an environment variable or mounted file.",
+						Name:  "setvar",
+						Usage: "Sets an environment variable.",
 						Flags: []cli.Flag{
 							flagStackID,
 							flagEnvironmentWriteOnly,
-							flagEnvironmentFile,
 						},
-						Action:    setEnvironment,
+						Action:    setVar,
 						Before:    authenticated.Ensure,
-						ArgsUsage: "NAME VALUE/FILE_PATH",
+						ArgsUsage: "NAME VALUE",
+					},
+					{
+						Name:  "mount",
+						Usage: "Mount a file from existing file or STDIN.",
+						Flags: []cli.Flag{
+							flagStackID,
+							flagEnvironmentWriteOnly,
+						},
+						Action:    mountFile,
+						Before:    authenticated.Ensure,
+						ArgsUsage: "RELATIVE_PATH_TO_MOUNT [FILE_PATH]",
 					},
 					{
 						Name:  "delete",

@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v2"
@@ -24,29 +26,73 @@ type ConfigInput struct {
 	WriteOnly graphql.Boolean `json:"writeOnly"`
 }
 
-func setEnvironment(cliCtx *cli.Context) error {
-	var value string
-	var configType ConfigType
-
+func setVar(cliCtx *cli.Context) error {
 	if nArgs := cliCtx.NArg(); nArgs != 2 {
-		return fmt.Errorf("expecting environment set as two arguments, got %d instead", nArgs)
+		return fmt.Errorf("expecting environment setenv as two arguments, got %d instead", nArgs)
 	}
 
 	envName := cliCtx.Args().Get(0)
 	envValue := cliCtx.Args().Get(1)
+
 	stackID := cliCtx.String(flagStackID.Name)
 
-	if cliCtx.Bool(flagEnvironmentFile.Name) {
-		fileContent, err := os.ReadFile(envValue)
-		if err != nil {
-			return err
-		}
+	var mutation struct {
+		ConfigElement struct {
+			ID        string `graphql:"id"`
+			WriteOnly bool   `graphql:"writeOnly"`
+			Value     string `graphql:"value"`
+		} `graphql:"stackConfigAdd(stack: $stack, config: $config)"`
+	}
 
-		configType = ConfigType("FILE_MOUNT")
-		value = base64.StdEncoding.EncodeToString(fileContent)
+	variables := map[string]interface{}{
+		"stack": graphql.ID(stackID),
+		"config": ConfigInput{
+			ID:        graphql.ID(envName),
+			Type:      ConfigType("ENVIRONMENT_VARIABLE"),
+			Value:     graphql.String(envValue),
+			WriteOnly: graphql.Boolean(cliCtx.Bool(flagEnvironmentWriteOnly.Name)),
+		},
+	}
+
+	if err := authenticated.Client.Mutate(context.Background(), &mutation, variables); err != nil {
+		return err
+	}
+
+	fmt.Printf("Environment variable (%s) has been set!\n", mutation.ConfigElement.ID)
+	if mutation.ConfigElement.WriteOnly {
+		fmt.Printf("Value: %s \n", strings.Repeat("*", len(envValue)))
 	} else {
-		configType = ConfigType("ENVIRONMENT_VARIABLE")
-		value = envValue
+		fmt.Printf("Value: %s \n", mutation.ConfigElement.Value)
+	}
+	fmt.Printf("Write only: %t \n", mutation.ConfigElement.WriteOnly)
+
+	return nil
+}
+
+func mountFile(cliCtx *cli.Context) error {
+	nArgs := cliCtx.NArg()
+
+	envName := cliCtx.Args().Get(0)
+	stackID := cliCtx.String(flagStackID.Name)
+
+	var fileContent []byte
+	var err error
+
+	switch nArgs {
+	case 1:
+		fmt.Println("Reading from STDIN...")
+
+		if fileContent, err = ioutil.ReadAll(os.Stdin); err != nil {
+			return fmt.Errorf("couldn't read from STDIN: %w", err)
+		}
+	case 2:
+		filePath := cliCtx.Args().Get(1)
+
+		if fileContent, err = os.ReadFile(filePath); err != nil {
+			return fmt.Errorf("couldn't read file from %s: %w", filePath, err)
+		}
+	default:
+		return fmt.Errorf("expecting environment mount as max two arguments, got %d instead", nArgs)
 	}
 
 	var mutation struct {
@@ -61,8 +107,8 @@ func setEnvironment(cliCtx *cli.Context) error {
 		"stack": graphql.ID(stackID),
 		"config": ConfigInput{
 			ID:        graphql.ID(envName),
-			Type:      configType,
-			Value:     graphql.String(value),
+			Type:      ConfigType("FILE_MOUNT"),
+			Value:     graphql.String(base64.StdEncoding.EncodeToString(fileContent)),
 			WriteOnly: graphql.Boolean(cliCtx.Bool(flagEnvironmentWriteOnly.Name)),
 		},
 	}
@@ -71,9 +117,8 @@ func setEnvironment(cliCtx *cli.Context) error {
 		return err
 	}
 
-	fmt.Printf("Environment (%s) has been set!\n", mutation.ConfigElement.ID)
+	fmt.Printf("File has been mounted to /mnt/workspace/%s\n", mutation.ConfigElement.ID)
 	fmt.Printf("Write only: %t \n", mutation.ConfigElement.WriteOnly)
-	fmt.Printf("Type: %s \n", mutation.ConfigElement.Type)
 
 	return nil
 }
