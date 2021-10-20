@@ -26,7 +26,7 @@ type configuration struct {
 	CurrentProfileAlias string `json:"currentProfileAlias,omitempty"`
 
 	// Profiles contains all the profiles.
-	Profiles map[string]*Profile `json:"profiles,omitempty"`
+	Profiles map[string]*Profile `json:"profiles"`
 }
 
 // A Profile represents a spacectl profile which is used to store credential information
@@ -107,9 +107,8 @@ func (m *ProfileManager) Create(profile *Profile) error {
 
 	m.Configuration.Profiles[profile.Alias] = profile
 	m.Configuration.CurrentProfileAlias = profile.Alias
-	m.writeConfigurationToFile()
 
-	return nil
+	return m.writeConfigurationToFile()
 }
 
 // Delete removes the profile with the specified alias, and un-selects it as the current profile
@@ -212,6 +211,10 @@ func (m *ProfileManager) loadConfiguration() error {
 	var config configuration
 	if err := json.Unmarshal(data, &config); err != nil {
 		return fmt.Errorf("could not unmarshal spacectl config from '%s': %w", m.ConfigurationFile, err)
+	}
+
+	if config.Profiles == nil {
+		config.Profiles = make(map[string]*Profile)
 	}
 
 	m.Configuration = &config

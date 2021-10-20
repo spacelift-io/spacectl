@@ -26,7 +26,7 @@ func TestProfileManager(t *testing.T) {
 		g.BeforeEach(func() {
 			var err error
 			if testDirectory, err = ioutil.TempDir("", "spacectlProfiles"); err != nil {
-				t.Errorf("Could not create a temp profiles directory: %w", err)
+				g.Fail(fmt.Errorf("Could not create a temp profiles directory: %w", err))
 			}
 
 			profilesDirectory = path.Join(testDirectory, "profiles")
@@ -46,6 +46,19 @@ func TestProfileManager(t *testing.T) {
 			g.Describe("profiles directory doesn't exist", func() {
 				g.It("creates directory", func() {
 					Expect(profilesDirectory).Should(BeADirectory())
+				})
+			})
+
+			g.Describe("profiles map is null", func() {
+				g.It("initializes profiles map", func() {
+					configFilename := path.Join(profilesDirectory, session.ConfigFileName)
+					err := os.WriteFile(configFilename, []byte("{}"), 0600)
+					Expect(err).ShouldNot(HaveOccurred())
+
+					manager, err = session.NewProfileManager(profilesDirectory)
+					Expect(err).ShouldNot(HaveOccurred())
+
+					Expect(manager.Configuration.Profiles).ToNot(BeNil())
 				})
 			})
 		})
