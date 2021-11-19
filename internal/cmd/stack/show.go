@@ -72,8 +72,9 @@ type showStackQuery struct {
 			ID     string `graphql:"id" json:"id,omitempty"`
 			Number string `graphql:"number" json:"number,omitempty"`
 			Module struct {
-				ID   string `graphql:"id" json:"id,omitempty"`
-				Name string `graphql:"name" json:"name,omitempty"`
+				ID    string `graphql:"id" json:"id,omitempty"`
+				Name  string `graphql:"name" json:"name,omitempty"`
+				Owner string `graphql:"owner" json:"owner,omitempty"`
 			} `graphql:"module" json:"module"`
 		} `graphql:"moduleVersionsUsed" json:"moduleVersionsUsed,omitempty"`
 		Name             string `graphql:"name" json:"name,omitempty"`
@@ -161,6 +162,9 @@ func (c *showStackCommand) showStackTable(query showStackQuery) error {
 		return err
 	}
 	if err := c.outputPolicies(query); err != nil {
+		return err
+	}
+	if err := c.outputModuleVersionUsage(query); err != nil {
 		return err
 	}
 
@@ -334,6 +338,31 @@ func (c *showStackCommand) outputScripts(scripts []string, title string) error {
 	}
 
 	return nil
+}
+
+func (c *showStackCommand) outputModuleVersionUsage(query showStackQuery) error {
+	if len(query.Stack.ModuleVersionsUsed) == 0 {
+		return nil
+	}
+
+	sort.SliceStable(query.Stack.ModuleVersionsUsed, func(i, j int) bool {
+		a := query.Stack.ModuleVersionsUsed[i]
+		b := query.Stack.ModuleVersionsUsed[j]
+
+		return a.Module.Owner < b.Module.Owner || (a.Module.Owner == b.Module.Owner && a.Module.Name < b.Module.Name)
+	})
+
+	pterm.DefaultSection.WithLevel(2).Println("Modules Used")
+	tableData := [][]string{{"Owner", "Name", "Version"}}
+	for _, version := range query.Stack.ModuleVersionsUsed {
+		tableData = append(tableData, []string{
+			version.Module.Owner,
+			version.Module.Name,
+			version.Number,
+		})
+	}
+
+	return cmd.OutputTable(tableData, true)
 }
 
 func (c *showStackCommand) humanizeVendor(vendorConfigType string) string {
