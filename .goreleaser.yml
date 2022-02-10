@@ -34,3 +34,13 @@ release:
 
 changelog:
   skip: true
+
+brews:
+  - name: "{{ .ProjectName }}"
+    tap:
+      owner: "spacelift-io"
+      name: "homebrew-spacelift"
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/spacelift-io/spacectl
+    description: "Spacelift client and CLI"
+    license: "MIT"
