@@ -4,7 +4,13 @@
 
 ## Installation
 
-`spacectl` is distributed through GitHub Releases as a zip file containing a self-contained statically linked executable built from the source in this repository. Binaries can be download directly from the [Releases page](https://github.com/spacelift-io/spacectl/releases).
+You can install `spacectl` using Homebrew on MacOS or Linux:
+
+```bash
+brew install spacelift-io/spacelift/spacectl
+```
+
+Alternatively, `spacectl` is distributed through GitHub Releases as a zip file containing a self-contained statically linked executable built from the source in this repository. Binaries can be download directly from the [Releases page](https://github.com/spacelift-io/spacectl/releases).
 
 ## Quick Start
 
