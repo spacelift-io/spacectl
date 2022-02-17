@@ -168,6 +168,8 @@ func validateProfile(profile *Profile) error {
 		if err := validateAPIKeyCredentials(profile); err != nil {
 			return err
 		}
+	case CredentialsTypeAPIToken:
+		return nil
 
 	default:
 		return fmt.Errorf("'%d' is an invalid credential type", credentialType)
