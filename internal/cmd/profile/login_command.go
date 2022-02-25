@@ -26,8 +26,8 @@ import (
 const (
 	cliServerPort      = 8020
 	cliBrowserPath     = "/cli_login"
-	cliAuthSuccessPage = "https://spacelift.io/auth_success"
-	cliAuthFailurePage = "https://spacelift.io/auth_failure"
+	cliAuthSuccessPage = "/auth_success"
+	cliAuthFailurePage = "/auth_failure"
 )
 
 func loginCommand() *cli.Command {
@@ -187,12 +187,19 @@ func loginUsingWebBrowser(creds *session.StoredCredentials) error {
 			return persistAccessCredentials(creds)
 		}()
 
+		infoPage, err := url.Parse(creds.Endpoint)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		if handlerErr != nil {
 			log.Println(handlerErr)
-			http.Redirect(w, r, cliAuthFailurePage, http.StatusTemporaryRedirect)
+			infoPage.Path = cliAuthFailurePage
+			http.Redirect(w, r, infoPage.String(), http.StatusTemporaryRedirect)
 		} else {
 			fmt.Println("Done!")
-			http.Redirect(w, r, cliAuthSuccessPage, http.StatusTemporaryRedirect)
+			infoPage.Path = cliAuthSuccessPage
+			http.Redirect(w, r, infoPage.String(), http.StatusTemporaryRedirect)
 		}
 
 		done <- true
