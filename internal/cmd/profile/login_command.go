@@ -34,18 +34,27 @@ func loginCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "login",
 		Usage:     "Create a profile for a Spacelift account",
-		Before:    getAlias,
+		Before:    getAliasWithAPITokenProfile,
 		ArgsUsage: "<account-alias>",
 		Action:    loginAction,
 	}
 }
 
 func loginAction(*cli.Context) error {
+	var storedCredentials session.StoredCredentials
+
+	// Let's try to re-authenticate user.
+	if apiTokenProfile != nil {
+		storedCredentials.Endpoint = apiTokenProfile.Credentials.Endpoint
+		storedCredentials.Type = apiTokenProfile.Credentials.Type
+		profileAlias = apiTokenProfile.Alias
+
+		return loginUsingWebBrowser(&storedCredentials)
+	}
+
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Print("Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/): ")
-
-	var storedCredentials session.StoredCredentials
 
 	endpoint, err := reader.ReadString('\n')
 	if err != nil {

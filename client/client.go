@@ -28,7 +28,13 @@ func (c *client) Mutate(ctx context.Context, mutation interface{}, variables map
 		return nil
 	}
 
-	return apiClient.Mutate(ctx, mutation, variables, opts...)
+	err = apiClient.Mutate(ctx, mutation, variables, opts...)
+
+	if err != nil && err.Error() == "unauthorized" {
+		return fmt.Errorf("unauthorized: you can re-login using `spacectl profile login`")
+	}
+
+	return err
 }
 
 func (c *client) Query(ctx context.Context, query interface{}, variables map[string]interface{}, opts ...graphql.RequestOption) error {
@@ -37,7 +43,13 @@ func (c *client) Query(ctx context.Context, query interface{}, variables map[str
 		return nil
 	}
 
-	return apiClient.Query(ctx, query, variables, opts...)
+	err = apiClient.Query(ctx, query, variables, opts...)
+
+	if err != nil && err.Error() == "unauthorized" {
+		return fmt.Errorf("unauthorized: you can re-login using `spacectl profile login`")
+	}
+
+	return err
 }
 
 func (c *client) URL(format string, a ...interface{}) string {
