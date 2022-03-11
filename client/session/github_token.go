@@ -45,6 +45,10 @@ func (g *gitHubToken) BearerToken(ctx context.Context) (string, error) {
 	return g.apiToken.BearerToken(ctx)
 }
 
+func (g *gitHubToken) Type() CredentialsType {
+	return CredentialsTypeGitHubToken
+}
+
 func (g *gitHubToken) exchange(ctx context.Context) error {
 	var mutation struct {
 		APIKeyUser user `graphql:"oauthUser(token: $token)"`

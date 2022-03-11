@@ -19,8 +19,11 @@ Authenticate using `spacectl profile login`:
 ```bash
 > spacectl profile login my-account
 Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/): http://my-account.app.spacelift.tf
-Select credentials type: 1 for API key, 2 for GitHub access token: 2
-Enter GitHub access token:
+Select authentication flow: 
+  1) for API key,
+  2) for GitHub access token,
+  3) for login with a web browser
+Option: 3
 ```
 
 Use spacectl :rocket::
@@ -147,13 +150,13 @@ OPTIONS:
 
 Each of the subcommands requires an account **alias**, which is a short, user-friendly name for each set of credentials (account profiles). Profiles don't need to be unique - you can have multiple sets of credentials for a single account too.
 
-Account profiles don't use short-lived tokens, so GitHub access tokens and API keys are the only two supported authentication methods. In order to authenticate to your first profile, type in the following (make sure to replace `${MY_ALIAS}` with the actual profile alias):
+Account profiles support three authentication methods: GitHub access tokens, API keys and login with a browser (API token). In order to authenticate to your first profile, type in the following (make sure to replace `${MY_ALIAS}` with the actual profile alias):
 
 ```bash
 ❯ spacectl profile login ${MY_ALIAS}
 Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/):
 ```
 
-In the next step, you will be asked to choose which authentication method you are going to use. Note that if your account is using [SAML-based SSO authentication](https://docs.spacelift.io/integrations/single-sign-on), then API keys are your only option. After you're done entering credentials, the CLI will validate them against the server, and assuming that they're valid, will persist them in a credentials file in `.spacelift/${MY_ALIAS}`. It will also create a symlink in `${HOME}/.spacelift/current` pointing to the current profile.
+In the next step, you will be asked to choose which authentication method you are going to use. Note that if your account is using [SAML-based SSO authentication](https://docs.spacelift.io/integrations/single-sign-on), then API keys and login with a browser are your only options. After you're done entering credentials, the CLI will validate them against the server, and assuming that they're valid, will persist them in a credentials file in `.spacelift/${MY_ALIAS}`. It will also create a symlink in `${HOME}/.spacelift/current` pointing to the current profile.
 
 You can switch between account profiles by using `spacectl profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacectl profile logout ${MY_ALIAS}` command.

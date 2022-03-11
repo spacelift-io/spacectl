@@ -378,12 +378,24 @@ func createAllValidProfileTypes() []*session.Profile {
 			Alias:       "spacelift-api-key",
 			Credentials: createValidAPIKeyCredentials(),
 		},
+		{
+			Alias:       "spacelift-api-token",
+			Credentials: createValidAPITokenCredentials(),
+		},
 	}
 }
 
 func createValidGitHubCredentials() *session.StoredCredentials {
 	return &session.StoredCredentials{
 		Type:        session.CredentialsTypeGitHubToken,
+		Endpoint:    "https://spacectl.app.spacelift.io",
+		AccessToken: "abc123",
+	}
+}
+
+func createValidAPITokenCredentials() *session.StoredCredentials {
+	return &session.StoredCredentials{
+		Type:        session.CredentialsTypeAPIToken,
 		Endpoint:    "https://spacectl.app.spacelift.io",
 		AccessToken: "abc123",
 	}

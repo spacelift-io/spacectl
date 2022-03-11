@@ -21,11 +21,15 @@ const (
 	// CredentialsTypeGitHubToken represents credentials stored as a GitHub
 	// access token.
 	CredentialsTypeGitHubToken
+
+	// CredentialsTypeAPIToken represents credentials stored as a JWT
+	// access token.
+	CredentialsTypeAPIToken
 )
 
 // String returns the string representation of the type.
 func (t CredentialsType) String() string {
-	return [...]string{"Invalid", "API Key", "GitHub"}[t]
+	return [...]string{"Invalid", "API Key", "GitHub", "API Token"}[t]
 }
 
 // StoredCredentials is a filesystem representation of the credentials.
@@ -44,6 +48,8 @@ func (s *StoredCredentials) Session(ctx context.Context, client *http.Client) (S
 		return FromAPIKey(ctx, client)(s.Endpoint, s.KeyID, s.KeySecret)
 	case CredentialsTypeGitHubToken:
 		return FromGitHubToken(ctx, client)(s.Endpoint, s.AccessToken)
+	case CredentialsTypeAPIToken:
+		return FromAPIToken(ctx, client)(s.AccessToken)
 	default:
 		return nil, fmt.Errorf("unexpected credentials type: %d", s.Type)
 	}

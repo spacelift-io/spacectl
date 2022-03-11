@@ -46,6 +46,10 @@ func (g *apiKey) BearerToken(ctx context.Context) (string, error) {
 	return g.apiToken.BearerToken(ctx)
 }
 
+func (g *apiKey) Type() CredentialsType {
+	return CredentialsTypeAPIKey
+}
+
 func (g *apiKey) exchange(ctx context.Context) error {
 	var mutation struct {
 		APIKeyUser user `graphql:"apiKeyUser(id: $id, secret: $secret)"`
