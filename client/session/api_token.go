@@ -57,6 +57,10 @@ func (a *apiToken) BearerToken(ctx context.Context) (string, error) {
 	return a.jwt, nil
 }
 
+func (a *apiToken) Type() CredentialsType {
+	return CredentialsTypeAPIToken
+}
+
 func (a *apiToken) Endpoint() string {
 	return strings.TrimRight(a.endpoint, "/") + "/graphql"
 }

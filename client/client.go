@@ -30,7 +30,7 @@ func (c *client) Mutate(ctx context.Context, mutation interface{}, variables map
 
 	err = apiClient.Mutate(ctx, mutation, variables, opts...)
 
-	if err != nil && err.Error() == "unauthorized" {
+	if err != nil && c.session.Type() == session.CredentialsTypeAPIToken && err.Error() == "unauthorized" {
 		return fmt.Errorf("unauthorized: you can re-login using `spacectl profile login`")
 	}
 
@@ -45,7 +45,7 @@ func (c *client) Query(ctx context.Context, query interface{}, variables map[str
 
 	err = apiClient.Query(ctx, query, variables, opts...)
 
-	if err != nil && err.Error() == "unauthorized" {
+	if err != nil && c.session.Type() == session.CredentialsTypeAPIToken && err.Error() == "unauthorized" {
 		return fmt.Errorf("unauthorized: you can re-login using `spacectl profile login`")
 	}
 
