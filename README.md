@@ -13,8 +13,11 @@ Authenticate using `spacectl profile login`:
 ```bash
 > spacectl profile login my-account
 Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/): http://my-account.app.spacelift.tf
-Select credentials type: 1 for API key, 2 for GitHub access token: 2
-Enter GitHub access token:
+Select authentication flow: 
+  1) for API key,
+  2) for GitHub access token,
+  3) for login with a web browser
+Option: 3
 ```
 
 Use spacectl :rocket::
