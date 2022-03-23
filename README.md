@@ -68,12 +68,13 @@ USAGE:
    spacectl profile command [command options] [arguments...]
 
 COMMANDS:
-   current  Outputs your currently selected profile
-   list     List all your Spacelift account profiles
-   login    Create a profile for a Spacelift account
-   logout   Remove Spacelift credentials for an existing profile
-   select   Select one of your Spacelift account profiles
-   help, h  Shows a list of commands or help for one command
+   current       Outputs your currently selected profile
+   export-token  Prints the current token to stdout. In order not to leak, we suggest piping it to your OS pastebin
+   list          List all your Spacelift account profiles
+   login         Create a profile for a Spacelift account
+   logout        Remove Spacelift credentials for an existing profile
+   select        Select one of your Spacelift account profiles
+   help, h       Shows a list of commands or help for one command
 
 OPTIONS:
    --help, -h  show help (default: false)
