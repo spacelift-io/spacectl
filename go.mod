@@ -7,6 +7,7 @@ require (
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/franela/goblin v0.0.0-20210113153425-413781f5e6c8
 	github.com/gookit/color v1.4.2 // indirect
+	github.com/mattn/go-isatty v0.0.14
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/onsi/gomega v1.11.0
 	github.com/pkg/errors v0.9.1
