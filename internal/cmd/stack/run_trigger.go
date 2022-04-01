@@ -17,7 +17,7 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 
 		var mutation struct {
 			RunTrigger struct {
-				ID string `grapqhl:"id"`
+				ID string `graphql:"id"`
 			} `graphql:"runTrigger(stack: $stack, commitSha: $sha, runType: $type)"`
 		}
 

@@ -44,6 +44,19 @@ func Command() *cli.Command {
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
+				Category: "Run management",
+				Name:     "retry",
+				Usage:    "Retry a failed run",
+				Flags: []cli.Flag{
+					flagStackID,
+					flagRun,
+					flagTail,
+				},
+				Action:    runRetry,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
 				Name:  "list",
 				Usage: "List the stacks you have access to",
 				Flags: []cli.Flag{

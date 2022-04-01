@@ -16,7 +16,7 @@ func runConfirm() cli.ActionFunc {
 
 		var mutation struct {
 			RunConfirm struct {
-				ID string `grapqhl:"id"`
+				ID string `graphql:"id"`
 			} `graphql:"runConfirm(stack: $stack, run: $run)"`
 		}
 

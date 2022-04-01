@@ -16,7 +16,7 @@ func taskCommand(cliCtx *cli.Context) error {
 
 	var mutation struct {
 		TaskCreate struct {
-			ID string `grapqhl:"id"`
+			ID string `graphql:"id"`
 		} `graphql:"taskCreate(stack: $stack, command: $command, skipInitialization: $noinit)"`
 	}
 

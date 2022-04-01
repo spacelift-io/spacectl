@@ -20,7 +20,7 @@ func setCurrentCommit(cliCtx *cli.Context) error {
 			TrackedCommit *struct {
 				Hash    string `graphql:"hash"`
 				Message string `graphql:"message"`
-			} `grapqhl:"trackedCommit"`
+			} `graphql:"trackedCommit"`
 		} `graphql:"stackSetCurrentCommit(id: $stack, sha: $sha)"`
 	}
 

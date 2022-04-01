@@ -31,7 +31,7 @@ func localPreview() cli.ActionFunc {
 
 		var uploadMutation struct {
 			UploadLocalWorkspace struct {
-				ID        string `grapqhl:"id"`
+				ID        string `graphql:"id"`
 				UploadURL string `graphql:"uploadUrl"`
 			} `graphql:"uploadLocalWorkspace(stack: $stack)"`
 		}
@@ -65,7 +65,7 @@ func localPreview() cli.ActionFunc {
 
 		var triggerMutation struct {
 			RunProposeLocalWorkspace struct {
-				ID string `grapqhl:"id"`
+				ID string `graphql:"id"`
 			} `graphql:"runProposeLocalWorkspace(stack: $stack, workspace: $workspace)"`
 		}
 
