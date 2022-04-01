@@ -48,9 +48,10 @@ func Command() *cli.Command {
 				Usage: "List the stacks you have access to",
 				Flags: []cli.Flag{
 					cmd.FlagOutputFormat,
+					cmd.FlagNoColor,
 				},
 				Action:    listStacks(),
-				Before:    authenticated.Ensure,
+				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
@@ -153,9 +154,10 @@ func Command() *cli.Command {
 				Flags: []cli.Flag{
 					flagStackID,
 					cmd.FlagOutputFormat,
+					cmd.FlagNoColor,
 				},
 				Action:    (&showStackCommand{}).showStack,
-				Before:    authenticated.Ensure,
+				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{

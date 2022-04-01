@@ -23,8 +23,10 @@ func listCommand() *cli.Command {
 		Usage: "List all your Spacelift account profiles",
 		Flags: []cli.Flag{
 			cmd.FlagOutputFormat,
+			cmd.FlagNoColor,
 		},
 		ArgsUsage: cmd.EmptyArgsUsage,
+		Before:    cmd.HandleNoColor,
 		Action: func(ctx *cli.Context) error {
 			profiles := manager.GetAll()
 
