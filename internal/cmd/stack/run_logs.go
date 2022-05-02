@@ -17,6 +17,7 @@ func runLogs(ctx context.Context, stack, run string) (terminal *structs.RunState
 
 	go func() {
 		terminal, err = runStates(ctx, stack, run, lines)
+		close(lines)
 	}()
 
 	for line := range lines {
@@ -27,8 +28,6 @@ func runLogs(ctx context.Context, stack, run string) (terminal *structs.RunState
 }
 
 func runStates(ctx context.Context, stack, run string, sink chan<- string) (*structs.RunStateTransition, error) {
-	defer func() { close(sink) }()
-
 	var query struct {
 		Stack *struct {
 			Run *struct {
