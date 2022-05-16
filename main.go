@@ -9,19 +9,26 @@ import (
 
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
+	versioncmd "github.com/spacelift-io/spacectl/internal/cmd/version"
 )
 
 var version = "dev"
+var date 	= "2006-01-02T15:04:05Z"
 
 func main() {
+	compileTime, err := time.Parse(time.RFC3339, date)
+	if err != nil {
+		log.Fatal(err)
+	}
 	app := &cli.App{
 		Name:     "spacectl",
 		Version:  version,
-		Compiled: time.Now(),
+		Compiled: compileTime,
 		Usage:    "Programmatic access to Spacelift GraphQL API.",
 		Commands: []*cli.Command{
 			profile.Command(),
 			stack.Command(),
+			versioncmd.Command(version),
 		},
 	}
 
