@@ -4,11 +4,24 @@
 
 ## Installation
 
+### Homebrew
+
 You can install `spacectl` using Homebrew on MacOS or Linux:
 
 ```bash
 brew install spacelift-io/spacelift/spacectl
 ```
+
+### Arch linux
+
+Install [`spacectl-bin`](https://aur.archlinux.org/packages/spacectl-bin) from the Arch User Repository ([AUR](https://aur.archlinux.org/)):
+```bash
+yay -S spacectl-bin
+```
+
+Disclaimer: The package is community-maintained, please make sure to verify the [`PKGBUILD`](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=spacectl-bin) before installing/updating.
+
+### GitHub Release
 
 Alternatively, `spacectl` is distributed through GitHub Releases as a zip file containing a self-contained statically linked executable built from the source in this repository. Binaries can be download directly from the [Releases page](https://github.com/spacelift-io/spacectl/releases).
 
