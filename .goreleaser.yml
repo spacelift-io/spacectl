@@ -28,7 +28,7 @@ signs:
       - "${artifact}"
 
 release:
-  draft: true
+  draft: false
   extra_files:
     - glob: ./key.*
 
