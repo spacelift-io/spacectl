@@ -36,7 +36,6 @@ func Command() *cli.Command {
 				Flags: []cli.Flag{
 					flagStackID,
 					flagRun,
-					flagRunMetadata,
 					flagTail,
 				},
 				Action:    runDiscard(),
