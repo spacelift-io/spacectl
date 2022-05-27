@@ -31,6 +31,20 @@ func Command() *cli.Command {
 			},
 			{
 				Category: "Run management",
+				Name:     "discard",
+				Usage:    "Discard an unconfirmed tracked run",
+				Flags: []cli.Flag{
+					flagStackID,
+					flagRun,
+					flagRunMetadata,
+					flagTail,
+				},
+				Action:    runDiscard(),
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
+				Category: "Run management",
 				Name:     "deploy",
 				Usage:    "Start a deployment (tracked run)",
 				Flags: []cli.Flag{
