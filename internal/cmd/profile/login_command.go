@@ -2,6 +2,7 @@ package profile
 
 import (
 	"bufio"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -234,13 +235,14 @@ func loginUsingWebBrowser(creds *session.StoredCredentials) error {
 
 	select {
 	case <-done:
-		server.Close()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		return errors.Wrap(server.Shutdown(shutdownCtx), "could not stop the server")
 	case <-time.After(2 * time.Minute):
 		server.Close()
 		return errors.New("login timeout exceeded")
 	}
-
-	return nil
 }
 
 func buildBrowserURL(endpoint, pubKey string) (string, error) {
