@@ -13,6 +13,11 @@ var flagCommitSHA = &cli.StringFlag{
 	Usage: "Commit `SHA` for the newly created run",
 }
 
+var flagOutputID = &cli.StringFlag{
+	Name:  "output-id",
+	Usage: "`ID` of output",
+}
+
 var flagEnvironmentWriteOnly = &cli.BoolFlag{
 	Name:  "write-only",
 	Usage: "Indicates whether the content can be read back outside a Run",
