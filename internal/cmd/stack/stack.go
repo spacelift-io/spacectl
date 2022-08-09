@@ -176,7 +176,7 @@ func Command() *cli.Command {
 			},
 			{
 				Name:  "outputs",
-				Usage: "Shows current outputs for a specific stack. Does not show sensitive outputs.",
+				Usage: "Shows current outputs for a specific stack. Does not show the value of sensitive outputs.",
 				Flags: []cli.Flag{
 					flagStackID,
 					flagOutputID,
