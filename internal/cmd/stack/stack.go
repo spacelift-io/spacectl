@@ -175,6 +175,19 @@ func Command() *cli.Command {
 				},
 			},
 			{
+				Name:  "outputs",
+				Usage: "Shows current outputs for a specific stack. Does not show the value of sensitive outputs.",
+				Flags: []cli.Flag{
+					flagStackID,
+					flagOutputID,
+					cmd.FlagOutputFormat,
+					cmd.FlagNoColor,
+				},
+				Action:    (&showOutputsStackCommand{}).showOutputs,
+				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
 				Name:  "show",
 				Usage: "Shows detailed information about a specific stack",
 				Flags: []cli.Flag{
