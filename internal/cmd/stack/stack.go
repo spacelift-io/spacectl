@@ -152,6 +152,16 @@ func Command() *cli.Command {
 						ArgsUsage: "NAME VALUE",
 					},
 					{
+						Name:  "list",
+						Usage: "Lists all the environment variables and mounted files for a stack.",
+						Flags: []cli.Flag{
+							flagStackID,
+							cmd.FlagOutputFormat,
+						},
+						Action: (&listEnvCommand{}).listEnv,
+						Before: authenticated.Ensure,
+					},
+					{
 						Name:  "mount",
 						Usage: "Mount a file from existing file or STDIN.",
 						Flags: []cli.Flag{
