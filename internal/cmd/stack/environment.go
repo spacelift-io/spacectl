@@ -3,11 +3,12 @@ package stack
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v2"
@@ -41,14 +42,12 @@ type configElement struct {
 	Type      ConfigType `graphql:"type" json:"type,omitempty"`
 	Value     *string    `graphql:"value" json:"value,omitempty"`
 	WriteOnly bool       `graphql:"writeOnly" json:"writeOnly,omitempty"`
-	FileMode  *string    `graphql:"fileMode" json:"fileMode,omitempty"`
 }
 
 type listEnvElementOutput struct {
-	Name     string  `json:"name"`
-	Type     string  `json:"type"`
-	Value    *string `json:"value"`
-	FileMode *string `json:"fileMode"`
+	Name  string  `json:"name"`
+	Type  string  `json:"type"`
+	Value *string `json:"value"`
 	// Context specifies the name of the context.
 	Context *string `json:"context"`
 	// Runtime is not printed, it's just used to determine output formatting.
@@ -157,7 +156,7 @@ func (e *listEnvCommand) listEnv(cliCtx *cli.Context) error {
 }
 
 func (e *listEnvCommand) showOutputsTable(outputs []listEnvElementOutput) error {
-	tableData := [][]string{{"Name", "Type", "Value", "File Mode", "Context"}}
+	tableData := [][]string{{"Name", "Type", "Value", "Context"}}
 	for _, output := range outputs {
 		var row []string
 
@@ -179,11 +178,6 @@ func (e *listEnvCommand) showOutputsTable(outputs []listEnvElementOutput) error 
 		}
 		row = append(row, value)
 
-		if output.FileMode != nil {
-			row = append(row, *output.FileMode)
-		} else {
-			row = append(row, "")
-		}
 		if output.Context != nil {
 			row = append(row, *output.Context)
 		} else {
@@ -218,7 +212,6 @@ func (e *configElement) toConfigElementOutput(contextName *string) (listEnvEleme
 		Name:      e.ID,
 		Type:      string(e.Type),
 		Value:     value,
-		FileMode:  e.FileMode,
 		Context:   contextName,
 		Runtime:   e.Runtime,
 		WriteOnly: e.WriteOnly,
