@@ -170,20 +170,20 @@ We should support the following commands for working with Stacks:
   - [x] `show` - outputs information about a specified Stack
   - [ ] `edit` - edits the name, labels and description for the stack
   - [ ] `set-current-commit` - sets the current commit for the stack
+  - [x] `confirm` - confirms a run awaiting approval
+  - [x] `deploy` - triggers a tracked (i.e. deployment) run
+  - [x] `preview` - triggers a preview run for a specific commit
+  - [x] `local-preview` - triggers a local-preview run using the current directory as the workspace
+  - [x] `task` - performs a one-off task in a workspace
 
 Subcommands:
 
 - `spacectl stack run`
-  - [ ] `confirm` - confirms a run awaiting approval
   - [ ] `list` - lists the runs for your stack
-  - [ ] `deploy` - triggers a tracked (i.e. deployment) run
-  - [ ] `preview` - triggers a preview run for a specific commit
-  - [ ] `local-preview` - triggers a local-preview run using the current directory as the workspace
   - [ ] `logs` - shows the logs for a run
   - [ ] `show` - outputs information about a specified Run
 - `spacectl stack task`
   - [ ] `list` - lists any tasks that have been run against the stack
-  - [ ] `perform` - performs a one-off task in a workspace
   - [ ] `show` - outputs information about a specified Task
 - `spacectl stack pr`
   - [ ] `list` - lists any open PRs against the stack
