@@ -223,6 +223,27 @@ func Command() *cli.Command {
 				Before:    authenticated.Ensure,
 				ArgsUsage: "COMMAND",
 			},
+			{
+				Name:  "lock",
+				Usage: "Locks a stack for exclusive use.",
+				Flags: []cli.Flag{
+					flagStackID,
+					flagStackLockNote,
+				},
+				Action:    lock,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
+				Name:  "unlock",
+				Usage: "Unlocks a stack.",
+				Flags: []cli.Flag{
+					flagStackID,
+				},
+				Action:    unlock,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
 		},
 	}
 }
