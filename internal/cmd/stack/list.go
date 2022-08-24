@@ -119,14 +119,9 @@ func listStacksTable(ctx context.Context) error {
 
 	tableData := [][]string{{"Name", "Commit", "Author", "State", "Worker Pool", "Locked By"}}
 	for _, stack := range query.Stacks {
-		var shortenedHash string
-		if len(stack.TrackedCommit.Hash) > 8 {
-			shortenedHash = stack.TrackedCommit.Hash[0:8]
-		}
-
 		tableData = append(tableData, []string{
 			stack.Name,
-			shortenedHash,
+			cmd.HumanizeGitHash(stack.TrackedCommit.Hash),
 			stack.TrackedCommit.AuthorName,
 			stack.State,
 			stack.WorkerPool.Name,

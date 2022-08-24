@@ -179,7 +179,7 @@ We should support the following commands for working with Stacks:
 Subcommands:
 
 - `spacectl stack run`
-  - [ ] `list` - lists the runs for your stack
+  - [x] `list` - lists the runs for your stack
   - [ ] `logs` - shows the logs for a run
   - [ ] `show` - outputs information about a specified Run
 - `spacectl stack task`

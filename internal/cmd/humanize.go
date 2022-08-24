@@ -43,3 +43,12 @@ func HumanizePolicyType(policyType string) string {
 
 	return policyType
 }
+
+// HumanizeGitHash shortens a Git hash to make it more readable.
+func HumanizeGitHash(hash string) string {
+	if len(hash) > 8 {
+		return hash[0:8]
+	}
+
+	return hash
+}
