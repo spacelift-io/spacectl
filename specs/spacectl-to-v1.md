@@ -167,7 +167,7 @@ We should support the following commands for working with Stacks:
   - [x] `list` - lists the stacks you have access to
   - [ ] `add` - adds a new stack
   - [ ] `delete` - deletes a stack
-  - [ ] `show` - outputs information about a specified Stack
+  - [x] `show` - outputs information about a specified Stack
   - [ ] `edit` - edits the name, labels and description for the stack
   - [ ] `set-current-commit` - sets the current commit for the stack
 
@@ -176,7 +176,7 @@ Subcommands:
 - `spacectl stack run`
   - [ ] `confirm` - confirms a run awaiting approval
   - [ ] `list` - lists the runs for your stack
-  - [ ] `trigger` - triggers a run
+  - [ ] `deploy` - triggers a tracked (i.e. deployment) run
   - [ ] `preview` - triggers a preview run for a specific commit
   - [ ] `local-preview` - triggers a local-preview run using the current directory as the workspace
   - [ ] `logs` - shows the logs for a run
@@ -189,7 +189,7 @@ Subcommands:
   - [ ] `list` - lists any open PRs against the stack
   - [ ] `show` - outputs information about a specified PR
 - `spacectl stack environment`
-  - [ ] `show` - outputs the environment variables and attached contexts.
+  - [x] `list` - outputs the environment variables and attached contexts.
   - [x] `setvar` - sets an environment variable
   - [x] `mount` - mounts a file from existing file or STDIN
   - [x] `delete` - deletes an environment variable or mounted file
