@@ -64,3 +64,9 @@ var flagNoTail = &cli.BoolFlag{
 	Usage: "Indicate whether not to tail the run",
 	Value: false,
 }
+
+var flagMaxResults = &cli.IntFlag{
+	Name:  "max-results",
+	Usage: "The maximum number of items to return",
+	Value: 10,
+}

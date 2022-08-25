@@ -125,6 +125,24 @@ func Command() *cli.Command {
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
+				Name:  "run",
+				Usage: "Manage a stack's runs",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "list",
+						Usage: "Lists the runs for a specified stack",
+						Flags: []cli.Flag{
+							flagStackID,
+							flagMaxResults,
+							cmd.FlagOutputFormat,
+						},
+						Action:    runList,
+						Before:    authenticated.Ensure,
+						ArgsUsage: cmd.EmptyArgsUsage,
+					},
+				},
+			},
+			{
 				Category: "Stack management",
 				Name:     "set-current-commit",
 				Usage:    "Set current commit on the stack",
@@ -138,7 +156,7 @@ func Command() *cli.Command {
 			},
 			{
 				Name:  "environment",
-				Usage: "Manage Stack`s environment`",
+				Usage: "Manage a stack's environment",
 				Subcommands: []*cli.Command{
 					{
 						Name:  "setvar",
