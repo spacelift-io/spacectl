@@ -11,7 +11,7 @@ import (
 
 func runRetry(cliCtx *cli.Context) error {
 	stackID := cliCtx.String(flagStackID.Name)
-	runID := cliCtx.String(flagRun.Name)
+	runID := cliCtx.String(flagRequiredRun.Name)
 
 	var mutation struct {
 		RunRetry struct {
