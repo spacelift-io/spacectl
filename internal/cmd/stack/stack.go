@@ -242,8 +242,9 @@ func Command() *cli.Command {
 				ArgsUsage: "COMMAND",
 			},
 			{
-				Name:  "lock",
-				Usage: "Locks a stack for exclusive use.",
+				Category: "Stack management",
+				Name:     "lock",
+				Usage:    "Locks a stack for exclusive use.",
 				Flags: []cli.Flag{
 					flagStackID,
 					flagStackLockNote,
@@ -253,8 +254,9 @@ func Command() *cli.Command {
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
-				Name:  "unlock",
-				Usage: "Unlocks a stack.",
+				Category: "Stack management",
+				Name:     "unlock",
+				Usage:    "Unlocks a stack.",
 				Flags: []cli.Flag{
 					flagStackID,
 				},

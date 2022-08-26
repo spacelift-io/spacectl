@@ -20,7 +20,7 @@ type stackUnlockMutation struct {
 }
 
 var flagStackLockNote = &cli.StringFlag{
-	Name:     "name",
+	Name:     "note",
 	Usage:    "Description of why the lock was acquired.",
 	Required: false,
 }
