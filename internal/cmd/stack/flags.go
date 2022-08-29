@@ -36,10 +36,15 @@ var flagRequiredCommitSHA = &cli.StringFlag{
 	Required: true,
 }
 
-var flagRun = &cli.StringFlag{
+var flagRequiredRun = &cli.StringFlag{
 	Name:     "run",
 	Usage:    "[Required] `ID` of the run",
 	Required: true,
+}
+
+var flagRun = &cli.StringFlag{
+	Name:  "run",
+	Usage: "`ID` of the run",
 }
 
 var flagNoInit = &cli.BoolFlag{

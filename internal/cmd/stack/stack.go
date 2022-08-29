@@ -21,7 +21,7 @@ func Command() *cli.Command {
 				Usage:    "Confirm an unconfirmed tracked run",
 				Flags: []cli.Flag{
 					flagStackID,
-					flagRun,
+					flagRequiredRun,
 					flagRunMetadata,
 					flagTail,
 				},
@@ -35,10 +35,36 @@ func Command() *cli.Command {
 				Usage:    "Discard an unconfirmed tracked run",
 				Flags: []cli.Flag{
 					flagStackID,
-					flagRun,
+					flagRequiredRun,
 					flagTail,
 				},
 				Action:    runDiscard(),
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
+				Category: "Run management",
+				Name:     "approve",
+				Usage:    "Approves a run or task. If no run is specified, the approval will be added to the current stack blocker.",
+				Flags: []cli.Flag{
+					flagStackID,
+					flagRun,
+					flagRunReviewNote,
+				},
+				Action:    runApprove,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
+				Category: "Run management",
+				Name:     "reject",
+				Usage:    "Rejects a run or task. If no run is specified, the rejection will be added to the current stack blocker.",
+				Flags: []cli.Flag{
+					flagStackID,
+					flagRun,
+					flagRunReviewNote,
+				},
+				Action:    runReject,
 				Before:    authenticated.Ensure,
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
@@ -62,7 +88,7 @@ func Command() *cli.Command {
 				Usage:    "Retry a failed run",
 				Flags: []cli.Flag{
 					flagStackID,
-					flagRun,
+					flagRequiredRun,
 					flagTail,
 				},
 				Action:    runRetry,
@@ -100,11 +126,11 @@ func Command() *cli.Command {
 				Usage:    "Show logs for a particular run",
 				Flags: []cli.Flag{
 					flagStackID,
-					flagRun,
+					flagRequiredRun,
 				},
 				Action: func(cliCtx *cli.Context) error {
 					stackID := cliCtx.String(flagStackID.Name)
-					_, err := runLogs(context.Background(), stackID, cliCtx.String(flagRun.Name))
+					_, err := runLogs(context.Background(), stackID, cliCtx.String(flagRequiredRun.Name))
 					return err
 				},
 				Before:    authenticated.Ensure,

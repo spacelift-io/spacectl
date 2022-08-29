@@ -169,8 +169,11 @@ We should support the following commands for working with Stacks:
   - [ ] `delete` - deletes a stack
   - [x] `show` - outputs information about a specified Stack
   - [ ] `edit` - edits the name, labels and description for the stack
-  - [ ] `set-current-commit` - sets the current commit for the stack
+  - [x] `set-current-commit` - sets the current commit for the stack
   - [x] `confirm` - confirms a run awaiting approval
+  - [x] `discard` - discards a run awaiting approval
+  - [x] `approve` - approves a run or task
+  - [x] `reject` - rejects a run or task
   - [x] `deploy` - triggers a tracked (i.e. deployment) run
   - [x] `preview` - triggers a preview run for a specific commit
   - [x] `local-preview` - triggers a local-preview run using the current directory as the workspace

@@ -22,7 +22,7 @@ func runConfirm() cli.ActionFunc {
 
 		variables := map[string]interface{}{
 			"stack": graphql.ID(stackID),
-			"run":   graphql.ID(cliCtx.String(flagRun.Name)),
+			"run":   graphql.ID(cliCtx.String(flagRequiredRun.Name)),
 		}
 
 		ctx := context.Background()
