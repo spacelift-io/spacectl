@@ -10,6 +10,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
 	versioncmd "github.com/spacelift-io/spacectl/internal/cmd/version"
+	"github.com/spacelift-io/spacectl/internal/cmd/workerpools"
 )
 
 var version = "dev"
@@ -29,6 +30,7 @@ func main() {
 			profile.Command(),
 			stack.Command(),
 			versioncmd.Command(version),
+			workerpools.Command(),
 		},
 	}
 
