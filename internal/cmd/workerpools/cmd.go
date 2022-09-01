@@ -22,7 +22,8 @@ func Command() *cli.Command {
 				Before: authenticated.Ensure,
 			},
 			{
-				Name: "worker",
+				Name:  "worker",
+				Usage: "Contains commands for managing workers within a pool.",
 				Subcommands: []*cli.Command{
 					{
 						Name:  "list",
