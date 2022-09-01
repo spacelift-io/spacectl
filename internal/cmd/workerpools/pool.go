@@ -2,6 +2,9 @@ package workerpools
 
 import (
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
@@ -57,6 +60,10 @@ func (c *listPoolsCommand) listPools(cliCtx *cli.Context) error {
 }
 
 func (c *listPoolsCommand) showOutputsTable(pools []pool) error {
+	sort.SliceStable(pools, func(i, j int) bool {
+		return strings.Compare(strings.ToLower(pools[i].Name), strings.ToLower(pools[j].Name)) < 0
+	})
+
 	tableData := [][]string{{"ID", "Name", "Description", "Pending Runs", "Busy Workers", "Registered Workers"}}
 
 	for _, pool := range pools {
