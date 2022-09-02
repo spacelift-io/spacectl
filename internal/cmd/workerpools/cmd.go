@@ -35,6 +35,27 @@ func Command() *cli.Command {
 						Action: (&listWorkersCommand{}).listWorkers,
 						Before: authenticated.Ensure,
 					},
+					{
+						Name:  "drain",
+						Usage: "Drains a worker.",
+						Flags: []cli.Flag{
+							flagWorkerID,
+							flagPoolIDNamed,
+							flagWaitUntilDrained,
+						},
+						Action: (&drainWorkerCommand{}).drainWorker,
+						Before: authenticated.Ensure,
+					},
+					{
+						Name:  "undrain",
+						Usage: "Undrains a worker.",
+						Flags: []cli.Flag{
+							flagWorkerID,
+							flagPoolIDNamed,
+						},
+						Action: (&undrainWorkerCommand{}).undrainWorker,
+						Before: authenticated.Ensure,
+					},
 				},
 			},
 		},
