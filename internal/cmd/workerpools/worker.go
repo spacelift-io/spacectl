@@ -3,13 +3,13 @@ package workerpools
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
-	"log"
-	"time"
 )
 
 const (
@@ -128,7 +128,7 @@ func (c *drainWorkerCommand) drainWorker(cliCtx *cli.Context) error {
 		}
 	}
 
-	log.Printf("Successfully drained worker %s", workerID)
+	fmt.Printf("Successfully drained worker %s\n", workerID)
 
 	return nil
 }
@@ -213,7 +213,7 @@ func (c *undrainWorkerCommand) undrainWorker(cliCtx *cli.Context) error {
 		return err
 	}
 
-	log.Printf("Successfully undrained worker %s", workerID)
+	fmt.Printf("Successfully undrained worker %s\n", workerID)
 
 	return nil
 }
