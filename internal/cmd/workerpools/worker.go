@@ -178,9 +178,9 @@ func (c *drainWorkerCommand) drainedWorkerIsIdle(cliCtx *cli.Context, workerID s
 
 	var workerToDrain *worker
 
-	for _, w := range query.WorkerPool.Workers {
+	for i, w := range query.WorkerPool.Workers {
 		if w.ID == workerID {
-			workerToDrain = &w
+			workerToDrain = &query.WorkerPool.Workers[i]
 			break
 		}
 	}
