@@ -8,11 +8,11 @@ jobs:
   lint:
     name: Lint the code
     runs-on: ubuntu-latest
-    container: golang:1.18
+    container: golang:1.19
 
     steps:
       - name: Check out repository code
-        uses: actions/checkout@master
+        uses: actions/checkout@v3
 
       - name: Check formatting using gofmt
         run: gofmt -s -l -d .
