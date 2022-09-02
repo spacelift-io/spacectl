@@ -33,7 +33,7 @@ release:
     - glob: ./key.*
 
 changelog:
-  skip: true
+  use: github-native
 
 brews:
   - name: "{{ .ProjectName }}"
