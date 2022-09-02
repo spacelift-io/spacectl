@@ -2,7 +2,6 @@ package session_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"sort"
@@ -25,7 +24,7 @@ func TestProfileManager(t *testing.T) {
 
 		g.BeforeEach(func() {
 			var err error
-			if testDirectory, err = ioutil.TempDir("", "spacectlProfiles"); err != nil {
+			if testDirectory, err = os.MkdirTemp("", "spacectlProfiles"); err != nil {
 				g.Fail(fmt.Errorf("Could not create a temp profiles directory: %w", err))
 			}
 

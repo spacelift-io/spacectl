@@ -9,19 +9,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with: { fetch-depth: 0 }
 
       - name: Set up Go
-        uses: actions/setup-go@v2
-        with: { go-version: 1.18 }
+        uses: actions/setup-go@v3
+        with: { go-version: 1.19 }
 
       - name: Import GPG key
         id: import_gpg
-        uses: paultyng/ghaction-import-gpg@v2.1.0
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Set up release notes
         run: |
@@ -29,7 +29,7 @@ jobs:
           gpg --armor --export ${{ steps.import_gpg.outputs.keyid }} > key.asc
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
           version: latest

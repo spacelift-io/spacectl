@@ -3,7 +3,7 @@ package stack
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"regexp"
 	"strings"
@@ -249,7 +249,7 @@ func mountFile(cliCtx *cli.Context) error {
 	case 1:
 		fmt.Println("Reading from STDIN...")
 
-		if fileContent, err = ioutil.ReadAll(os.Stdin); err != nil {
+		if fileContent, err = io.ReadAll(os.Stdin); err != nil {
 			return fmt.Errorf("couldn't read from STDIN: %w", err)
 		}
 	case 2:
