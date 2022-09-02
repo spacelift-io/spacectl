@@ -216,7 +216,7 @@ func loginUsingWebBrowser(creds *session.StoredCredentials) error {
 	}
 
 	m := http.NewServeMux()
-	server := &http.Server{Addr: fmt.Sprintf(":%d", cliServerPort), Handler: m}
+	server := &http.Server{Addr: fmt.Sprintf(":%d", cliServerPort), Handler: m, ReadHeaderTimeout: 5 * time.Second}
 	m.HandleFunc("/", handler)
 
 	fmt.Printf("\nOpening browser to %s\n\n", browserURL)
@@ -269,7 +269,7 @@ func openWebBrowser(url string) error {
 		cmd = exec.Command("open", url)
 	case "windows":
 		r := strings.NewReplacer("&", "^&")
-		cmd = exec.Command("cmd", "/c", "start", r.Replace(url))
+		cmd = exec.Command("cmd", "/c", "start", r.Replace(url)) //#nosec
 	default:
 		return errors.New("unsupported platform")
 	}
