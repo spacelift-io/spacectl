@@ -25,6 +25,25 @@ Disclaimer: The package is community-maintained, please make sure to verify the 
 
 Alternatively, `spacectl` is distributed through GitHub Releases as a zip file containing a self-contained statically linked executable built from the source in this repository. Binaries can be download directly from the [Releases page](https://github.com/spacelift-io/spacectl/releases).
 
+### Usage on GitHub Actions
+
+We have [setup-spacectl](https://github.com/spacelift-io/setup-spacectl) GitHub Action that can be used to install `spacectl`:
+
+```yaml
+steps:
+  - name: Install spacectl
+    uses: spacelift-io/setup-spacectl@main
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  - name: Deploy infrastructure
+    env:
+      SPACELIFT_API_ENDPOINT: https://mycorp.app.spacelift.io
+      SPACELIFT_API_KEY_ID: ${{ secrets.SPACELIFT_API_KEY_ID }}
+      SPACELIFT_API_KEY_SECRET: ${{ secrets.SPACELIFT_API_KEY_SECRET }}
+    run: spacectl stack deploy --id my-infra-stack
+```
+
 ## Quick Start
 
 Authenticate using `spacectl profile login`:
