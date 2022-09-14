@@ -61,7 +61,17 @@ func loginAction(*cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("could not read Spacelift endpoint: %w", err)
 	}
-	storedCredentials.Endpoint = strings.TrimSpace(endpoint)
+	endpoint = strings.TrimSpace(endpoint)
+
+	if endpoint == "" {
+		return errors.New("Spacelift endpoint cannot be empty")
+	}
+
+	_, err = url.ParseRequestURI(endpoint)
+	if err != nil {
+		return fmt.Errorf("invalid Spacelift endpoint: %w", err)
+	}
+	storedCredentials.Endpoint = endpoint
 
 Loop:
 	for {
