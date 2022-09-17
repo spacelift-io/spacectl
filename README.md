@@ -38,7 +38,7 @@ steps:
 
   - name: Deploy infrastructure
     env:
-      SPACELIFT_API_ENDPOINT: https://mycorp.app.spacelift.io
+      SPACELIFT_API_KEY_ENDPOINT: https://mycorp.app.spacelift.io
       SPACELIFT_API_KEY_ID: ${{ secrets.SPACELIFT_API_KEY_ID }}
       SPACELIFT_API_KEY_SECRET: ${{ secrets.SPACELIFT_API_KEY_SECRET }}
     run: spacectl stack deploy --id my-infra-stack
@@ -144,14 +144,14 @@ NOTE: API tokens are generally short-lived and will need to be re-created often.
 
 GitHub tokens are only available to accounts that use GitHub as their identity provider, but are very convenient for use in GitHub actions. To use a GitHub token, set the following environment variables:
 
-- `SPACELIFT_API_ENDPOINT` - the URL to your Spacelift account, for example `https://mycorp.app.spacelift.io`.
+- `SPACELIFT_API_KEY_ENDPOINT` - the URL to your Spacelift account, for example `https://mycorp.app.spacelift.io`.
 - `SPACELIFT_API_GITHUB_TOKEN` - a GitHub personal access token.
 
 #### Spacelift API keys
 
 To use a Spacelift API key, set the following environment variables:
 
-- `SPACELIFT_API_ENDPOINT` - the URL to your Spacelift account, for example `https://mycorp.app.spacelift.io`.
+- `SPACELIFT_API_KEY_ENDPOINT` - the URL to your Spacelift account, for example `https://mycorp.app.spacelift.io`.
 - `SPACELIFT_API_KEY_ID` - the ID of your Spacelift API key. Available via the Spacelift application.
 - `SPACELIFT_API_KEY_SECRET` - the secret for your API key. Only available when the secret is created.
 

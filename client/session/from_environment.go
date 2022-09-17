@@ -10,7 +10,13 @@ import (
 const (
 	// EnvSpaceliftAPIEndpoint represents the name of the environment variable
 	// pointing to the Spacelift API endpoint.
+	//
+	// Deprecated
 	EnvSpaceliftAPIEndpoint = "SPACELIFT_API_ENDPOINT"
+
+	// EnvSpaceliftAPIKeyEndpoint represents the name of the environment variable
+	// pointing to the Spacelift API endpoint.
+	EnvSpaceliftAPIKeyEndpoint = "SPACELIFT_API_KEY_ENDPOINT"
 
 	// EnvSpaceliftAPIKeyID represents the name of the environment variable
 	// pointing to the Spacelift API key ID.
@@ -40,9 +46,14 @@ func FromEnvironment(ctx context.Context, client *http.Client) func(func(string)
 			return FromAPIToken(ctx, client)(token)
 		}
 
-		endpoint, ok := lookup(EnvSpaceliftAPIEndpoint)
+		endpoint, ok := lookup(EnvSpaceliftAPIKeyEndpoint)
 		if !ok {
-			return nil, fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIEndpoint)
+			// Keep backwards compatibility with older version of spacectl.
+			endpoint, ok = lookup(EnvSpaceliftAPIEndpoint)
+			if !ok {
+				return nil, fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeyEndpoint)
+			}
+			fmt.Printf("Environment variable %q is deprecated, please use %q\n", EnvSpaceliftAPIEndpoint, EnvSpaceliftAPIKeyEndpoint)
 		}
 
 		if gitHubToken, ok := lookup(EnvSpaceliftAPIGitHubToken); ok {
