@@ -7,6 +7,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
 	versioncmd "github.com/spacelift-io/spacectl/internal/cmd/version"
@@ -29,6 +30,7 @@ func main() {
 		Commands: []*cli.Command{
 			profile.Command(),
 			stack.Command(),
+			module.Command(),
 			versioncmd.Command(version),
 			workerpools.Command(),
 		},
