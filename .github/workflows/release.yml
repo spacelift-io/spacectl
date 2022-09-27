@@ -32,7 +32,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          version: "1.10.3"
+          version: latest
           args: release --rm-dist
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
