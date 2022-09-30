@@ -2,7 +2,6 @@ package stack
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -50,8 +49,12 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string) (*str
 			return nil, err
 		}
 
-		if query.Stack == nil || query.Stack.Run == nil {
-			return nil, errors.New("not found")
+		if query.Stack == nil {
+			return nil, fmt.Errorf("stack %q not found", stack)
+		}
+
+		if query.Stack.Run == nil {
+			return nil, fmt.Errorf("run %q in stack %q not found", run, stack)
 		}
 
 		history := query.Stack.Run.History
@@ -124,8 +127,16 @@ func runStateLogs(ctx context.Context, stack, run string, state structs.RunState
 			return err
 		}
 
-		if query.Stack == nil || query.Stack.Run == nil || query.Stack.Run.Logs == nil {
-			return errors.New("not found")
+		if query.Stack == nil {
+			return fmt.Errorf("stack %q not found", stack)
+		}
+
+		if query.Stack.Run == nil {
+			return fmt.Errorf("run %q in stack %q not found", run, stack)
+		}
+
+		if query.Stack.Run.Logs == nil {
+			return fmt.Errorf("logs for run %q in stack %q not found", run, stack)
 		}
 
 		logs := query.Stack.Run.Logs
