@@ -96,6 +96,7 @@ func listStacksJSON(ctx context.Context) error {
 func listStacksTable(ctx context.Context) error {
 	var query struct {
 		Stacks []struct {
+			ID            string `graphql:"id" json:"id,omitempty"`
 			LockedBy      string `graphql:"lockedBy"`
 			Name          string `graphql:"name"`
 			State         string `graphql:"state"`
@@ -117,10 +118,11 @@ func listStacksTable(ctx context.Context) error {
 		return strings.Compare(strings.ToLower(query.Stacks[i].Name), strings.ToLower(query.Stacks[j].Name)) < 0
 	})
 
-	tableData := [][]string{{"Name", "Commit", "Author", "State", "Worker Pool", "Locked By"}}
+	tableData := [][]string{{"Name", "ID", "Commit", "Author", "State", "Worker Pool", "Locked By"}}
 	for _, stack := range query.Stacks {
 		tableData = append(tableData, []string{
 			stack.Name,
+			stack.ID,
 			cmd.HumanizeGitHash(stack.TrackedCommit.Hash),
 			stack.TrackedCommit.AuthorName,
 			stack.State,
