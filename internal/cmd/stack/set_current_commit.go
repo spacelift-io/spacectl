@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v2"
