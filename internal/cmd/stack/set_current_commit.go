@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v2"
@@ -40,7 +39,7 @@ func setCurrentCommit(cliCtx *cli.Context) error {
 		return errors.New("no tracked commit set on the Stack")
 	}
 
-	_, err := fmt.Fprintf(os.Stdout, "Current commit set to %q: (SHA %s)", commit.Message, commit.Hash)
+	_, err := fmt.Printf("Current commit set to %q: (SHA %s)\n", commit.Message, commit.Hash)
 
 	return err
 }
