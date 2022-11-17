@@ -52,6 +52,7 @@ func localPreview() cli.ActionFunc {
 		}
 
 		tgz := *archiver.DefaultTarGz
+		tgz.ForceArchiveImplicitTopLevelFolder = true
 		tgz.MatchFn = matchFn
 
 		if err := tgz.Archive([]string{"."}, fp); err != nil {

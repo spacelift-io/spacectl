@@ -127,8 +127,8 @@ github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 h1:OkMGxebDj
 github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06/go.mod h1:+ePHsJ1keEjQtpvf9HHw0f4ZeJ0TLRsxhunSI2hYJSs=
 github.com/sergi/go-diff v1.2.0 h1:XU+rvMAioB0UC3q1MFrIQy4Vo5/4VsRDQQXHsEya6xQ=
 github.com/sergi/go-diff v1.2.0/go.mod h1:STckp+ISIX8hZLjrqAeVduY0gWCT9IjLuqbuNXdaHfM=
-github.com/spacelift-io/archiver/v3 v3.3.1-0.20210524114144-7c0457f07819 h1:KPyKFpnC7vuvZ7QSUy66GeVBR1W03JDFExgPuhIAWj0=
-github.com/spacelift-io/archiver/v3 v3.3.1-0.20210524114144-7c0457f07819/go.mod h1:YnQtqsp+94Rwd0D/rk5cnLrxusUBUXg+08Ebtr1Mqao=
+github.com/spacelift-io/archiver/v3 v3.3.1-0.20221117135619-d7d90ab08987 h1:L8buChChTRSHaGHco2ptAFivZUDYHhr7+OG5haf5FJI=
+github.com/spacelift-io/archiver/v3 v3.3.1-0.20221117135619-d7d90ab08987/go.mod h1:YnQtqsp+94Rwd0D/rk5cnLrxusUBUXg+08Ebtr1Mqao=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
