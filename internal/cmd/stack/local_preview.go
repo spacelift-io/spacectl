@@ -27,7 +27,7 @@ func localPreview() cli.ActionFunc {
 			}
 		}
 
-		fmt.Println("Uploading local workspace...")
+		fmt.Println("Packing local workspace...")
 
 		var uploadMutation struct {
 			UploadLocalWorkspace struct {
@@ -58,7 +58,15 @@ func localPreview() cli.ActionFunc {
 		if err := tgz.Archive([]string{"."}, fp); err != nil {
 			return fmt.Errorf("couldn't archive local directory: %w", err)
 		}
+
+		if cliCtx.Bool(flagNoUpload.Name) {
+			fmt.Println("No upload flag was provided, will not create run, saved archive at:", fp)
+			return nil
+		}
+
 		defer os.Remove(fp)
+
+		fmt.Println("Uploading local workspace...")
 
 		if err := uploadArchive(ctx, uploadMutation.UploadLocalWorkspace.UploadURL, fp); err != nil {
 			return fmt.Errorf("couldn't upload archive: %w", err)
