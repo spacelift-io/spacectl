@@ -115,6 +115,7 @@ func Command() *cli.Command {
 					flagNoFindRepositoryRoot,
 					flagRunMetadata,
 					flagNoTail,
+					flagNoUpload,
 				},
 				Action:    localPreview(),
 				Before:    authenticated.Ensure,

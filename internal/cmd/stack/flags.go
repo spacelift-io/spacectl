@@ -75,3 +75,9 @@ var flagMaxResults = &cli.IntFlag{
 	Usage: "The maximum number of items to return",
 	Value: 10,
 }
+
+var flagNoUpload = &cli.BoolFlag{
+	Name:  "no-upload",
+	Usage: "Indicate whether Spacectl should prepare the workspace archive, but skip uploading it. Useful for debugging ignorefiles.",
+	Value: false,
+}
