@@ -18,9 +18,9 @@ var flagGoReleaserDir = &cli.StringFlag{
 	Usage: "Directory containing the GoReleaser build artifacts",
 }
 
-var flagSigningKeyID = &cli.StringFlag{
-	Name:     "signing-key-id",
-	Usage:    "ID of the signing key used to sign the provider version",
+var gpgKeyFingerprint = &cli.StringFlag{
+	Name:     "gpg-fingerprint",
+	Usage:    "ID (fingerprint) of the GPG key used to sign the provider version",
 	EnvVars:  []string{"GPG_FINGERPRINT"},
 	Required: true,
 }

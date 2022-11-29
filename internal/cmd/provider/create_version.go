@@ -71,7 +71,7 @@ func createVersion() cli.ActionFunc {
 				ProtocolVersions: protocolVersions,
 				SHASumsFileSHA:   checksumsFileChecksum,
 				SignatureFileSHA: signatureFileChecksum,
-				SigningKeyID:     cliCtx.String(flagSigningKeyID.Name),
+				SigningKeyID:     cliCtx.String(gpgKeyFingerprint.Name),
 			},
 		}
 
@@ -93,7 +93,7 @@ func createVersion() cli.ActionFunc {
 
 		archives := versionData.Artifacts.Archives()
 		for i := range archives {
-			if err := registerVersion(cliCtx.Context, dir, versionID, &archives[i]); err != nil {
+			if err := registerPlatform(cliCtx.Context, dir, versionID, &archives[i]); err != nil {
 				return err
 			}
 		}
@@ -123,7 +123,7 @@ func createVersion() cli.ActionFunc {
 	}
 }
 
-func registerVersion(ctx context.Context, dir string, versionID string, artifact *GoReleaserArtifact) error {
+func registerPlatform(ctx context.Context, dir string, versionID string, artifact *GoReleaserArtifact) error {
 	var mutation struct {
 		RegisterTerraformProviderVersionPlatform string `graphql:"terraformProviderVersionRegisterPlatform(version: $version, input: $input)"`
 	}
