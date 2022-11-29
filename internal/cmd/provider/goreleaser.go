@@ -27,6 +27,7 @@ func BuildGoReleaserVersionData(dir string) (*GoReleaserVersionData, error) {
 	var out GoReleaserVersionData
 
 	// Read the artifacts file.
+	// #nosec G304
 	artifactsData, err := os.ReadFile(dir + "/artifacts.json")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read artifacts.json")
@@ -37,6 +38,7 @@ func BuildGoReleaserVersionData(dir string) (*GoReleaserVersionData, error) {
 	}
 
 	// Read the metadata file.
+	// #nosec G304
 	metadataData, err := os.ReadFile(dir + "/metadata.json")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read metadata.json")
@@ -47,6 +49,7 @@ func BuildGoReleaserVersionData(dir string) (*GoReleaserVersionData, error) {
 	}
 
 	// Read the CHANGELOG.
+	// #nosec G304
 	notesData, err := os.ReadFile(dir + "/CHANGELOG.md")
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -108,7 +111,7 @@ type GoReleaserArtifact struct {
 
 // Checksum returns the SHA256 checksum of the artifact as a hex-encoded string.
 func (a *GoReleaserArtifact) Checksum(dir string) (string, error) {
-	content, err := a.Content(dir)
+	content, err := a.content(dir)
 	if err != nil {
 		return "", err
 	}
@@ -124,7 +127,7 @@ func (a *GoReleaserArtifact) Checksum(dir string) (string, error) {
 
 // Upload uploads the artifact's content to the given URL using HTTP PUT method.
 func (a *GoReleaserArtifact) Upload(ctx context.Context, dir string, url string) error {
-	content, err := a.Content(dir)
+	content, err := a.content(dir)
 	if err != nil {
 		return errors.Wrapf(err, "could not get artifact content for %s", a.Name)
 	}
@@ -147,7 +150,8 @@ func (a *GoReleaserArtifact) Upload(ctx context.Context, dir string, url string)
 	return nil
 }
 
-func (a *GoReleaserArtifact) Content(dir string) (io.ReadCloser, error) {
+func (a *GoReleaserArtifact) content(dir string) (io.ReadCloser, error) {
+	// #nosec G304
 	return os.Open(filepath.Join(dir, a.Path))
 }
 

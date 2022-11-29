@@ -75,8 +75,8 @@ func createVersion() cli.ActionFunc {
 
 		versionID := createMutation.CreateTerraformProviderVersion.Version.ID
 
-		for _, artifact := range versionData.Artifacts {
-			if err := registerVersion(cliCtx.Context, dir, versionID, &artifact); err != nil {
+		for i := range versionData.Artifacts {
+			if err := registerVersion(cliCtx.Context, dir, versionID, &versionData.Artifacts[i]); err != nil {
 				return err
 			}
 		}
