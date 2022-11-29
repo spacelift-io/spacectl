@@ -15,6 +15,8 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
+// GoReleaserVersionData contains the data we get from GoReleaser's distribution
+// directory.
 type GoReleaserVersionData struct {
 	Artifacts GoReleaserArtifacts
 	Metadata  GoReleaserMetadata
@@ -63,8 +65,10 @@ func BuildGoReleaserVersionData(dir string) (*GoReleaserVersionData, error) {
 	return &out, nil
 }
 
+// GoReleaserArtifacts is a list of GoReleaser artifacts.
 type GoReleaserArtifacts []GoReleaserArtifact
 
+// Archives lists all the zip archives in the GoReleaser artifacts.
 func (a GoReleaserArtifacts) Archives() []GoReleaserArtifact {
 	var archives []GoReleaserArtifact
 
@@ -77,6 +81,7 @@ func (a GoReleaserArtifacts) Archives() []GoReleaserArtifact {
 	return archives
 }
 
+// ChecksumsFile finds a checksums file in the GoReleaser artifacts.
 func (a GoReleaserArtifacts) ChecksumsFile() (*GoReleaserArtifact, error) {
 	for _, artifact := range a {
 		if artifact.Type == "Checksum" {
@@ -87,6 +92,7 @@ func (a GoReleaserArtifacts) ChecksumsFile() (*GoReleaserArtifact, error) {
 	return nil, errors.New("checksums file not found")
 }
 
+// SignatureFile finds a signature file in the GoReleaser artifacts.
 func (a GoReleaserArtifacts) SignatureFile() (*GoReleaserArtifact, error) {
 	for _, artifact := range a {
 		if artifact.Type == "Signature" {
@@ -97,6 +103,7 @@ func (a GoReleaserArtifacts) SignatureFile() (*GoReleaserArtifact, error) {
 	return nil, errors.New("signature file not found")
 }
 
+// GoReleaserArtifact represents a single GoReleaser artifact.
 type GoReleaserArtifact struct {
 	Name string `json:"name"`
 	Path string `json:"path"`
@@ -155,10 +162,12 @@ func (a *GoReleaserArtifact) content(dir string) (io.ReadCloser, error) {
 	return os.Open(filepath.Join(dir, a.Path))
 }
 
+// GoReleaserArtifactExtras contains extra data about a GoReleaser artifact.
 type GoReleaserArtifactExtras struct {
 	Checksum GoReleaserArtifactChecksum `json:"Checksum"`
 }
 
+// GoReleaserArtifactChecksum is a checksum of a GoReleaser artifact.
 type GoReleaserArtifactChecksum string
 
 // BinarySHA256 returns the binary SHA256 checksum as a hex-encoded string.
@@ -166,6 +175,8 @@ func (c GoReleaserArtifactChecksum) BinarySHA256() string {
 	return strings.TrimPrefix(string(c), "sha256:")
 }
 
+// GoReleaserMetadata contains metadata about a GoReleaser release that is
+// relevant to Spacelift.
 type GoReleaserMetadata struct {
 	Version string `json:"version"`
 }
