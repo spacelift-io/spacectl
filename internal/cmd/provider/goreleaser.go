@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -29,33 +30,39 @@ func BuildGoReleaserVersionData(dir string) (*GoReleaserVersionData, error) {
 	var out GoReleaserVersionData
 
 	// Read the artifacts file.
+	artifactsPath := dir + "/artifacts.json"
+
 	// #nosec G304
-	artifactsData, err := os.ReadFile(dir + "/artifacts.json")
+	artifactsData, err := os.ReadFile(artifactsPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read artifacts.json")
+		return nil, errors.Wrapf(err, "failed to read %s", artifactsPath)
 	}
 
 	if err := json.Unmarshal(artifactsData, &out.Artifacts); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal artifacts.json")
+		return nil, errors.Wrapf(err, "failed to unmarshal %s", artifactsPath)
 	}
 
 	// Read the metadata file.
+	metadataPath := dir + "/metadata.json"
+
 	// #nosec G304
-	metadataData, err := os.ReadFile(dir + "/metadata.json")
+	metadataData, err := os.ReadFile(metadataPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read metadata.json")
+		return nil, errors.Wrapf(err, "failed to read %s", metadataPath)
 	}
 
 	if err := json.Unmarshal(metadataData, &out.Metadata); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal metadata.json")
+		return nil, errors.Wrapf(err, "failed to unmarshal %s", metadataPath)
 	}
 
 	// Read the CHANGELOG.
+	changelogPath := dir + "/CHANGELOG.md"
+
 	// #nosec G304
-	notesData, err := os.ReadFile(dir + "/CHANGELOG.md")
+	notesData, err := os.ReadFile(changelogPath)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return nil, errors.Wrap(err, "failed to read notes.txt")
+			return nil, errors.Wrapf(err, "failed to read changelog: %s", changelogPath)
 		}
 	} else {
 		notes := string(notesData)
@@ -140,26 +147,56 @@ func (a *GoReleaserArtifact) Upload(ctx context.Context, dir string, url string)
 	}
 	defer content.Close()
 
-	request, err := http.NewRequest(http.MethodPut, url, content)
+	data, err := io.ReadAll(content)
+	if err != nil {
+		return errors.Wrapf(err, "could not read artifact content for %s", a.Name)
+	}
+
+	request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(data))
 	if err != nil {
 		return errors.Wrapf(err, "could not create request for %s", a.Name)
+	}
+
+	if a.OS != nil {
+		request.Header.Set("x-amz-meta-binary-os", *a.OS)
+	}
+
+	if a.Arch != nil {
+		request.Header.Set("x-amz-meta-binary-architecture", *a.Arch)
+	}
+
+	if checksum := a.Extra.Checksum.BinarySHA256(); checksum != "" {
+		request.Header.Set("x-amz-meta-binary-checksum", checksum)
 	}
 
 	response, err := ctxhttp.Do(ctx, http.DefaultClient, request)
 	if err != nil {
 		return errors.Wrapf(err, "could not upload %s", a.Name)
 	}
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return errors.Wrapf(err, "could not read response body for %s", a.Name)
+	}
 
 	if response.StatusCode/100 != 2 {
-		return errors.Errorf("could not upload %s: %s", a.Name, response.Status)
+		return errors.Errorf("could not upload %s: %s (BODY %s, URL %s)", a.Name, response.Status, body, url)
 	}
 
 	return nil
 }
 
 func (a *GoReleaserArtifact) content(dir string) (io.ReadCloser, error) {
+	path := filepath.Join(dir, a.Name)
+
 	// #nosec G304
-	return os.Open(filepath.Join(dir, a.Path))
+	out, err := os.Open(path)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not open %s", a.Path)
+	}
+
+	return out, nil
 }
 
 // GoReleaserArtifactExtras contains extra data about a GoReleaser artifact.

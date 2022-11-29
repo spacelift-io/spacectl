@@ -2,7 +2,7 @@ package provider
 
 type TerraformProviderVersionInput struct {
 	Number           string   `json:"number"`
-	ProtocolVersions []string `json:"protocol_versions"`
+	ProtocolVersions []string `json:"protocolVersions"`
 	SHASumsFileSHA   string   `json:"shaSumsFileSHA"`
 	SignatureFileSHA string   `json:"signatureFileSHA"`
 	SigningKeyID     string   `json:"signingKeyId"`

@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
@@ -12,9 +13,17 @@ import (
 
 func createVersion() cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
-		providerType := cliCtx.String(flagProviderType.Name)
-		dir := cliCtx.String(flagGoReleaserDir.Name)
+		// Assuming that spacectl is ran from the root of the repository,
+		// containing the release artifacts in the "dist" directory.
+		dir := "dist"
 
+		if cliCtx.IsSet(flagGoReleaserDir.Name) {
+			dir = cliCtx.String(flagGoReleaserDir.Name)
+		}
+
+		providerType := cliCtx.String(flagProviderType.Name)
+
+		fmt.Println("Retrieving release data from ", dir)
 		versionData, err := BuildGoReleaserVersionData(dir)
 		if err != nil {
 			return errors.Wrap(err, "invalid release data")
@@ -50,11 +59,16 @@ func createVersion() cli.ActionFunc {
 			} `graphql:"terraformProviderVersionCreate(provider: $provider, input: $input)"`
 		}
 
+		protocolVersions := []string{"5.0"}
+		if cliCtx.IsSet(flagProviderVersionProtocols.Name) {
+			protocolVersions = cliCtx.StringSlice(flagProviderVersionProtocols.Name)
+		}
+
 		variables := map[string]any{
 			"provider": graphql.ID(providerType),
 			"input": TerraformProviderVersionInput{
 				Number:           versionData.Metadata.Version,
-				ProtocolVersions: cliCtx.StringSlice(flagProviderVersionProtocols.Name),
+				ProtocolVersions: protocolVersions,
 				SHASumsFileSHA:   checksumsFileChecksum,
 				SignatureFileSHA: signatureFileChecksum,
 				SigningKeyID:     cliCtx.String(flagSigningKeyID.Name),
@@ -65,18 +79,21 @@ func createVersion() cli.ActionFunc {
 			return err
 		}
 
+		fmt.Println("Uploading the checksums file")
 		if err := checksumsFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsUploadURL); err != nil {
 			return errors.Wrap(err, "could not upload checksums file")
 		}
 
+		fmt.Println("Uploading the signatures file")
 		if err := signatureFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadURL); err != nil {
 			return errors.Wrap(err, "could not upload signature file")
 		}
 
 		versionID := createMutation.CreateTerraformProviderVersion.Version.ID
 
-		for i := range versionData.Artifacts {
-			if err := registerVersion(cliCtx.Context, dir, versionID, &versionData.Artifacts[i]); err != nil {
+		archives := versionData.Artifacts.Archives()
+		for i := range archives {
+			if err := registerVersion(cliCtx.Context, dir, versionID, &archives[i]); err != nil {
 				return err
 			}
 		}
@@ -93,8 +110,10 @@ func createVersion() cli.ActionFunc {
 
 		variables = map[string]any{
 			"version":     graphql.ID(versionID),
-			"description": *versionData.Changelog,
+			"description": graphql.String(*versionData.Changelog),
 		}
+
+		fmt.Println("Uploading the changelog")
 
 		if err := authenticated.Client.Mutate(cliCtx.Context, &changelogMutation, variables); err != nil {
 			return errors.Wrap(err, "could not update changelog")
@@ -121,6 +140,8 @@ func registerVersion(ctx context.Context, dir string, versionID string, artifact
 	if err != nil {
 		return errors.Wrap(err, "could not calculate checksum of artifact")
 	}
+
+	fmt.Printf("Uploading the artifact for %s/%s\n", *artifact.OS, *artifact.Arch)
 
 	variables := map[string]any{
 		"version": graphql.ID(versionID),
