@@ -15,11 +15,7 @@ func createVersion() cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
 		// Assuming that spacectl is ran from the root of the repository,
 		// containing the release artifacts in the "dist" directory.
-		dir := "dist"
-
-		if cliCtx.IsSet(flagGoReleaserDir.Name) {
-			dir = cliCtx.String(flagGoReleaserDir.Name)
-		}
+		dir := cliCtx.String(flagGoReleaserDir.Name)
 
 		providerType := cliCtx.String(flagProviderType.Name)
 
@@ -28,6 +24,8 @@ func createVersion() cli.ActionFunc {
 		if err != nil {
 			return errors.Wrap(err, "invalid release data")
 		}
+
+		fmt.Println("Creating version ", versionData.Metadata.Version)
 
 		checksumsFile, err := versionData.Artifacts.ChecksumsFile()
 		if err != nil {
@@ -59,16 +57,11 @@ func createVersion() cli.ActionFunc {
 			} `graphql:"terraformProviderVersionCreate(provider: $provider, input: $input)"`
 		}
 
-		protocolVersions := []string{"5.0"}
-		if cliCtx.IsSet(flagProviderVersionProtocols.Name) {
-			protocolVersions = cliCtx.StringSlice(flagProviderVersionProtocols.Name)
-		}
-
 		variables := map[string]any{
 			"provider": graphql.ID(providerType),
 			"input": TerraformProviderVersionInput{
 				Number:           versionData.Metadata.Version,
-				ProtocolVersions: protocolVersions,
+				ProtocolVersions: cliCtx.StringSlice(flagProviderVersionProtocols.Name),
 				SHASumsFileSHA:   checksumsFileChecksum,
 				SignatureFileSHA: signatureFileChecksum,
 				SigningKeyID:     cliCtx.String(gpgKeyFingerprint.Name),
@@ -93,10 +86,15 @@ func createVersion() cli.ActionFunc {
 
 		archives := versionData.Artifacts.Archives()
 		for i := range archives {
+			if err := archives[i].ValidateFilename(providerType, versionData.Metadata.Version); err != nil {
+				return errors.Wrapf(err, "invalid artifact filename: %s", archives[i].Name)
+			}
+
 			if err := registerPlatform(cliCtx.Context, dir, versionID, &archives[i]); err != nil {
 				return err
 			}
 		}
+		fmt.Printf("Draft version %s created\n", versionID)
 
 		if versionData.Changelog == nil {
 			return nil
@@ -126,14 +124,6 @@ func createVersion() cli.ActionFunc {
 func registerPlatform(ctx context.Context, dir string, versionID string, artifact *GoReleaserArtifact) error {
 	var mutation struct {
 		RegisterTerraformProviderVersionPlatform string `graphql:"terraformProviderVersionRegisterPlatform(version: $version, input: $input)"`
-	}
-
-	if artifact.Arch == nil {
-		return errors.New("artifact has no architecture specified")
-	}
-
-	if artifact.OS == nil {
-		return errors.New("artifact has no operating system specified")
 	}
 
 	archiveChecksum, err := artifact.Checksum(dir)

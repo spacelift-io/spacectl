@@ -10,12 +10,14 @@ var flagProviderType = &cli.StringFlag{
 
 var flagProviderVersionProtocols = &cli.StringSliceFlag{
 	Name:  "protocols",
-	Usage: "Protocols supported by the provider",
+	Usage: "Terraform plugin protocols supported by the provider",
+	Value: cli.NewStringSlice("5.0"),
 }
 
 var flagGoReleaserDir = &cli.StringFlag{
 	Name:  "goreleaser-dir",
 	Usage: "Directory containing the GoReleaser build artifacts",
+	Value: "dist",
 }
 
 var gpgKeyFingerprint = &cli.StringFlag{

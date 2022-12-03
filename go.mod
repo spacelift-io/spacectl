@@ -13,7 +13,7 @@ require (
 	github.com/pterm/pterm v0.12.46
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29
-	github.com/urfave/cli/v2 v2.16.3
+	github.com/urfave/cli/v2 v2.23.5
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035
 )

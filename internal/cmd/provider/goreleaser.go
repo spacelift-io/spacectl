@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -30,7 +31,7 @@ func BuildGoReleaserVersionData(dir string) (*GoReleaserVersionData, error) {
 	var out GoReleaserVersionData
 
 	// Read the artifacts file.
-	artifactsPath := dir + "/artifacts.json"
+	artifactsPath := filepath.Join(dir, "/artifacts.json")
 
 	// #nosec G304
 	artifactsData, err := os.ReadFile(artifactsPath)
@@ -43,7 +44,7 @@ func BuildGoReleaserVersionData(dir string) (*GoReleaserVersionData, error) {
 	}
 
 	// Read the metadata file.
-	metadataPath := dir + "/metadata.json"
+	metadataPath := filepath.Join(dir, "/metadata.json")
 
 	// #nosec G304
 	metadataData, err := os.ReadFile(metadataPath)
@@ -56,7 +57,7 @@ func BuildGoReleaserVersionData(dir string) (*GoReleaserVersionData, error) {
 	}
 
 	// Read the CHANGELOG.
-	changelogPath := dir + "/CHANGELOG.md"
+	changelogPath := filepath.Join(dir, "/CHANGELOG.md")
 
 	// #nosec G304
 	notesData, err := os.ReadFile(changelogPath)
@@ -182,6 +183,26 @@ func (a *GoReleaserArtifact) Upload(ctx context.Context, dir string, url string)
 
 	if response.StatusCode/100 != 2 {
 		return errors.Errorf("could not upload %s: %s (BODY %s, URL %s)", a.Name, response.Status, body, url)
+	}
+
+	return nil
+}
+
+// ValidateFilename validates that the artifact's name matches the expected
+// format.
+func (a *GoReleaserArtifact) ValidateFilename(providerType, versionNumber string) error {
+	if a.OS == nil {
+		return errors.Errorf("missing OS for %s", a.Name)
+	}
+
+	if a.Arch == nil {
+		return errors.Errorf("missing architecture for %s", a.Name)
+	}
+
+	expectedName := fmt.Sprintf("terraform-provider-%s_%s_%s_%s.zip", providerType, versionNumber, *a.OS, *a.Arch)
+
+	if a.Name != expectedName {
+		return errors.Errorf("unexpected artifact name: %s (expected %s)", a.Name, expectedName)
 	}
 
 	return nil
