@@ -11,7 +11,7 @@ import (
 
 func createVersion(cliCtx *cli.Context) error {
 	moduleID := cliCtx.String(flagModuleID.Name)
-	commitSHA := cliCtx.String(flagCommitSHA.Name)
+	forcedCommitSHA := cliCtx.String(flagCommitSHA.Name)
 	forcedVersion := cliCtx.String(flagVersion.Name)
 
 	var mutation struct {
@@ -25,10 +25,14 @@ func createVersion(cliCtx *cli.Context) error {
 	if forcedVersion != "" {
 		version = graphql.NewString(graphql.String(forcedVersion))
 	}
+	var commitSha *graphql.String
+	if forcedCommitSHA != "" {
+		commitSha = graphql.NewString(graphql.String(forcedCommitSHA))
+	}
 
 	variables := map[string]interface{}{
 		"module":    graphql.ID(moduleID),
-		"commitSha": graphql.String(commitSHA),
+		"commitSha": commitSha,
 		"version":   version,
 	}
 
