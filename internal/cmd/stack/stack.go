@@ -291,6 +291,28 @@ func Command() *cli.Command {
 				Before:    authenticated.Ensure,
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
+			{
+				Category: "Stack management",
+				Name:     "enable",
+				Usage:    "Enable new runs against the stack",
+				Flags: []cli.Flag{
+					flagStackID,
+				},
+				Action:    enable,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
+				Category: "Stack management",
+				Name:     "disable",
+				Usage:    "Disable new runs against the stack",
+				Flags: []cli.Flag{
+					flagStackID,
+				},
+				Action:    disable,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
 		},
 	}
 }
