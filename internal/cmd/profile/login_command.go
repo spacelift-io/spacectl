@@ -226,7 +226,7 @@ func loginUsingWebBrowser(creds *session.StoredCredentials) error {
 	}
 
 	m := http.NewServeMux()
-	server := &http.Server{Addr: fmt.Sprintf(":%d", cliServerPort), Handler: m, ReadHeaderTimeout: 5 * time.Second}
+	server := &http.Server{Addr: fmt.Sprintf("localhost:%d", cliServerPort), Handler: m, ReadHeaderTimeout: 5 * time.Second}
 	m.HandleFunc("/", handler)
 
 	fmt.Printf("\nOpening browser to %s\n\n", browserURL)
