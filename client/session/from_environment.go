@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 )
 
 const (
@@ -55,6 +56,7 @@ func FromEnvironment(ctx context.Context, client *http.Client) func(func(string)
 			}
 			fmt.Printf("Environment variable %q is deprecated, please use %q\n", EnvSpaceliftAPIEndpoint, EnvSpaceliftAPIKeyEndpoint)
 		}
+		endpoint = strings.TrimSuffix(endpoint, "/")
 
 		if gitHubToken, ok := lookup(EnvSpaceliftAPIGitHubToken); ok {
 			return FromGitHubToken(ctx, client)(endpoint, gitHubToken)
