@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Version is a version of a Terraform provider.
 type Version struct {
 	ID               string           `graphql:"id" json:"id"`
 	CreatedAt        int64            `graphql:"createdAt" json:"createdAt"`
@@ -16,6 +17,8 @@ type Version struct {
 	UpdatedAt        int64            `graphql:"updatedAt" json:"updatedAt"`
 }
 
+// Row returns a slice of strings representing a row in a table of provider
+// versions.
 func (v Version) Row() []string {
 	return []string{
 		v.ID,
@@ -25,8 +28,10 @@ func (v Version) Row() []string {
 	}
 }
 
+// Versions is a slice of provider versions.
 type Versions []Version
 
+// Headers returns a collection of versions table headers.
 func (v Versions) Headers() []string {
 	return []string{
 		"ID",
@@ -36,8 +41,10 @@ func (v Versions) Headers() []string {
 	}
 }
 
+// VersionPlatforms is a slice of provider version platforms.
 type VersionPlatforms []VersionPlatform
 
+// String returns a comma-separated list of platforms.
 func (p VersionPlatforms) String() string {
 	partial := make([]string, len(p))
 
@@ -48,11 +55,13 @@ func (p VersionPlatforms) String() string {
 	return strings.Join(partial, ", ")
 }
 
+// VersionPlatform is a platform for a provider version.
 type VersionPlatform struct {
 	Architecture string `graphql:"architecture" json:"architecture"`
 	OS           string `graphql:"os" json:"os"`
 }
 
+// String returns a string representation of a platform.
 func (p VersionPlatform) String() string {
 	return fmt.Sprintf("%s/%s", p.OS, p.Architecture)
 }
