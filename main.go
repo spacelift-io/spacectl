@@ -9,6 +9,7 @@ import (
 
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
+	"github.com/spacelift-io/spacectl/internal/cmd/provider"
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
 	versioncmd "github.com/spacelift-io/spacectl/internal/cmd/version"
 	"github.com/spacelift-io/spacectl/internal/cmd/workerpools"
@@ -28,9 +29,10 @@ func main() {
 		Compiled: compileTime,
 		Usage:    "Programmatic access to Spacelift GraphQL API.",
 		Commands: []*cli.Command{
-			profile.Command(),
-			stack.Command(),
 			module.Command(),
+			profile.Command(),
+			provider.Command(),
+			stack.Command(),
 			versioncmd.Command(version),
 			workerpools.Command(),
 		},
