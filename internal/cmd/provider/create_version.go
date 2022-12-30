@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 )
 
 func createVersion() cli.ActionFunc {
@@ -20,7 +21,7 @@ func createVersion() cli.ActionFunc {
 		providerType := cliCtx.String(flagProviderType.Name)
 
 		fmt.Println("Retrieving release data from ", dir)
-		versionData, err := BuildGoReleaserVersionData(dir)
+		versionData, err := internal.BuildGoReleaserVersionData(dir)
 		if err != nil {
 			return errors.Wrap(err, "invalid release data")
 		}
@@ -121,7 +122,7 @@ func createVersion() cli.ActionFunc {
 	}
 }
 
-func registerPlatform(ctx context.Context, dir string, versionID string, artifact *GoReleaserArtifact) error {
+func registerPlatform(ctx context.Context, dir string, versionID string, artifact *internal.GoReleaserArtifact) error {
 	var mutation struct {
 		RegisterTerraformProviderVersionPlatform string `graphql:"terraformProviderVersionRegisterPlatform(version: $version, input: $input)"`
 	}

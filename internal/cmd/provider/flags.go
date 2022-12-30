@@ -20,6 +20,12 @@ var flagGoReleaserDir = &cli.StringFlag{
 	Value: "dist",
 }
 
+var flagRequiredVersionID = &cli.StringFlag{
+	Name:     "version",
+	Usage:    "Version of the provider",
+	Required: true,
+}
+
 var gpgKeyFingerprint = &cli.StringFlag{
 	Name:     "gpg-fingerprint",
 	Usage:    "ID (fingerprint) of the GPG key used to sign the provider version",
