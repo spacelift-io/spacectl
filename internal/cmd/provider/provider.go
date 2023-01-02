@@ -54,7 +54,7 @@ func Command() *cli.Command {
 					flagProviderType,
 					flagProviderVersionProtocols,
 					flagGoReleaserDir,
-					gpgKeyFingerprint,
+					flagGPGKeyID,
 				},
 				Action:    createVersion(),
 				Before:    authenticated.Ensure,

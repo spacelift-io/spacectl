@@ -60,9 +60,9 @@ var flagRequiredVersionID = &cli.StringFlag{
 	Required: true,
 }
 
-var gpgKeyFingerprint = &cli.StringFlag{
-	Name:     "gpg-fingerprint",
-	Usage:    "ID (fingerprint) of the GPG key used to sign the provider version",
-	EnvVars:  []string{"GPG_FINGERPRINT"},
+var flagGPGKeyID = &cli.StringFlag{
+	Name:     "gpg-key-id",
+	Usage:    "ID of the GPG key used to sign the provider version",
+	EnvVars:  []string{"GPG_KEY_ID"},
 	Required: true,
 }
