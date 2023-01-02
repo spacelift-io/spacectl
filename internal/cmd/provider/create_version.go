@@ -65,7 +65,7 @@ func createVersion() cli.ActionFunc {
 				ProtocolVersions: cliCtx.StringSlice(flagProviderVersionProtocols.Name),
 				SHASumsFileSHA:   checksumsFileChecksum,
 				SignatureFileSHA: signatureFileChecksum,
-				SigningKeyID:     cliCtx.String(gpgKeyFingerprint.Name),
+				SigningKeyID:     cliCtx.String(flagGPGKeyID.Name),
 			},
 		}
 
