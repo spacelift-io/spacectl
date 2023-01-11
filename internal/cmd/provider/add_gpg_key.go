@@ -12,7 +12,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 )
 
-func createGPGKey() cli.ActionFunc {
+func addGPGKey() cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
 		keyGenerate := cliCtx.Bool(flagKeyGenerate.Name)
 		keyImport := cliCtx.Bool(flagKeyImport.Name)

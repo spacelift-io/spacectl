@@ -15,8 +15,8 @@ func Command() *cli.Command {
 		Subcommands: []*cli.Command{
 			{
 				Category: "GPG key management",
-				Name:     "create-gpg-key",
-				Usage:    "Create a new GPG key for signing provider releases",
+				Name:     "add-gpg-key",
+				Usage:    "Adds a new GPG key for signing provider releases",
 				Flags: []cli.Flag{
 					flagKeyEmail,
 					flagKeyGenerate,
@@ -24,7 +24,7 @@ func Command() *cli.Command {
 					flagKeyName,
 					flagKeyPath,
 				},
-				Action:    createGPGKey(),
+				Action:    addGPGKey(),
 				Before:    authenticated.Ensure,
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
