@@ -12,6 +12,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/provider"
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
 	versioncmd "github.com/spacelift-io/spacectl/internal/cmd/version"
+	"github.com/spacelift-io/spacectl/internal/cmd/whoami"
 	"github.com/spacelift-io/spacectl/internal/cmd/workerpools"
 )
 
@@ -33,6 +34,7 @@ func main() {
 			profile.Command(),
 			provider.Command(),
 			stack.Command(),
+			whoami.Command(),
 			versioncmd.Command(version),
 			workerpools.Command(),
 		},

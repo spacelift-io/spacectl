@@ -3,8 +3,6 @@ package profile
 import (
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/spacelift-io/spacectl/client/session"
 	"github.com/urfave/cli/v2"
@@ -19,14 +17,9 @@ func getAliasWithAPITokenProfile(cliCtx *cli.Context) error {
 		return nil
 	}
 
-	userHomeDir, err := os.UserHomeDir()
+	manager, err := session.UserProfileManager()
 	if err != nil {
-		return fmt.Errorf("could not find user home directory: %w", err)
-	}
-
-	manager, err := session.NewProfileManager(filepath.Join(userHomeDir, session.SpaceliftConfigDirectory))
-	if err != nil {
-		return fmt.Errorf("could not create profile manager: %w", err)
+		return fmt.Errorf("could not accesss profile manager: %w", err)
 	}
 
 	profile := manager.Current()

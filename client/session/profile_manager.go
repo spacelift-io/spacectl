@@ -48,6 +48,19 @@ type ProfileManager struct {
 	Configuration *configuration
 }
 
+// UserProfileManager creates a new ProfileManager using the user home directory to store the profile data.
+func UserProfileManager() (*ProfileManager, error) {
+	userHomeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("could not find user home directory: %w", err)
+	}
+	manager, err := NewProfileManager(filepath.Join(userHomeDir, SpaceliftConfigDirectory))
+	if err != nil {
+		return nil, fmt.Errorf("could not create profile manager: %w", err)
+	}
+	return manager, nil
+}
+
 // NewProfileManager creates a new ProfileManager using the specified directory to store the profile data.
 func NewProfileManager(profilesDirectory string) (*ProfileManager, error) {
 	if err := os.MkdirAll(profilesDirectory, 0700); err != nil {

@@ -2,8 +2,6 @@ package profile
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/urfave/cli/v2"
 
@@ -20,16 +18,10 @@ func Command() *cli.Command {
 		Name:  "profile",
 		Usage: "Manage Spacelift profiles",
 		Before: func(cliCtx *cli.Context) error {
-			homeDir, err := os.UserHomeDir()
-			if err != nil {
-				return fmt.Errorf("could not get user home directory: %w", err)
-			}
-
-			configDir := filepath.Join(homeDir, session.SpaceliftConfigDirectory)
-			if manager, err = session.NewProfileManager(configDir); err != nil {
+			var err error
+			if manager, err = session.UserProfileManager(); err != nil {
 				return fmt.Errorf("could not initialize profile manager: %w", err)
 			}
-
 			return nil
 		},
 		Subcommands: []*cli.Command{
