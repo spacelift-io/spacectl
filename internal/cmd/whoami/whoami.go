@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 
 	"github.com/spacelift-io/spacectl/client/session"
@@ -28,13 +29,16 @@ func Command() *cli.Command {
 			}
 
 			var query struct {
-				Viewer struct {
+				Viewer *struct {
 					ID   string `graphql:"id" json:"id"`
 					Name string `graphql:"name" json:"name"`
 				}
 			}
 			if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{}); err != nil {
-				return err
+				return errors.Wrap(err, "failed to query user information")
+			}
+			if query.Viewer == nil {
+				return errors.New("failed to query user information: unauthorized")
 			}
 
 			encoder := json.NewEncoder(os.Stdout)
