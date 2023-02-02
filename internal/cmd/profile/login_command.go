@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,7 +26,6 @@ import (
 )
 
 const (
-	cliServerPort      = 8020
 	cliBrowserPath     = "/cli_login"
 	cliAuthSuccessPage = "/auth_success"
 	cliAuthFailurePage = "/auth_failure"
@@ -164,11 +164,6 @@ func loginUsingWebBrowser(creds *session.StoredCredentials) error {
 
 	keyBase64 := base64.RawURLEncoding.EncodeToString(pubKey)
 
-	browserURL, err := buildBrowserURL(creds.Endpoint, keyBase64)
-	if err != nil {
-		return errors.Wrap(err, "could not build browser URL")
-	}
-
 	done := make(chan bool, 1)
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		handlerErr := func() error {
@@ -225,19 +220,21 @@ func loginUsingWebBrowser(creds *session.StoredCredentials) error {
 		done <- true
 	}
 
-	m := http.NewServeMux()
-	server := &http.Server{Addr: fmt.Sprintf("localhost:%d", cliServerPort), Handler: m, ReadHeaderTimeout: 5 * time.Second}
-	m.HandleFunc("/", handler)
+	server, port, err := serveOnOpenPort(handler)
+	if err != nil {
+		return err
+	}
+
+	browserURL, err := buildBrowserURL(creds.Endpoint, keyBase64, port)
+	if err != nil {
+		server.Close()
+		return errors.Wrap(err, "could not build browser URL")
+	}
 
 	fmt.Printf("\nOpening browser to %s\n\n", browserURL)
 
-	go func() {
-		if err := server.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatalf("could not start local server: %s", err)
-		}
-	}()
-
 	if err := openWebBrowser(browserURL); err != nil {
+		server.Close()
 		return err
 	}
 
@@ -255,7 +252,7 @@ func loginUsingWebBrowser(creds *session.StoredCredentials) error {
 	}
 }
 
-func buildBrowserURL(endpoint, pubKey string) (string, error) {
+func buildBrowserURL(endpoint, pubKey string, port int) (string, error) {
 	base, err := url.Parse(endpoint)
 	if err != nil {
 		return "", err
@@ -264,6 +261,7 @@ func buildBrowserURL(endpoint, pubKey string) (string, error) {
 
 	q := url.Values{}
 	q.Add("key", pubKey)
+	q.Add("port", fmt.Sprint(port))
 
 	base.RawQuery = q.Encode()
 
@@ -302,4 +300,33 @@ func persistAccessCredentials(creds *session.StoredCredentials) error {
 		Alias:       profileAlias,
 		Credentials: creds,
 	})
+}
+
+func serveOnOpenPort(handler func(w http.ResponseWriter, r *http.Request)) (*http.Server, int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", ":0")
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "failed to resolve tcp address")
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return nil, 0, errors.Wrapf(err, "failed to start listening on %s", addr.String())
+	}
+
+	m := http.NewServeMux()
+	m.HandleFunc("/", handler)
+
+	port := l.Addr().(*net.TCPAddr).Port
+	fmt.Printf("Will use port %d to receive responses\n", port)
+
+	server := &http.Server{Handler: m, ReadHeaderTimeout: 5 * time.Second}
+	go func() {
+		if err := server.Serve(l); err != nil {
+			if !errors.Is(err, http.ErrServerClosed) {
+				log.Fatalf("could not start local server: %s", err)
+			}
+		}
+	}()
+
+	return server, port, nil
 }
