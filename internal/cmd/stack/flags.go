@@ -81,3 +81,21 @@ var flagNoUpload = &cli.BoolFlag{
 	Usage: "Indicate whether Spacectl should prepare the workspace archive, but skip uploading it. Useful for debugging ignorefiles.",
 	Value: false,
 }
+
+var flagIgnoreSubdir = &cli.BoolFlag{
+	Name:  "ignore-subdir",
+	Usage: "[Optional] Indicate whetever open command should ignore the current subdir and only use the repository to search for a stack",
+	Value: false,
+}
+
+var flagCurrentBranch = &cli.BoolFlag{
+	Name:  "current-branch",
+	Usage: "[Optional] Indicate whetever to search a stack by the current branch you're on",
+	Value: false,
+}
+
+var flagSearchCount = &cli.IntFlag{
+	Name:  "count",
+	Usage: "[Optional] Indicate the maximum count of elements returned when searching stacks",
+	Value: 30,
+}

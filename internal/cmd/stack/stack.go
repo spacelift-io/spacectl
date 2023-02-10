@@ -255,6 +255,19 @@ func Command() *cli.Command {
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
+				Category: "Stack management",
+				Name:     "open",
+				Usage:    "Open a stack in your browser",
+				Flags: []cli.Flag{
+					flagIgnoreSubdir,
+					flagCurrentBranch,
+					flagSearchCount,
+				},
+				Action:    openCommandInBrowser,
+				Before:    authenticated.Ensure,
+				ArgsUsage: "COMMAND",
+			},
+			{
 				Category: "Run management",
 				Name:     "task",
 				Usage:    "Perform a task in a workspace",
