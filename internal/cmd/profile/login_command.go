@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
-	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -233,7 +231,7 @@ func loginUsingWebBrowser(creds *session.StoredCredentials) error {
 
 	fmt.Printf("\nOpening browser to %s\n\n", browserURL)
 
-	if err := openWebBrowser(browserURL); err != nil {
+	if err := internal.OpenWebBrowser(browserURL); err != nil {
 		server.Close()
 		return err
 	}
@@ -266,33 +264,6 @@ func buildBrowserURL(endpoint, pubKey string, port int) (string, error) {
 	base.RawQuery = q.Encode()
 
 	return base.String(), nil
-}
-
-func openWebBrowser(url string) error {
-	var cmd *exec.Cmd
-	switch runtime.GOOS {
-	case "linux":
-		cmd = exec.Command("xdg-open", url)
-	case "darwin":
-		cmd = exec.Command("open", url)
-	case "windows":
-		r := strings.NewReplacer("&", "^&")
-		cmd = exec.Command("cmd", "/c", "start", r.Replace(url)) //#nosec
-	default:
-		return errors.New("unsupported platform")
-	}
-
-	err := cmd.Start()
-	if err != nil {
-		return errors.Wrap(err, "could not open the browser")
-	}
-
-	err = cmd.Wait()
-	if err != nil {
-		return errors.Wrap(err, "could not wait for the opening browser")
-	}
-
-	return nil
 }
 
 func persistAccessCredentials(creds *session.StoredCredentials) error {
