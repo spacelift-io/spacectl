@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/spacelift-io/spacectl/client/structs"
+	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
@@ -35,7 +36,7 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 
 		var requestOpts []graphql.RequestOption
 		if cliCtx.IsSet(flagRunMetadata.Name) {
-			requestOpts = append(requestOpts, graphql.WithHeader(UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
+			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
 		}
 
 		if err := authenticated.Client.Mutate(ctx, &mutation, variables, requestOpts...); err != nil {

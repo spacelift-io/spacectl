@@ -1,9 +1,10 @@
 package module
 
 import (
+	"github.com/urfave/cli/v2"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 // Command encapsulates the module command subtree.
@@ -22,6 +23,20 @@ func Command() *cli.Command {
 					flagVersion,
 				},
 				Action:    createVersion,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
+				Category: "Module management",
+				Name:     "local-preview",
+				Usage:    "Start a preview (proposed version) based on the current project. Respects .gitignore and .terraformignore.",
+				Flags: []cli.Flag{
+					flagModuleID,
+					flagNoFindRepositoryRoot,
+					flagNoUpload,
+					flagRunMetadata,
+				},
+				Action:    localPreview(),
 				Before:    authenticated.Ensure,
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
