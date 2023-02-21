@@ -91,7 +91,7 @@ func localPreview() cli.ActionFunc {
 			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables); err != nil {
+		if err := authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {
 			return err
 		}
 
@@ -99,7 +99,9 @@ func localPreview() cli.ActionFunc {
 
 		go func() {
 			// Refresh run state every 5 seconds.
-			for range time.Tick(time.Second * 5) {
+			ticker := time.NewTicker(time.Second * 5)
+			defer ticker.Stop()
+			for range ticker.C {
 				newRuns := make([]runQuery, len(triggerMutation.VersionProposeLocalWorkspace))
 				var g errgroup.Group
 				for i := range newRuns {
