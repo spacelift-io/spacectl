@@ -128,9 +128,7 @@ func localPreview() cli.ActionFunc {
 				if err := g.Wait(); err != nil {
 					log.Fatal("couldn't get runs: ", err)
 				}
-				model.Lock()
-				model.Runs = newRuns
-				model.Unlock()
+				model.setRuns(newRuns)
 			}
 		}()
 
@@ -178,6 +176,12 @@ func newModuleLocalPreviewModel(moduleID string, runsState []runQuery) *moduleLo
 		SpinnersSlow: spinnersSlow,
 		SpinnersFast: spinnersFast,
 	}
+}
+
+func (m *moduleLocalPreviewModel) setRuns(newRuns []runQuery) {
+	m.Lock()
+	m.Runs = newRuns
+	m.Unlock()
 }
 
 func (m *moduleLocalPreviewModel) Init() tea.Cmd {
