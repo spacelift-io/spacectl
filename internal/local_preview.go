@@ -11,6 +11,7 @@ import (
 	ignore "github.com/sabhiram/go-gitignore"
 )
 
+// MoveToRepositoryRoot moves the current workdir to the git repository root.
 func MoveToRepositoryRoot() error {
 	startCwd, err := os.Getwd()
 	if err != nil {
@@ -44,6 +45,7 @@ func MoveToRepositoryRoot() error {
 	}
 }
 
+// GetIgnoreMatcherFn creates an ignore-matcher for archiving purposes. Respects gitignore and terraformignore.
 func GetIgnoreMatcherFn(ctx context.Context) (func(filePath string) bool, error) {
 	gitignore, err := ignore.CompileIgnoreFile(".gitignore")
 	if err != nil && !os.IsNotExist(err) {
@@ -68,6 +70,7 @@ func GetIgnoreMatcherFn(ctx context.Context) (func(filePath string) bool, error)
 	}, nil
 }
 
+// UploadArchive uploads a tarball to the target endpoint and displays a fancy progress bar.
 func UploadArchive(ctx context.Context, uploadURL, path string) (err error) {
 	stat, err := os.Stat(path)
 	if err != nil {
