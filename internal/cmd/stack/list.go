@@ -22,7 +22,7 @@ func listStacks() cli.ActionFunc {
 
 		switch outputFormat {
 		case cmd.OutputFormatTable:
-			return listStacksTable(cliCtx.Context)
+			return listStacksTable(cliCtx)
 		case cmd.OutputFormatJSON:
 			return listStacksJSON(cliCtx.Context)
 		}
@@ -42,13 +42,14 @@ func listStacksJSON(ctx context.Context) error {
 	return cmd.OutputJSON(query.Stacks)
 }
 
-func listStacksTable(ctx context.Context) error {
+func listStacksTable(ctx *cli.Context) error {
 	var query struct {
 		Stacks []struct {
-			ID            string `graphql:"id" json:"id,omitempty"`
-			LockedBy      string `graphql:"lockedBy"`
-			Name          string `graphql:"name"`
-			State         string `graphql:"state"`
+			ID            string   `graphql:"id" json:"id,omitempty"`
+			LockedBy      string   `graphql:"lockedBy"`
+			Name          string   `graphql:"name"`
+			State         string   `graphql:"state"`
+			Labels        []string `graphql:"labels"`
 			TrackedCommit struct {
 				AuthorName string `graphql:"authorName"`
 				Hash       string `graphql:"hash"`
@@ -59,7 +60,7 @@ func listStacksTable(ctx context.Context) error {
 		} `graphql:"stacks"`
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
+	if err := authenticated.Client.Query(ctx.Context, &query, map[string]interface{}{}); err != nil {
 		return errors.Wrap(err, "failed to query list of stacks")
 	}
 
@@ -67,9 +68,14 @@ func listStacksTable(ctx context.Context) error {
 		return strings.Compare(strings.ToLower(query.Stacks[i].Name), strings.ToLower(query.Stacks[j].Name)) < 0
 	})
 
-	tableData := [][]string{{"Name", "ID", "Commit", "Author", "State", "Worker Pool", "Locked By"}}
+	columns := []string{"Name", "ID", "Commit", "Author", "State", "Worker Pool", "Locked By"}
+	if ctx.Bool(flagVerbose.Name) {
+		columns = append(columns, "Labels")
+	}
+
+	tableData := [][]string{columns}
 	for _, stack := range query.Stacks {
-		tableData = append(tableData, []string{
+		row := []string{
 			stack.Name,
 			stack.ID,
 			cmd.HumanizeGitHash(stack.TrackedCommit.Hash),
@@ -77,7 +83,12 @@ func listStacksTable(ctx context.Context) error {
 			stack.State,
 			stack.WorkerPool.Name,
 			stack.LockedBy,
-		})
+		}
+		if ctx.Bool(flagVerbose.Name) {
+			row = append(row, strings.Join(stack.Labels, ", "))
+		}
+
+		tableData = append(tableData, row)
 	}
 
 	return cmd.OutputTable(tableData, true)
