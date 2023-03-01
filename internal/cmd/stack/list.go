@@ -69,7 +69,7 @@ func listStacksTable(ctx *cli.Context) error {
 	})
 
 	columns := []string{"Name", "ID", "Commit", "Author", "State", "Worker Pool", "Locked By"}
-	if ctx.Bool(flagVerbose.Name) {
+	if ctx.Bool(flagShowLabels.Name) {
 		columns = append(columns, "Labels")
 	}
 
@@ -84,7 +84,7 @@ func listStacksTable(ctx *cli.Context) error {
 			stack.WorkerPool.Name,
 			stack.LockedBy,
 		}
-		if ctx.Bool(flagVerbose.Name) {
+		if ctx.Bool(flagShowLabels.Name) {
 			row = append(row, strings.Join(stack.Labels, ", "))
 		}
 
