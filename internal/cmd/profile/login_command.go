@@ -36,10 +36,13 @@ func loginCommand() *cli.Command {
 		Before:    getAliasWithAPITokenProfile,
 		ArgsUsage: "<account-alias>",
 		Action:    loginAction,
+		Flags: []cli.Flag{
+			flagBindPort,
+		},
 	}
 }
 
-func loginAction(*cli.Context) error {
+func loginAction(ctx *cli.Context) error {
 	var storedCredentials session.StoredCredentials
 
 	// Let's try to re-authenticate user.
@@ -48,7 +51,7 @@ func loginAction(*cli.Context) error {
 		storedCredentials.Type = apiTokenProfile.Credentials.Type
 		profileAlias = apiTokenProfile.Alias
 
-		return loginUsingWebBrowser(&storedCredentials)
+		return loginUsingWebBrowser(ctx, &storedCredentials)
 	}
 
 	reader := bufio.NewReader(os.Stdin)
@@ -105,7 +108,7 @@ Loop:
 			}
 			break Loop
 		case session.CredentialsTypeAPIToken:
-			return loginUsingWebBrowser(&storedCredentials)
+			return loginUsingWebBrowser(ctx, &storedCredentials)
 		default:
 			fmt.Printf("Invalid selection (%s), please try again", credentialsType)
 			continue
@@ -154,7 +157,7 @@ func loginUsingGitHubAccessToken(creds *session.StoredCredentials) error {
 	return nil
 }
 
-func loginUsingWebBrowser(creds *session.StoredCredentials) error {
+func loginUsingWebBrowser(ctx *cli.Context, creds *session.StoredCredentials) error {
 	pubKey, privKey, err := internal.GenerateRSAKeyPair()
 	if err != nil {
 		return errors.Wrap(err, "could not generate RSA key pair")
@@ -218,7 +221,13 @@ func loginUsingWebBrowser(creds *session.StoredCredentials) error {
 		done <- true
 	}
 
-	server, port, err := serveOnOpenPort(handler)
+	var bindOn *int
+	if ctx.IsSet(flagBindPort.Name) {
+		port := ctx.Int(flagBindPort.Name)
+		bindOn = &port
+	}
+
+	server, port, err := serveOnOpenPort(bindOn, handler)
 	if err != nil {
 		return err
 	}
@@ -273,8 +282,13 @@ func persistAccessCredentials(creds *session.StoredCredentials) error {
 	})
 }
 
-func serveOnOpenPort(handler func(w http.ResponseWriter, r *http.Request)) (*http.Server, int, error) {
-	addr, err := net.ResolveTCPAddr("tcp", ":0")
+func serveOnOpenPort(port *int, handler func(w http.ResponseWriter, r *http.Request)) (*http.Server, int, error) {
+	bindOn := ":0"
+	if port != nil {
+		bindOn = fmt.Sprintf(":%d", *port)
+	}
+
+	addr, err := net.ResolveTCPAddr("tcp", bindOn)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "failed to resolve tcp address")
 	}
@@ -287,8 +301,8 @@ func serveOnOpenPort(handler func(w http.ResponseWriter, r *http.Request)) (*htt
 	m := http.NewServeMux()
 	m.HandleFunc("/", handler)
 
-	port := l.Addr().(*net.TCPAddr).Port
-	fmt.Printf("Will use port %d to receive responses\n", port)
+	binded := l.Addr().(*net.TCPAddr).Port
+	fmt.Printf("Will use port %d to receive responses\n", binded)
 
 	server := &http.Server{Handler: m, ReadHeaderTimeout: 5 * time.Second}
 	go func() {
@@ -299,5 +313,5 @@ func serveOnOpenPort(handler func(w http.ResponseWriter, r *http.Request)) (*htt
 		}
 	}()
 
-	return server, port, nil
+	return server, binded, nil
 }
