@@ -99,6 +99,7 @@ func Command() *cli.Command {
 				Name:  "list",
 				Usage: "List the stacks you have access to",
 				Flags: []cli.Flag{
+					flagShowLabels,
 					cmd.FlagOutputFormat,
 					cmd.FlagNoColor,
 				},

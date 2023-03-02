@@ -99,3 +99,10 @@ var flagSearchCount = &cli.IntFlag{
 	Usage: "[Optional] Indicate the maximum count of elements returned when searching stacks",
 	Value: 30,
 }
+
+var flagShowLabels = &cli.BoolFlag{
+	Name:     "show-labels",
+	Usage:    "[Optional] Indicates that stack labels should be printed when outputting stack data in the table format",
+	Required: false,
+	Value:    false,
+}
