@@ -3,7 +3,6 @@ package stack
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -16,15 +15,10 @@ var errNoStackFound = errors.New("no stack found")
 // getStackID will try to retreive a stack ID from multiple sources.
 // It will do so in the following order:
 // 1. Check the --id flag, if set, use that value.
-// 2. Check env variable SPACECTL_STACK_ID and use it if it's set to a non empty string.
-// 3. Check the current directory to determine repository and subdirectory and search for a stack.
+// 2. Check the current directory to determine repository and subdirectory and search for a stack.
 func getStackID(cliCtx *cli.Context) (string, error) {
 	if cliCtx.IsSet(flagStackID.Name) {
 		return cliCtx.String(flagStackID.Name), nil
-	}
-
-	if got := os.Getenv("SPACELIFT_CTL_STACK_ID"); got != "" {
-		return got, nil
 	}
 
 	subdir, err := getGitRepositorySubdir()
@@ -44,7 +38,7 @@ func getStackID(cliCtx *cli.Context) (string, error) {
 	}, true)
 	if err != nil {
 		if errors.Is(err, errNoStackFound) {
-			return "", errors.New("no --id flag was provided and stack could not be found by searching current directory or env variables")
+			return "", errors.New("no --id flag was provided and stack could not be found by searching the current directory")
 		}
 
 		return "", err

@@ -7,7 +7,7 @@ import "github.com/urfave/cli/v2"
 // It should never be retreived direcly but rather through the getStackID func.
 var flagStackID = &cli.StringFlag{
 	Name:  "id",
-	Usage: "[Optional] User-facing `ID` (slug) of the stack, if not provided environment variable SPACECTL_STACK_ID is used or spacectl tries to lookup the stack by the current directory and repository name",
+	Usage: "[Optional] User-facing `ID` (slug) of the stack, if not provided stack search is used lookup the stack ID by the current directory and repository name",
 }
 
 var flagCommitSHA = &cli.StringFlag{
