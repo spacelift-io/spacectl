@@ -54,7 +54,7 @@ func openCommandInBrowser(cliCtx *cli.Context) error {
 }
 
 func findAndOpenStackInBrowser(ctx context.Context, p *stackSearchParams) error {
-	got, err := findAndSelectStack(ctx, p)
+	got, err := findAndSelectStack(ctx, p, false)
 	if errors.Is(err, errNoStackFound) {
 		return errors.New("No stacks using the provided search parameters, maybe it's in a different subdir?")
 	}

@@ -41,7 +41,7 @@ func getStackID(cliCtx *cli.Context) (string, error) {
 		count:          50,
 		projectRoot:    &subdir,
 		repositoryName: name,
-	})
+	}, true)
 	if err != nil {
 		if errors.Is(err, errNoStackFound) {
 			return "", errors.New("no --id flag was provided and stack could not be found by searching current directory or env variables")
@@ -53,7 +53,7 @@ func getStackID(cliCtx *cli.Context) (string, error) {
 	return got, nil
 }
 
-func findAndSelectStack(ctx context.Context, p *stackSearchParams) (string, error) {
+func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt bool) (string, error) {
 	stacks, err := searchStacks(ctx, p)
 	if err != nil {
 		return "", err
@@ -71,7 +71,7 @@ func findAndSelectStack(ctx context.Context, p *stackSearchParams) (string, erro
 	}
 
 	selected := items[0]
-	if len(items) > 1 {
+	if len(items) > 1 || forcePrompt {
 		if len(items) == p.count {
 			fmt.Printf("Search results exceeded maximum capacity (%d) some stacks might be missing\n", p.count)
 		}
