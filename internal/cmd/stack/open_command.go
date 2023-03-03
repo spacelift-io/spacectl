@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/manifoldco/promptui"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
@@ -46,7 +45,7 @@ func openCommandInBrowser(cliCtx *cli.Context) error {
 		return err
 	}
 
-	return findAndSelect(cliCtx.Context, &stackSearchParams{
+	return findAndOpenStackInBrowser(cliCtx.Context, &stackSearchParams{
 		count:          count,
 		projectRoot:    subdir,
 		repositoryName: name,
@@ -54,49 +53,15 @@ func openCommandInBrowser(cliCtx *cli.Context) error {
 	})
 }
 
-func findAndSelect(ctx context.Context, p *stackSearchParams) error {
-	stacks, err := searchStacks(ctx, p)
-	if err != nil {
-		return err
-	}
-
-	items := []string{}
-	found := map[string]string{}
-	for _, stack := range stacks {
-		items = append(items, stack.Name)
-		found[stack.Name] = stack.ID
-	}
-
-	if len(found) == 0 {
-		return errors.New("Didn't find stacks")
-	}
-
-	selected := items[0]
-	if len(items) > 1 {
-		if len(items) == p.count {
-			fmt.Printf("Search results exceeded maximum capacity (%d) some stacks might be missing\n", p.count)
-		}
-
-		prompt := promptui.Select{
-			Label:             fmt.Sprintf("Found %d stacks, select one", len(items)),
-			Items:             items,
-			Size:              10,
-			StartInSearchMode: len(items) > 5,
-			Searcher: func(input string, index int) bool {
-				return strings.Contains(items[index], input)
-			},
-		}
-
-		_, result, err := prompt.Run()
-		if err != nil {
-			return err
-		}
-		selected = result
+func findAndOpenStackInBrowser(ctx context.Context, p *stackSearchParams) error {
+	got, err := findAndSelectStack(ctx, p)
+	if errors.Is(err, errNoStackFound) {
+		return errors.New("No stacks using the provided search parameters, maybe it's in a different subdir?")
 	}
 
 	return browser.OpenURL(authenticated.Client.URL(
 		"/stack/%s",
-		found[selected],
+		got,
 	))
 }
 

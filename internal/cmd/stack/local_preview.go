@@ -16,7 +16,10 @@ import (
 
 func localPreview() cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
-		stackID := cliCtx.String(flagStackID.Name)
+		stackID, err := getStackID(cliCtx)
+		if err != nil {
+			return err
+		}
 		ctx := context.Background()
 
 		if !cliCtx.Bool(flagNoFindRepositoryRoot.Name) {

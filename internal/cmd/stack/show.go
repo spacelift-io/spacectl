@@ -117,7 +117,10 @@ type showStackQuery struct {
 type showStackCommand struct{}
 
 func (c *showStackCommand) showStack(cliCtx *cli.Context) error {
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	outputFormat, err := cmd.GetOutputFormat(cliCtx)
 	if err != nil {

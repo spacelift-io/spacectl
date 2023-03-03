@@ -29,7 +29,10 @@ type showOutputsQuery struct {
 type showOutputsStackCommand struct{}
 
 func (c *showOutputsStackCommand) showOutputs(cliCtx *cli.Context) error {
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 	outputID := cliCtx.String(flagOutputID.Name)
 
 	outputFormat, err := cmd.GetOutputFormat(cliCtx)

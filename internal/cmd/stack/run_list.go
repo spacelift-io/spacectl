@@ -19,7 +19,10 @@ func runList(cliCtx *cli.Context) error {
 		return err
 	}
 
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 	maxResults := cliCtx.Int(flagMaxResults.Name)
 
 	switch outputFormat {

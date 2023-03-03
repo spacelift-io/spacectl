@@ -32,7 +32,10 @@ func disable(cliCtx *cli.Context) error {
 }
 
 func enableDisable[T any](cliCtx *cli.Context) error {
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	if nArgs := cliCtx.NArg(); nArgs != 0 {
 		return fmt.Errorf("expected zero arguments but got %d", nArgs)

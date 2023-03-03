@@ -2,10 +2,12 @@ package stack
 
 import "github.com/urfave/cli/v2"
 
+// flagStackID is flag used for passing the ID for a stack.
+//
+// It should never be retreived direcly but rather through the getStackID func.
 var flagStackID = &cli.StringFlag{
-	Name:     "id",
-	Usage:    "[Required] User-facing `ID` (slug) of the stack",
-	Required: true,
+	Name:  "id",
+	Usage: "[Optional] User-facing `ID` (slug) of the stack, if not provided environment variable SPACECTL_STACK_ID is used or spacectl tries to lookup the stack by the current directory and repository name",
 }
 
 var flagCommitSHA = &cli.StringFlag{

@@ -12,7 +12,10 @@ import (
 )
 
 func setCurrentCommit(cliCtx *cli.Context) error {
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	var mutation struct {
 		SetCurrentCommmit struct {
@@ -39,7 +42,7 @@ func setCurrentCommit(cliCtx *cli.Context) error {
 		return errors.New("no tracked commit set on the Stack")
 	}
 
-	_, err := fmt.Printf("Current commit set to %q: (SHA %s)\n", commit.Message, commit.Hash)
+	_, err = fmt.Printf("Current commit set to %q: (SHA %s)\n", commit.Message, commit.Hash)
 
 	return err
 }

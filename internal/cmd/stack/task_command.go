@@ -13,7 +13,10 @@ import (
 )
 
 func taskCommand(cliCtx *cli.Context) error {
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	var mutation struct {
 		TaskCreate struct {
