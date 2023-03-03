@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
@@ -240,7 +241,7 @@ func loginUsingWebBrowser(ctx *cli.Context, creds *session.StoredCredentials) er
 
 	fmt.Printf("\nOpening browser to %s\n\n", browserURL)
 
-	if err := internal.OpenWebBrowser(browserURL); err != nil {
+	if err := browser.OpenURL(browserURL); err != nil {
 		server.Close()
 		return err
 	}
