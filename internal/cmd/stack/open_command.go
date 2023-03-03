@@ -9,12 +9,12 @@ import (
 	"strings"
 
 	"github.com/manifoldco/promptui"
+	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v2"
 
 	"github.com/spacelift-io/spacectl/client/structs"
-	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
@@ -94,7 +94,7 @@ func findAndSelect(ctx context.Context, p *stackSearchParams) error {
 		selected = result
 	}
 
-	return internal.OpenWebBrowser(authenticated.Client.URL(
+	return browser.OpenURL(authenticated.Client.URL(
 		"/stack/%s",
 		found[selected],
 	))
