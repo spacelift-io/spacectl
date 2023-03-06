@@ -131,8 +131,11 @@ func Command() *cli.Command {
 					flagRequiredRun,
 				},
 				Action: func(cliCtx *cli.Context) error {
-					stackID := cliCtx.String(flagStackID.Name)
-					_, err := runLogs(context.Background(), stackID, cliCtx.String(flagRequiredRun.Name))
+					stackID, err := getStackID(cliCtx)
+					if err != nil {
+						return err
+					}
+					_, err = runLogs(context.Background(), stackID, cliCtx.String(flagRequiredRun.Name))
 					return err
 				},
 				Before:    authenticated.Ensure,

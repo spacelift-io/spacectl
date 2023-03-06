@@ -80,7 +80,10 @@ func setVar(cliCtx *cli.Context) error {
 	envName := cliCtx.Args().Get(0)
 	envValue := cliCtx.Args().Get(1)
 
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	var mutation struct {
 		ConfigElement struct {
@@ -121,7 +124,10 @@ func (e *listEnvCommand) listEnv(cliCtx *cli.Context) error {
 		return err
 	}
 
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	var query listEnvQuery
 	variables := map[string]interface{}{
@@ -240,10 +246,12 @@ func mountFile(cliCtx *cli.Context) error {
 	nArgs := cliCtx.NArg()
 
 	envName := cliCtx.Args().Get(0)
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	var fileContent []byte
-	var err error
 
 	switch nArgs {
 	case 1:
@@ -291,7 +299,10 @@ func mountFile(cliCtx *cli.Context) error {
 }
 
 func deleteEnvironment(cliCtx *cli.Context) error {
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	if nArgs := cliCtx.NArg(); nArgs != 1 {
 		return fmt.Errorf("expecting environment delete as only one agument, got %d instead", nArgs)

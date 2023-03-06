@@ -24,7 +24,10 @@ var flagRunReviewNote = &cli.StringFlag{
 }
 
 func runApprove(cliCtx *cli.Context) error {
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 	runID := cliCtx.String(flagRequiredRun.Name)
 	note := cliCtx.String(flagRunReviewNote.Name)
 
@@ -36,7 +39,10 @@ func runApprove(cliCtx *cli.Context) error {
 }
 
 func runReject(cliCtx *cli.Context) error {
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 	runID := cliCtx.String(flagRequiredRun.Name)
 	note := cliCtx.String(flagRunReviewNote.Name)
 

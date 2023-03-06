@@ -26,7 +26,10 @@ var flagStackLockNote = &cli.StringFlag{
 }
 
 func lock(cliCtx *cli.Context) error {
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 	note := cliCtx.String(flagStackLockNote.Name)
 
 	if nArgs := cliCtx.NArg(); nArgs != 0 {
@@ -43,7 +46,10 @@ func lock(cliCtx *cli.Context) error {
 }
 
 func unlock(cliCtx *cli.Context) error {
-	stackID := cliCtx.String(flagStackID.Name)
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
 
 	if nArgs := cliCtx.NArg(); nArgs != 0 {
 		return fmt.Errorf("expected zero arguments but got %d", nArgs)
