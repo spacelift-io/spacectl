@@ -284,9 +284,9 @@ func persistAccessCredentials(creds *session.StoredCredentials) error {
 }
 
 func serveOnOpenPort(port *int, handler func(w http.ResponseWriter, r *http.Request)) (*http.Server, int, error) {
-	bindOn := ":0"
+	bindOn := "localhost:0"
 	if port != nil {
-		bindOn = fmt.Sprintf(":%d", *port)
+		bindOn = fmt.Sprintf("localhost:%d", *port)
 	}
 
 	addr, err := net.ResolveTCPAddr("tcp", bindOn)
@@ -302,8 +302,8 @@ func serveOnOpenPort(port *int, handler func(w http.ResponseWriter, r *http.Requ
 	m := http.NewServeMux()
 	m.HandleFunc("/", handler)
 
-	binded := l.Addr().(*net.TCPAddr).Port
-	fmt.Printf("Will use port %d to receive responses\n", binded)
+	bound := l.Addr().(*net.TCPAddr).Port
+	fmt.Printf("Waiting for login responses at %v\n", l.Addr())
 
 	server := &http.Server{Handler: m, ReadHeaderTimeout: 5 * time.Second}
 	go func() {
@@ -314,5 +314,5 @@ func serveOnOpenPort(port *int, handler func(w http.ResponseWriter, r *http.Requ
 		}
 	}()
 
-	return server, binded, nil
+	return server, bound, nil
 }
