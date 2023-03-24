@@ -148,7 +148,7 @@ func searchStacks(ctx context.Context, p *stackSearchParams) ([]stack, error) {
 		},
 	}
 
-	if p.projectRoot != nil {
+	if p.projectRoot != nil && *p.projectRoot != "" {
 		root := strings.TrimSuffix(*p.projectRoot, "/")
 		conditions = append(conditions, structs.QueryPredicate{
 			Field: graphql.String("projectRoot"),
