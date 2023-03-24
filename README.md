@@ -21,6 +21,14 @@ yay -S spacectl-bin
 
 Disclaimer: The package is community-maintained, please make sure to verify the [`PKGBUILD`](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=spacectl-bin) before installing/updating.
 
+### asdf
+
+```bash
+asdf plugin add spacectl
+asdf install spacectl latest
+asdf global spacectl latest
+```
+
 ### GitHub Release
 
 Alternatively, `spacectl` is distributed through GitHub Releases as a zip file containing a self-contained statically linked executable built from the source in this repository. Binaries can be download directly from the [Releases page](https://github.com/spacelift-io/spacectl/releases).
