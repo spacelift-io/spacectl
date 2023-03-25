@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/shurcooL/graphql"
 )
 
@@ -20,10 +20,10 @@ const timePadding = 30 * time.Second
 // FromAPIToken creates a session from a ready API token.
 func FromAPIToken(_ context.Context, client *http.Client) func(string) (Session, error) {
 	return func(token string) (Session, error) {
-		var claims jwt.StandardClaims
+		var claims jwt.RegisteredClaims
 
 		_, _, err := (&jwt.Parser{}).ParseUnverified(token, &claims)
-		if unverifiable := new(jwt.UnverfiableTokenError); err != nil && !errors.As(err, &unverifiable) {
+		if !errors.Is(err, jwt.ErrTokenUnverifiable) {
 			return nil, fmt.Errorf("could not parse the API token: %w", err)
 		}
 
