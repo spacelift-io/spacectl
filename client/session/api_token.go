@@ -23,7 +23,7 @@ func FromAPIToken(_ context.Context, client *http.Client) func(string) (Session,
 		var claims jwt.RegisteredClaims
 
 		_, _, err := (&jwt.Parser{}).ParseUnverified(token, &claims)
-		if !errors.Is(err, jwt.ErrTokenUnverifiable) {
+		if err != nil && !errors.Is(err, jwt.ErrTokenUnverifiable) {
 			return nil, fmt.Errorf("could not parse the API token: %w", err)
 		}
 
