@@ -22,13 +22,25 @@ func localPreview() cli.ActionFunc {
 		}
 		ctx := context.Background()
 
+		packagePath := ""
+		if cliCtx.Bool(flagProjectRootOnly.Name) {
+			packagePath, err = getGitRepositorySubdir()
+			if err != nil {
+				return fmt.Errorf("couldn't get the packagePath: %w", err)
+			}
+		}
+
+		// TODO(lexton): this may be broken because of the side effects from the getStackID function - where it automatically moved you to the project root
+		// we need to test out this functionality to ensure that it works as expected
+		// Specifically I am concerned about where the matchers are loaded from - it required loaded from the project_root only
+		// it won't load the .gitinore and .terrraformignore files from the current directory
 		if !cliCtx.Bool(flagNoFindRepositoryRoot.Name) {
 			if err := internal.MoveToRepositoryRoot(); err != nil {
 				return fmt.Errorf("couldn't move to repository root: %w", err)
 			}
 		}
 
-		fmt.Println("Packing local workspace...")
+		fmt.Printf("Packing local workspace... path='%s'\n", packagePath)
 
 		var uploadMutation struct {
 			UploadLocalWorkspace struct {
@@ -47,7 +59,7 @@ func localPreview() cli.ActionFunc {
 
 		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", uploadMutation.UploadLocalWorkspace.ID))
 
-		matchFn, err := internal.GetIgnoreMatcherFn(ctx)
+		matchFn, err := internal.GetIgnoreMatcherFn(ctx, packagePath)
 		if err != nil {
 			return fmt.Errorf("couldn't analyze .gitignore and .terraformignore files")
 		}

@@ -51,7 +51,7 @@ func localPreview() cli.ActionFunc {
 
 		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", uploadMutation.UploadLocalWorkspace.ID))
 
-		matchFn, err := internal.GetIgnoreMatcherFn(ctx)
+		matchFn, err := internal.GetIgnoreMatcherFn(ctx, "")
 		if err != nil {
 			return fmt.Errorf("couldn't analyze .gitignore and .terraformignore files")
 		}

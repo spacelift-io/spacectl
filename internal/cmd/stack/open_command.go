@@ -100,7 +100,7 @@ func getGitCurrentBranch() (string, error) {
 	return result, nil
 }
 
-// getGitRepositorySubdir will travese the path back to .git
+// getGitRepositorySubdir will traverse the path back to .git
 // and return the path it took to get there.
 func getGitRepositorySubdir() (string, error) {
 	current, err := os.Getwd()
@@ -110,22 +110,16 @@ func getGitRepositorySubdir() (string, error) {
 
 	root := current
 	for {
-		if _, err := os.Stat(".git"); err == nil {
+		if _, err := os.Stat(filepath.Join(root, ".git")); err == nil {
 			break
 		} else if !os.IsNotExist(err) {
 			return "", fmt.Errorf("couldn't stat .git directory: %w", err)
 		}
+		root = filepath.Dir(root)
+	}
 
-		cwd, err := os.Getwd()
-		if err != nil {
-			return "", fmt.Errorf("couldn't get current working directory: %w", err)
-		}
-
-		parent := filepath.Dir(cwd)
-		if err := os.Chdir(parent); err != nil {
-			return "", fmt.Errorf("couldn't set current working directory: %w", err)
-		}
-		root = parent
+	if !strings.HasSuffix(current, "/") {
+		current = current + "/"
 	}
 
 	return strings.TrimPrefix(strings.ReplaceAll(current, root, ""), "/"), nil
