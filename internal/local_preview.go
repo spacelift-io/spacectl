@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cheggaaa/pb/v3"
 	ignore "github.com/sabhiram/go-gitignore"
@@ -45,8 +46,10 @@ func MoveToRepositoryRoot() error {
 	}
 }
 
-// GetIgnoreMatcherFn creates an ignore-matcher for archiving purposes. Respects gitignore and terraformignore.
-func GetIgnoreMatcherFn(ctx context.Context) (func(filePath string) bool, error) {
+// GetIgnoreMatcherFn creates an ignore-matcher for archiving purposes
+// This function respects gitignore and terraformignore, and
+// optionally if a projectRoot is provided it only include files from this root
+func GetIgnoreMatcherFn(ctx context.Context, projectRoot *string) (func(filePath string) bool, error) {
 	gitignore, err := ignore.CompileIgnoreFile(".gitignore")
 	if err != nil && !os.IsNotExist(err) {
 		return nil, fmt.Errorf("couldn't compile .gitignore file: %w", err)
@@ -66,6 +69,15 @@ func GetIgnoreMatcherFn(ctx context.Context) (func(filePath string) bool, error)
 		if terraformignore != nil && terraformignore.MatchesPath(filePath) {
 			return false
 		}
+
+		if projectRoot != nil {
+			// ensure the root only matches the directory and not all other files
+			root := strings.TrimSuffix(*projectRoot, "/") + "/"
+			if !strings.HasPrefix(filePath, root) {
+				return false
+			}
+		}
+
 		return true
 	}, nil
 }

@@ -32,6 +32,12 @@ var flagNoFindRepositoryRoot = &cli.BoolFlag{
 	Value: false,
 }
 
+var flagProjectRootOnly = &cli.BoolFlag{
+	Name:  "project-root-only",
+	Usage: "Indicate if spacelift should only package files inside this stacks project_root",
+	Value: false,
+}
+
 var flagRequiredCommitSHA = &cli.StringFlag{
 	Name:     "sha",
 	Usage:    "[Required] `SHA` of the commit to set as canonical for the stack",
