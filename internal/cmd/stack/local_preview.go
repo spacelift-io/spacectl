@@ -22,13 +22,25 @@ func localPreview() cli.ActionFunc {
 		}
 		ctx := context.Background()
 
+		var packagePath *string = nil
+		if cliCtx.Bool(flagProjectRootOnly.Name) {
+			root, err := getGitRepositorySubdir()
+			if err != nil {
+				return fmt.Errorf("couldn't get the packagePath: %w", err)
+			}
+			packagePath = &root
+		}
 		if !cliCtx.Bool(flagNoFindRepositoryRoot.Name) {
 			if err := internal.MoveToRepositoryRoot(); err != nil {
 				return fmt.Errorf("couldn't move to repository root: %w", err)
 			}
 		}
 
-		fmt.Println("Packing local workspace...")
+		if packagePath == nil {
+			fmt.Printf("Packing local workspace...\n")
+		} else {
+			fmt.Printf("Packing '%s' as local workspace...\n", *packagePath)
+		}
 
 		var uploadMutation struct {
 			UploadLocalWorkspace struct {
@@ -47,7 +59,7 @@ func localPreview() cli.ActionFunc {
 
 		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", uploadMutation.UploadLocalWorkspace.ID))
 
-		matchFn, err := internal.GetIgnoreMatcherFn(ctx)
+		matchFn, err := internal.GetIgnoreMatcherFn(ctx, packagePath)
 		if err != nil {
 			return fmt.Errorf("couldn't analyze .gitignore and .terraformignore files")
 		}

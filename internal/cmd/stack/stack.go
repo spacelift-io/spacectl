@@ -114,6 +114,7 @@ func Command() *cli.Command {
 				Flags: []cli.Flag{
 					flagStackID,
 					flagNoFindRepositoryRoot,
+					flagProjectRootOnly,
 					flagRunMetadata,
 					flagNoTail,
 					flagNoUpload,
