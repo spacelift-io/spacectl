@@ -51,16 +51,33 @@ func localPreview() cli.ActionFunc {
 
 		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", uploadMutation.UploadLocalWorkspace.ID))
 
-		matchFn, err := internal.GetIgnoreMatcherFn(ctx, nil)
+		const pathToArchive = "."
+
+		absPathToArchive, err := filepath.Abs(pathToArchive)
 		if err != nil {
-			return fmt.Errorf("couldn't analyze .gitignore and .terraformignore files")
+			return fmt.Errorf("could not convert to absolute path: %w", err)
 		}
+
+		projectRoot, err := internal.FindProjectRoot(absPathToArchive)
+		if err != nil {
+			return fmt.Errorf("could not find project: %w", err)
+		}
+		project := &internal.Project{
+			RootDirectory: projectRoot,
+		}
+
+		err = project.UpdateIgnoreFiles()
+		if err != nil {
+			return fmt.Errorf("could not update ignore files: %w", err)
+		}
+
+		matchFn := project.ArchiveMatcher(absPathToArchive)
 
 		tgz := *archiver.DefaultTarGz
 		tgz.ForceArchiveImplicitTopLevelFolder = true
 		tgz.MatchFn = matchFn
 
-		if err := tgz.Archive([]string{"."}, fp); err != nil {
+		if err := tgz.Archive([]string{pathToArchive}, fp); err != nil {
 			return fmt.Errorf("couldn't archive local directory: %w", err)
 		}
 

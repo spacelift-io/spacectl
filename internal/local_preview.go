@@ -6,10 +6,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/cheggaaa/pb/v3"
-	ignore "github.com/sabhiram/go-gitignore"
 )
 
 // MoveToRepositoryRoot moves the current workdir to the git repository root.
@@ -44,42 +42,6 @@ func MoveToRepositoryRoot() error {
 			return fmt.Errorf("couldn't set current working directory: %w", err)
 		}
 	}
-}
-
-// GetIgnoreMatcherFn creates an ignore-matcher for archiving purposes
-// This function respects gitignore and terraformignore, and
-// optionally if a projectRoot is provided it only include files from this root
-func GetIgnoreMatcherFn(ctx context.Context, projectRoot *string) (func(filePath string) bool, error) {
-	gitignore, err := ignore.CompileIgnoreFile(".gitignore")
-	if err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("couldn't compile .gitignore file: %w", err)
-	}
-	terraformignore, err := ignore.CompileIgnoreFile(".terraformignore")
-	if err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("couldn't compile .terraformignore file: %w", err)
-	}
-	customignore := ignore.CompileIgnoreLines(".git", ".terraform")
-	return func(filePath string) bool {
-		if customignore.MatchesPath(filePath) {
-			return false
-		}
-		if gitignore != nil && gitignore.MatchesPath(filePath) {
-			return false
-		}
-		if terraformignore != nil && terraformignore.MatchesPath(filePath) {
-			return false
-		}
-
-		if projectRoot != nil {
-			// ensure the root only matches the directory and not all other files
-			root := strings.TrimSuffix(*projectRoot, "/") + "/"
-			if !strings.HasPrefix(filePath, root) {
-				return false
-			}
-		}
-
-		return true
-	}, nil
 }
 
 // UploadArchive uploads a tarball to the target endpoint and displays a fancy progress bar.
