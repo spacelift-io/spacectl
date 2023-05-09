@@ -29,6 +29,16 @@ asdf install spacectl latest
 asdf global spacectl latest
 ```
 
+### Docker image
+
+`spacectl` is distributed as a Docker image, which can be used as follows:
+
+```bash
+docker run -it --rm ghcr.io/spacelift-io/spacectl stack deploy --id my-infra-stack
+```
+
+> Don't forget to add the [requied environment variables](#authenticating-using-environment-variables) in order to authenticate.
+
 ### GitHub Release
 
 Alternatively, `spacectl` is distributed through GitHub Releases as a zip file containing a self-contained statically linked executable built from the source in this repository. Binaries can be download directly from the [Releases page](https://github.com/spacelift-io/spacectl/releases).
