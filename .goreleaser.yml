@@ -14,6 +14,28 @@ archives:
   - format: zip
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
+dockers:
+  - use: buildx
+    goarch: amd64
+    build_flag_templates: ["--platform=linux/amd64"]
+    image_templates: ["ghcr.io/spacelift-io/spacectl:{{ .Version }}-amd64"]
+    
+  - use: buildx
+    goarch: arm64
+    build_flag_templates: ["--platform=linux/arm64"]
+    image_templates: ["ghcr.io/spacelift-io/spacectl:{{ .Version }}-arm64"]
+
+docker_manifests:
+  - name_template: ghcr.io/spacelift-io/spacectl:{{ .Version }}
+    image_templates:
+    - ghcr.io/spacelift-io/spacectl:{{ .Version }}-amd64
+    - ghcr.io/spacelift-io/spacectl:{{ .Version }}-arm64
+
+  - name_template: ghcr.io/spacelift-io/spacectl:latest
+    image_templates:
+    - ghcr.io/spacelift-io/spacectl:{{ .Version }}-amd64
+    - ghcr.io/spacelift-io/spacectl:{{ .Version }}-arm64
+
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
