@@ -17,12 +17,32 @@ archives:
 dockers:
   - use: buildx
     goarch: amd64
-    build_flag_templates: ["--platform=linux/amd64"]
+    build_flag_templates:
+     - "--platform=linux/amd64"
+     - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+     - "--label=org.opencontainers.image.vendor=Spacelift"
+     - "--label=org.opencontainers.image.description=Spacelift CLI version {{ .Version }}"
+     - "--label=org.opencontainers.image.url=https://github.com/spacelift-io/spacectl"
+     - "--label=org.opencontainers.image.documentation=https://github.com/spacelift-io/spacectl/blob/main/README.md"
+     - "--label=org.opencontainers.image.source=https://github.com/spacelift-io/spacectl"
+     - "--label=org.opencontainers.image.version={{ .Version }}"
+     - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+     - "--label=org.opencontainers.image.created={{ time \"2006-01-02T15:04:05Z07:00\" }}"
     image_templates: ["ghcr.io/spacelift-io/spacectl:{{ .Version }}-amd64"]
-    
+
   - use: buildx
     goarch: arm64
-    build_flag_templates: ["--platform=linux/arm64"]
+    build_flag_templates:
+     - "--platform=linux/arm64"
+     - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+     - "--label=org.opencontainers.image.vendor=Spacelift"
+     - "--label=org.opencontainers.image.description=Spacelift CLI version {{ .Version }}"
+     - "--label=org.opencontainers.image.url=https://github.com/spacelift-io/spacectl"
+     - "--label=org.opencontainers.image.documentation=https://github.com/spacelift-io/spacectl/blob/main/README.md"
+     - "--label=org.opencontainers.image.source=https://github.com/spacelift-io/spacectl"
+     - "--label=org.opencontainers.image.version={{ .Version }}"
+     - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+     - "--label=org.opencontainers.image.created={{ time \"2006-01-02T15:04:05Z07:00\" }}"
     image_templates: ["ghcr.io/spacelift-io/spacectl:{{ .Version }}-arm64"]
 
 docker_manifests:
