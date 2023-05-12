@@ -114,3 +114,13 @@ var flagShowLabels = &cli.BoolFlag{
 	Required: false,
 	Value:    false,
 }
+
+var flagEnvVarsTF = &cli.StringSliceFlag{
+	Name:  "tf-env-vars",
+	Usage: "[Optional] Terraform environment variables injected into the run at runtime, they will be prefixed with TF_ by default, example: --tf-env-var 'foo=bar,bar=baz'",
+}
+
+var flagEnvVars = &cli.StringSliceFlag{
+	Name:  "env-vars",
+	Usage: "[Optional] Environment variables injected into the run at runtime, example: --env-var 'foo=bar,bar=baz'",
+}

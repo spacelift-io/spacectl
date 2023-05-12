@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mholt/archiver/v3"
 	"github.com/shurcooL/graphql"
@@ -16,10 +17,16 @@ import (
 
 func localPreview() cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
+		envVars, err := parseEnvVariablesForLocalPreview(cliCtx)
+		if err != nil {
+			return err
+		}
+
 		stackID, err := getStackID(cliCtx)
 		if err != nil {
 			return err
 		}
+
 		ctx := context.Background()
 
 		var packagePath *string = nil
@@ -88,12 +95,13 @@ func localPreview() cli.ActionFunc {
 		var triggerMutation struct {
 			RunProposeLocalWorkspace struct {
 				ID string `graphql:"id"`
-			} `graphql:"runProposeLocalWorkspace(stack: $stack, workspace: $workspace)"`
+			} `graphql:"runProposeLocalWorkspace(stack: $stack, workspace: $workspace, environmentVarsOverrides: $environmentVarsOverrides)"`
 		}
 
 		triggerVariables := map[string]interface{}{
-			"stack":     graphql.ID(stackID),
-			"workspace": graphql.ID(uploadMutation.UploadLocalWorkspace.ID),
+			"stack":                    graphql.ID(stackID),
+			"workspace":                graphql.ID(uploadMutation.UploadLocalWorkspace.ID),
+			"environmentVarsOverrides": envVars,
 		}
 
 		var requestOpts []graphql.RequestOption
@@ -124,4 +132,52 @@ func localPreview() cli.ActionFunc {
 
 		return terminal.Error()
 	}
+}
+
+// EnvironmentVariable represents a key-value pair of environment variables
+type EnvironmentVariable struct {
+	Key   graphql.String `json:"key"`
+	Value graphql.String `json:"value"`
+}
+
+func parseEnvVariablesForLocalPreview(cliCtx *cli.Context) ([]EnvironmentVariable, error) {
+	envVars := make([]EnvironmentVariable, 0)
+
+	if !cliCtx.IsSet(flagEnvVars.Name) && !cliCtx.IsSet(flagEnvVarsTF.Name) {
+		return envVars, nil
+	}
+
+	parseFn := func(ev string, mutateKey func(string) string) error {
+		parts := strings.Split(ev, "=")
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid environment variable %q, must be in the form of KEY=VALUE", ev)
+		}
+
+		if mutateKey != nil {
+			parts[0] = mutateKey(parts[0])
+		}
+
+		envVars = append(envVars, EnvironmentVariable{
+			Key:   graphql.String(parts[0]),
+			Value: graphql.String(parts[1]),
+		})
+
+		return nil
+	}
+
+	for _, ev := range cliCtx.StringSlice(flagEnvVars.Name) {
+		if err := parseFn(ev, nil); err != nil {
+			return nil, err
+		}
+	}
+
+	for _, ev := range cliCtx.StringSlice(flagEnvVarsTF.Name) {
+		if err := parseFn(ev, func(s string) string {
+			return strings.Join([]string{"TF_", s}, "")
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	return envVars, nil
 }
