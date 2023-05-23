@@ -143,10 +143,6 @@ type EnvironmentVariable struct {
 func parseEnvVariablesForLocalPreview(cliCtx *cli.Context) ([]EnvironmentVariable, error) {
 	envVars := make([]EnvironmentVariable, 0)
 
-	if !cliCtx.IsSet(flagEnvVars.Name) && !cliCtx.IsSet(flagEnvVarsTF.Name) {
-		return envVars, nil
-	}
-
 	parseFn := func(ev string, mutateKey func(string) string) error {
 		parts := strings.Split(ev, "=")
 		if len(parts) != 2 {
@@ -165,13 +161,13 @@ func parseEnvVariablesForLocalPreview(cliCtx *cli.Context) ([]EnvironmentVariabl
 		return nil
 	}
 
-	for _, ev := range cliCtx.StringSlice(flagEnvVars.Name) {
+	for _, ev := range cliCtx.StringSlice(flagOverrideEnvVars.Name) {
 		if err := parseFn(ev, nil); err != nil {
 			return nil, err
 		}
 	}
 
-	for _, ev := range cliCtx.StringSlice(flagEnvVarsTF.Name) {
+	for _, ev := range cliCtx.StringSlice(flagOverrideEnvVarsTF.Name) {
 		if err := parseFn(ev, func(s string) string {
 			return strings.Join([]string{"TF_", s}, "")
 		}); err != nil {
