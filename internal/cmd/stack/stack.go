@@ -118,6 +118,8 @@ func Command() *cli.Command {
 					flagRunMetadata,
 					flagNoTail,
 					flagNoUpload,
+					flagOverrideEnvVars,
+					flagOverrideEnvVarsTF,
 				},
 				Action:    localPreview(),
 				Before:    authenticated.Ensure,
