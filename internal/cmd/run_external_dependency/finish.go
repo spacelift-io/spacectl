@@ -17,7 +17,9 @@ func markRunExternalDependencyAsFinished(cliCtx *cli.Context) error {
 	status := cliCtx.String(flagStatus.Name)
 
 	var mutation struct {
-		RunExternalDependencyMarkAsFinished int `graphql:"runExternalDependencyMarkAsFinished(dependency: $dependency, status: $status)"`
+		RunExternalDependencyMarkAsFinished struct {
+			Phantom bool `graphql:"phantom"`
+		} `graphql:"runExternalDependencyMarkAsCompleted(dependency: $dependency, status: $status)"`
 	}
 
 	if !slices.Contains([]string{"finished", "failed"}, status) {
