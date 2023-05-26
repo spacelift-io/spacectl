@@ -15,13 +15,13 @@ func Command() *cli.Command {
 		Subcommands: []*cli.Command{
 			{
 				Category: "Run external dependency management",
-				Name:     "mark-finished",
-				Usage:    "Mark Run external dependency as finished",
+				Name:     "mark-completed",
+				Usage:    "Mark Run external dependency as completed",
 				Flags: []cli.Flag{
 					flagRunExternalDependencyID,
 					flagStatus,
 				},
-				Action:    markRunExternalDependencyAsFinished,
+				Action:    markRunExternalDependencyAsCompleted,
 				Before:    authenticated.Ensure,
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},

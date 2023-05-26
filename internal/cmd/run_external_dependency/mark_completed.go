@@ -12,7 +12,7 @@ import (
 
 type RunExternalDependencyStatus string
 
-func markRunExternalDependencyAsFinished(cliCtx *cli.Context) error {
+func markRunExternalDependencyAsCompleted(cliCtx *cli.Context) error {
 	externalDependencyID := cliCtx.String(flagRunExternalDependencyID.Name)
 	status := cliCtx.String(flagStatus.Name)
 
