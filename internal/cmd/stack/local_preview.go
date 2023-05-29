@@ -115,11 +115,12 @@ func localPreview() cli.ActionFunc {
 
 		fmt.Println("You have successfully created a local preview run!")
 
-		fmt.Println("The live run can be visited at", authenticated.Client.URL(
+		linkToRun := authenticated.Client.URL(
 			"/stack/%s/run/%s",
 			stackID,
 			triggerMutation.RunProposeLocalWorkspace.ID,
-		))
+		)
+		fmt.Println("The live run can be visited at", linkToRun)
 
 		if cliCtx.Bool(flagNoTail.Name) {
 			return nil
@@ -129,6 +130,8 @@ func localPreview() cli.ActionFunc {
 		if err != nil {
 			return err
 		}
+
+		fmt.Println("View full logs at", linkToRun)
 
 		return terminal.Error()
 	}
