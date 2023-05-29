@@ -7,7 +7,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-// Command encapsulates the module command subtree.
+// Command encapsulates the run external dependency command subtree.
 func Command() *cli.Command {
 	return &cli.Command{
 		Name:  "run-external-dependency",

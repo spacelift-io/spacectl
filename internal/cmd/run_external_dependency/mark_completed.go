@@ -35,7 +35,7 @@ func markRunExternalDependencyAsCompleted(cliCtx *cli.Context) error {
 		return err
 	}
 
-	fmt.Printf("Marked external dependencies for %d runs as %s\n", mutation.RunExternalDependencyMarkAsFinished, status)
+	fmt.Printf("Marked external dependency as %s\n", status)
 
 	return nil
 }
