@@ -1,4 +1,4 @@
-package run_external_dependency
+package runexternaldependency
 
 import (
 	"fmt"

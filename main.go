@@ -34,7 +34,7 @@ func main() {
 			module.Command(),
 			profile.Command(),
 			provider.Command(),
-			run_external_dependency.Command(),
+			runexternaldependency.Command(),
 			stack.Command(),
 			whoami.Command(),
 			versioncmd.Command(version),
