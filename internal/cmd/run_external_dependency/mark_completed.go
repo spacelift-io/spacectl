@@ -10,6 +10,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
+// RunExternalDependencyStatus represents the status of a Run external dependency.
 type RunExternalDependencyStatus string
 
 func markRunExternalDependencyAsCompleted(cliCtx *cli.Context) error {
