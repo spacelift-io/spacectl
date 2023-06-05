@@ -85,7 +85,7 @@ func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt b
 			return "", err
 		}
 
-		selected = result
+		selected = found[result]
 	}
 
 	return selected, nil
