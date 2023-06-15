@@ -38,6 +38,7 @@ func loginCommand() *cli.Command {
 		ArgsUsage: "<account-alias>",
 		Action:    loginAction,
 		Flags: []cli.Flag{
+			flagBindHost,
 			flagBindPort,
 		},
 	}
@@ -222,13 +223,7 @@ func loginUsingWebBrowser(ctx *cli.Context, creds *session.StoredCredentials) er
 		done <- true
 	}
 
-	var bindOn *int
-	if ctx.IsSet(flagBindPort.Name) {
-		port := ctx.Int(flagBindPort.Name)
-		bindOn = &port
-	}
-
-	server, port, err := serveOnOpenPort(bindOn, handler)
+	server, port, err := serveOnOpenPort(&bindHost, &bindPort, handler)
 	if err != nil {
 		return err
 	}
@@ -283,11 +278,9 @@ func persistAccessCredentials(creds *session.StoredCredentials) error {
 	})
 }
 
-func serveOnOpenPort(port *int, handler func(w http.ResponseWriter, r *http.Request)) (*http.Server, int, error) {
-	bindOn := "localhost:0"
-	if port != nil {
-		bindOn = fmt.Sprintf("localhost:%d", *port)
-	}
+func serveOnOpenPort(host *string, port *int, handler func(w http.ResponseWriter, r *http.Request)) (*http.Server, int, error) {
+
+	bindOn := fmt.Sprintf("%s:%d", *host, *port)
 
 	addr, err := net.ResolveTCPAddr("tcp", bindOn)
 	if err != nil {
