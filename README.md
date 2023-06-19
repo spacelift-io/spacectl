@@ -37,7 +37,7 @@ asdf global spacectl latest
 docker run -it --rm ghcr.io/spacelift-io/spacectl stack deploy --id my-infra-stack
 ```
 
-> Don't forget to add the [requied environment variables](#authenticating-using-environment-variables) in order to authenticate.
+> Don't forget to add the [required environment variables](#authenticating-using-environment-variables) in order to authenticate.
 
 ### GitHub Release
 
