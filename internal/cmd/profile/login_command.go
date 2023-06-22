@@ -237,8 +237,7 @@ func loginUsingWebBrowser(ctx *cli.Context, creds *session.StoredCredentials) er
 	fmt.Printf("\nOpening browser to %s\n\n", browserURL)
 
 	if err := browser.OpenURL(browserURL); err != nil {
-		server.Close()
-		return err
+		fmt.Printf("Failed to open the browser: %s\nPlease open the URL manually\n\n", err.Error())
 	}
 
 	fmt.Println("Waiting for login...")
