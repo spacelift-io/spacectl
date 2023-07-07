@@ -54,7 +54,7 @@ func FromEnvironment(ctx context.Context, client *http.Client) func(func(string)
 		}
 
 		endpoint, ok := lookup(EnvSpaceliftAPIKeyEndpoint)
-		if !ok {
+		if !ok || endpoint == "" {
 			// Keep backwards compatibility with older version of spacectl.
 			endpoint, ok = lookup(EnvSpaceliftAPIEndpoint)
 			if !ok {
