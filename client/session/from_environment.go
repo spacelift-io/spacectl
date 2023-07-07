@@ -37,9 +37,9 @@ const (
 )
 
 var (
-	ErrEnvSpaceliftAPIKeyID       = fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeyID)
-	ErrEnvSpaceliftAPIKeySecret   = fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeySecret)
-	ErrEnvSpaceliftAPIKeyEndpoint = fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeyEndpoint)
+	errEnvSpaceliftAPIKeyID       = fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeyID)
+	errEnvSpaceliftAPIKeySecret   = fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeySecret)
+	errEnvSpaceliftAPIKeyEndpoint = fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeyEndpoint)
 )
 
 // FromEnvironment creates a Spacelift session from the environment.
@@ -58,7 +58,7 @@ func FromEnvironment(ctx context.Context, client *http.Client) func(func(string)
 			// Keep backwards compatibility with older version of spacectl.
 			endpoint, ok = lookup(EnvSpaceliftAPIEndpoint)
 			if !ok {
-				return nil, ErrEnvSpaceliftAPIKeyEndpoint
+				return nil, errEnvSpaceliftAPIKeyEndpoint
 			}
 			fmt.Printf("Environment variable %q is deprecated, please use %q\n", EnvSpaceliftAPIEndpoint, EnvSpaceliftAPIKeyEndpoint)
 		}
@@ -70,12 +70,12 @@ func FromEnvironment(ctx context.Context, client *http.Client) func(func(string)
 
 		keyID, ok := lookup(EnvSpaceliftAPIKeyID)
 		if !ok || keyID == "" {
-			return nil, ErrEnvSpaceliftAPIKeyID
+			return nil, errEnvSpaceliftAPIKeyID
 		}
 
 		keySecret, ok := lookup(EnvSpaceliftAPIKeySecret)
 		if !ok || keySecret == "" {
-			return nil, ErrEnvSpaceliftAPIKeySecret
+			return nil, errEnvSpaceliftAPIKeySecret
 		}
 
 		return FromAPIKey(ctx, client)(endpoint, keyID, keySecret)

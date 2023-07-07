@@ -41,7 +41,7 @@ func TestFromEnvironment(t *testing.T) {
 			l := lookupWithEnv("", "", "abc123", "SuperSecret")
 			g.It("expect an error to find api endpoint in environment", func() {
 				_, err := FromEnvironment(context.TODO(), nil)(l)
-				g.Assert(err).Equal(ErrEnvSpaceliftAPIKeyEndpoint)
+				g.Assert(err).Equal(errEnvSpaceliftAPIKeyEndpoint)
 			})
 		})
 
@@ -85,7 +85,7 @@ func TestFromEnvironment(t *testing.T) {
 				g.It("expect an error to find api key id in environment", func() {
 					l := lookupWithEnv("https://spacectl.app.spacelift.io", "", "", "SuperSecret")
 					_, err := FromEnvironment(context.TODO(), nil)(l)
-					g.Assert(err).Equal(ErrEnvSpaceliftAPIKeyID)
+					g.Assert(err).Equal(errEnvSpaceliftAPIKeyID)
 				})
 			})
 
@@ -93,7 +93,7 @@ func TestFromEnvironment(t *testing.T) {
 				g.It("expect an error to find api key secret in environment", func() {
 					l := lookupWithEnv("https://spacectl.app.spacelift.io", "", "abc123", "")
 					_, err := FromEnvironment(context.TODO(), nil)(l)
-					g.Assert(err).Equal(ErrEnvSpaceliftAPIKeySecret)
+					g.Assert(err).Equal(errEnvSpaceliftAPIKeySecret)
 				})
 			})
 		})
