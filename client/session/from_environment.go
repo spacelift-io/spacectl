@@ -36,6 +36,12 @@ const (
 	EnvSpaceliftAPIGitHubToken = "SPACELIFT_API_GITHUB_TOKEN" // #nosec G101
 )
 
+var (
+	errEnvSpaceliftAPIKeyID       = fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeyID)
+	errEnvSpaceliftAPIKeySecret   = fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeySecret)
+	errEnvSpaceliftAPIKeyEndpoint = fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeyEndpoint)
+)
+
 // FromEnvironment creates a Spacelift session from the environment.
 func FromEnvironment(ctx context.Context, client *http.Client) func(func(string) (string, bool)) (Session, error) {
 	return func(lookup func(string) (string, bool)) (Session, error) {
@@ -43,33 +49,33 @@ func FromEnvironment(ctx context.Context, client *http.Client) func(func(string)
 			lookup = os.LookupEnv
 		}
 
-		if token, ok := lookup(EnvSpaceliftAPIToken); ok {
+		if token, ok := lookup(EnvSpaceliftAPIToken); ok && token != "" {
 			return FromAPIToken(ctx, client)(token)
 		}
 
 		endpoint, ok := lookup(EnvSpaceliftAPIKeyEndpoint)
-		if !ok {
+		if !ok || endpoint == "" {
 			// Keep backwards compatibility with older version of spacectl.
 			endpoint, ok = lookup(EnvSpaceliftAPIEndpoint)
 			if !ok {
-				return nil, fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeyEndpoint)
+				return nil, errEnvSpaceliftAPIKeyEndpoint
 			}
 			fmt.Printf("Environment variable %q is deprecated, please use %q\n", EnvSpaceliftAPIEndpoint, EnvSpaceliftAPIKeyEndpoint)
 		}
 		endpoint = strings.TrimSuffix(endpoint, "/")
 
-		if gitHubToken, ok := lookup(EnvSpaceliftAPIGitHubToken); ok {
+		if gitHubToken, ok := lookup(EnvSpaceliftAPIGitHubToken); ok && gitHubToken != "" {
 			return FromGitHubToken(ctx, client)(endpoint, gitHubToken)
 		}
 
 		keyID, ok := lookup(EnvSpaceliftAPIKeyID)
-		if !ok {
-			return nil, fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeyID)
+		if !ok || keyID == "" {
+			return nil, errEnvSpaceliftAPIKeyID
 		}
 
 		keySecret, ok := lookup(EnvSpaceliftAPIKeySecret)
-		if !ok {
-			return nil, fmt.Errorf("%s missing from the environment", EnvSpaceliftAPIKeySecret)
+		if !ok || keySecret == "" {
+			return nil, errEnvSpaceliftAPIKeySecret
 		}
 
 		return FromAPIKey(ctx, client)(endpoint, keyID, keySecret)
