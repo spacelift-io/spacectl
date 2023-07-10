@@ -227,3 +227,5 @@ To release a new version of spacectl, tag the repo and then push that tag. For e
 git tag -a v0.24.2 -m"Releasing v0.24.2"
 git push origin v0.24.2
 ```
+
+After the tag is pushed, the [release](.github/workflows/release.yml) workflow will trigger and will automatically publish a new GitHub release.
