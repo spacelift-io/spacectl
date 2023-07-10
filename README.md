@@ -218,3 +218,14 @@ Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/):
 In the next step, you will be asked to choose which authentication method you are going to use. Note that if your account is using [SAML-based SSO authentication](https://docs.spacelift.io/integrations/single-sign-on), then API keys and login with a browser are your only options. After you're done entering credentials, the CLI will validate them against the server, and assuming that they're valid, will persist them in a credentials file in `.spacelift/${MY_ALIAS}`. It will also create a symlink in `${HOME}/.spacelift/current` pointing to the current profile.
 
 You can switch between account profiles by using `spacectl profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacectl profile logout ${MY_ALIAS}` command.
+
+## Releasing
+
+To release a new version of spacectl, tag the repo and then push that tag. For example:
+
+```shell
+git tag -a v0.24.2 -m"Releasing v0.24.2"
+git push origin v0.24.2
+```
+
+After the tag is pushed, the [release](.github/workflows/release.yml) workflow will trigger and will automatically publish a new GitHub release.
