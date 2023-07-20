@@ -64,7 +64,7 @@ func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt b
 		return "", errNoStackFound
 	}
 
-	selected := items[0]
+	selected := found[items[0]]
 	if len(items) > 1 || forcePrompt {
 		if len(items) == p.count {
 			fmt.Printf("Search results exceeded maximum capacity (%d) some stacks might be missing\n", p.count)
