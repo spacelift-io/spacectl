@@ -8,12 +8,13 @@ import (
 
 // RunStateTransition represents a single run state transition.
 type RunStateTransition struct {
-	HasLogs   bool     `graphql:"hasLogs"`
-	Note      *string  `graphql:"note"`
-	State     RunState `graphql:"state"`
-	Terminal  bool     `graphql:"terminal"`
-	Timestamp int      `graphql:"timestamp"`
-	Username  *string  `graphql:"username"`
+	HasLogs      bool     `graphql:"hasLogs"`
+	Note         *string  `graphql:"note"`
+	State        RunState `graphql:"state"`
+	StateVersion int      `graphql:"stateVersion"`
+	Terminal     bool     `graphql:"terminal"`
+	Timestamp    int      `graphql:"timestamp"`
+	Username     *string  `graphql:"username"`
 }
 
 // About returns "header" information about the state transition.

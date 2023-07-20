@@ -76,7 +76,7 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string) (*str
 			fmt.Println("")
 
 			if transition.HasLogs {
-				if err := runStateLogs(ctx, stack, run, transition.State, sink); err != nil {
+				if err := runStateLogs(ctx, stack, run, transition.State, transition.StateVersion, sink); err != nil {
 					return nil, err
 				}
 			}
@@ -94,7 +94,7 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string) (*str
 	}
 }
 
-func runStateLogs(ctx context.Context, stack, run string, state structs.RunState, sink chan<- string) error {
+func runStateLogs(ctx context.Context, stack, run string, state structs.RunState, version int, sink chan<- string) error {
 	var query struct {
 		Stack *struct {
 			Run *struct {
@@ -106,18 +106,18 @@ func runStateLogs(ctx context.Context, stack, run string, state structs.RunState
 						Body string `graphql:"message"`
 					} `graphql:"messages"`
 					NextToken *graphql.String `graphql:"nextToken"`
-				} `graphql:"logs(state: $state, token: $token)"`
+				} `graphql:"logs(state: $state, token: $token, stateVersion: $stateVersion)"`
 			} `graphql:"run(id: $run)"`
 		} `graphql:"stack(id: $stack)"`
 	}
 
 	var token *graphql.String
-
 	variables := map[string]interface{}{
-		"stack": graphql.ID(stack),
-		"run":   graphql.ID(run),
-		"state": state,
-		"token": token,
+		"stack":        graphql.ID(stack),
+		"run":          graphql.ID(run),
+		"state":        state,
+		"token":        token,
+		"stateVersion": graphql.Int(version),
 	}
 
 	var backOff time.Duration
