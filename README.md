@@ -15,6 +15,7 @@ brew install spacelift-io/spacelift/spacectl
 ### Arch linux
 
 Install [`spacectl-bin`](https://aur.archlinux.org/packages/spacectl-bin) from the Arch User Repository ([AUR](https://aur.archlinux.org/)):
+
 ```bash
 yay -S spacectl-bin
 ```
@@ -229,3 +230,5 @@ git push origin v0.24.2
 ```
 
 After the tag is pushed, the [release](.github/workflows/release.yml) workflow will trigger and will automatically publish a new GitHub release.
+
+Once the [release](.github/workflows/release.yml) workflow is done, go to the [winget-pkgs](https://github.com/microsoft/winget-pkgs) repository and submit a pull request for the release version.
