@@ -88,3 +88,17 @@ brews:
     homepage: https://github.com/spacelift-io/spacectl
     description: "Spacelift client and CLI"
     license: "MIT"
+
+winget:
+  - name: "{{ .ProjectName }}"
+    publisher: spacelift-io
+    license: "MIT"
+    homepage: https://github.com/spacelift-io/spacectl
+    short_description: "Spacelift client and CLI"
+    repository:
+      owner: spacelift-io
+      name: winget-pkgs
+      branch: "spacectl-{{.Version}}"
+      token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
+      pull_request:
+        enabled: false
