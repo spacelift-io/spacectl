@@ -22,6 +22,20 @@ yay -S spacectl-bin
 
 Disclaimer: The package is community-maintained, please make sure to verify the [`PKGBUILD`](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=spacectl-bin) before installing/updating.
 
+### Windows
+
+You can install `spacectl` using winget:
+
+```shell
+winget install spacectl
+```
+
+or
+
+```shell
+winget install --id spacelift-io.spacectl
+```
+
 ### asdf
 
 ```bash
