@@ -35,6 +35,7 @@ func Command() *cli.Command {
 					flagNoFindRepositoryRoot,
 					flagNoUpload,
 					flagRunMetadata,
+					flagDisregardGitignore,
 				},
 				Action:    localPreview(),
 				Before:    authenticated.Ensure,

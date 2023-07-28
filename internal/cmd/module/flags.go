@@ -35,3 +35,8 @@ var flagVersion = &cli.StringFlag{
 	Usage: "Semver `version` for the module version. If not provided, the version " +
 		"from the configuration file will be used",
 }
+
+var flagDisregardGitignore = &cli.BoolFlag{
+	Name:  "disregard-gitignore",
+	Usage: "[Optional] Disregard the .gitignore file when reading files in a directory",
+}

@@ -49,25 +49,27 @@ func MoveToRepositoryRoot() error {
 // GetIgnoreMatcherFn creates an ignore-matcher for archiving purposes
 // This function respects gitignore and terraformignore, and
 // optionally if a projectRoot is provided it only include files from this root
-func GetIgnoreMatcherFn(ctx context.Context, projectRoot *string) (func(filePath string) bool, error) {
-	gitignore, err := ignore.CompileIgnoreFile(".gitignore")
-	if err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("couldn't compile .gitignore file: %w", err)
+func GetIgnoreMatcherFn(ctx context.Context, projectRoot *string, ignoreFiles []string) (func(filePath string) bool, error) {
+	ignoreList := make([]*ignore.GitIgnore, 0)
+	for _, f := range ignoreFiles {
+		ignoreFile, err := ignore.CompileIgnoreFile(f)
+		if err != nil && !os.IsNotExist(err) {
+			return nil, fmt.Errorf("couldn't compile %s file: %w", f, err)
+		}
+
+		ignoreList = append(ignoreList, ignoreFile)
 	}
-	terraformignore, err := ignore.CompileIgnoreFile(".terraformignore")
-	if err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("couldn't compile .terraformignore file: %w", err)
-	}
+
 	customignore := ignore.CompileIgnoreLines(".git", ".terraform")
 	return func(filePath string) bool {
 		if customignore.MatchesPath(filePath) {
 			return false
 		}
-		if gitignore != nil && gitignore.MatchesPath(filePath) {
-			return false
-		}
-		if terraformignore != nil && terraformignore.MatchesPath(filePath) {
-			return false
+
+		for _, v := range ignoreList {
+			if v != nil && v.MatchesPath(filePath) {
+				return false
+			}
 		}
 
 		if projectRoot != nil {
