@@ -70,10 +70,14 @@ func loginAction(ctx *cli.Context) error {
 		return errors.New("Spacelift endpoint cannot be empty")
 	}
 
-	_, err = url.ParseRequestURI(endpoint)
+	url, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return fmt.Errorf("invalid Spacelift endpoint: %w", err)
 	}
+	if url.Scheme == "" || url.Host == "" {
+		return fmt.Errorf("scheme and host must be valid: parsed scheme %q and host %q", url.Scheme, url.Host)
+	}
+
 	storedCredentials.Endpoint = endpoint
 
 Loop:
