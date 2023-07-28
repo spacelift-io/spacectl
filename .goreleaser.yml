@@ -81,7 +81,7 @@ changelog:
 
 brews:
   - name: "{{ .ProjectName }}"
-    tap:
+    repository:
       owner: "spacelift-io"
       name: "homebrew-spacelift"
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
