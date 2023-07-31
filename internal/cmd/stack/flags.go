@@ -124,3 +124,8 @@ var flagOverrideEnvVars = &cli.StringSliceFlag{
 	Name:  "env-var-override",
 	Usage: "[Optional] Environment variables injected into the run at runtime, example: --env-var-override 'foo=bar,bar=baz'",
 }
+
+var flagDisregardGitignore = &cli.BoolFlag{
+	Name:  "disregard-gitignore",
+	Usage: "[Optional] Disregard the .gitignore file when reading files in a directory",
+}

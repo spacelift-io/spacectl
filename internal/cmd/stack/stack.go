@@ -120,6 +120,7 @@ func Command() *cli.Command {
 					flagNoUpload,
 					flagOverrideEnvVars,
 					flagOverrideEnvVarsTF,
+					flagDisregardGitignore,
 				},
 				Action:    localPreview(),
 				Before:    authenticated.Ensure,
