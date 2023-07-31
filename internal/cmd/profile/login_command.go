@@ -10,11 +10,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
+	"github.com/manifoldco/promptui"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
@@ -38,8 +38,10 @@ func loginCommand() *cli.Command {
 		ArgsUsage: "<account-alias>",
 		Action:    loginAction,
 		Flags: []cli.Flag{
+			flagMethod,
 			flagBindHost,
 			flagBindPort,
+			flagEndpoint,
 		},
 	}
 }
@@ -58,67 +60,31 @@ func loginAction(ctx *cli.Context) error {
 
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Print("Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/): ")
-
-	endpoint, err := reader.ReadString('\n')
+	endpoint, err := readEndpoint(ctx, reader)
 	if err != nil {
-		return fmt.Errorf("could not read Spacelift endpoint: %w", err)
+		return err
 	}
-	endpoint = strings.TrimSpace(endpoint)
-
-	if endpoint == "" {
-		return errors.New("Spacelift endpoint cannot be empty")
-	}
-
-	url, err := url.ParseRequestURI(endpoint)
-	if err != nil {
-		return fmt.Errorf("invalid Spacelift endpoint: %w", err)
-	}
-	if url.Scheme == "" || url.Host == "" {
-		return fmt.Errorf("scheme and host must be valid: parsed scheme %q and host %q", url.Scheme, url.Host)
-	}
-
 	storedCredentials.Endpoint = endpoint
 
-Loop:
-	for {
-		fmt.Printf(
-			"Select authentication flow: \n  %d) for API key,\n  %d) for GitHub access token,\n  %d) for login with a web browser\nOption: ",
-			session.CredentialsTypeAPIKey,
-			session.CredentialsTypeGitHubToken,
-			session.CredentialsTypeAPIToken,
-		)
+	credentialsType, err := getCredentialsType(ctx)
+	if err != nil {
+		return err
+	}
+	storedCredentials.Type = credentialsType
 
-		credentialsType, err := reader.ReadString('\n')
-		if err != nil {
-			return fmt.Errorf("could not read Spacelift credentials type: %w", err)
+	switch storedCredentials.Type {
+	case session.CredentialsTypeAPIKey:
+		if err := loginUsingAPIKey(reader, &storedCredentials); err != nil {
+			return err
 		}
-
-		typeNum, err := strconv.Atoi(strings.TrimSpace(credentialsType))
-		if err != nil {
-			fmt.Printf("Invalid selection (%s), please try again", credentialsType)
-			continue
+	case session.CredentialsTypeGitHubToken:
+		if err := loginUsingGitHubAccessToken(&storedCredentials); err != nil {
+			return err
 		}
-
-		storedCredentials.Type = session.CredentialsType(typeNum)
-
-		switch storedCredentials.Type {
-		case session.CredentialsTypeAPIKey:
-			if err := loginUsingAPIKey(reader, &storedCredentials); err != nil {
-				return err
-			}
-			break Loop
-		case session.CredentialsTypeGitHubToken:
-			if err := loginUsingGitHubAccessToken(&storedCredentials); err != nil {
-				return err
-			}
-			break Loop
-		case session.CredentialsTypeAPIToken:
-			return loginUsingWebBrowser(ctx, &storedCredentials)
-		default:
-			fmt.Printf("Invalid selection (%s), please try again", credentialsType)
-			continue
-		}
+	case session.CredentialsTypeAPIToken:
+		return loginUsingWebBrowser(ctx, &storedCredentials)
+	default:
+		return fmt.Errorf("invalid selection (%s), please try again", storedCredentials.Type)
 	}
 
 	// Check if the credentials are valid before we try persisting them.
@@ -127,6 +93,55 @@ Loop:
 	}
 
 	return persistAccessCredentials(&storedCredentials)
+}
+
+func getCredentialsType(ctx *cli.Context) (session.CredentialsType, error) {
+	if ctx.IsSet(flagMethod.Name) {
+		got := methodToCredentialsType[ctx.String(flagMethod.Name)]
+		return session.CredentialsType(got), nil
+	}
+
+	prompt := promptui.Select{
+		Label: "Select authentication flow:",
+		Items: []string{"API key", "GitHub access token", "Login with a web browser"},
+		Size:  3,
+	}
+	result, _, err := prompt.Run()
+	if err != nil {
+		return 0, err
+	}
+
+	return session.CredentialsType(result + 1), nil
+}
+
+func readEndpoint(ctx *cli.Context, reader *bufio.Reader) (string, error) {
+	var endpoint string
+	if ctx.IsSet(flagEndpoint.Name) {
+		endpoint = ctx.String(flagEndpoint.Name)
+	} else {
+		fmt.Print("Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/): ")
+
+		var err error
+		endpoint, err = reader.ReadString('\n')
+		if err != nil {
+			return "", fmt.Errorf("could not read Spacelift endpoint: %w", err)
+		}
+
+		endpoint = strings.TrimSpace(endpoint)
+		if endpoint == "" {
+			return "", errors.New("Spacelift endpoint cannot be empty")
+		}
+	}
+
+	url, err := url.ParseRequestURI(endpoint)
+	if err != nil {
+		return "", fmt.Errorf("invalid Spacelift endpoint: %w", err)
+	}
+	if url.Scheme == "" || url.Host == "" {
+		return "", fmt.Errorf("scheme and host must be valid: parsed scheme %q and host %q", url.Scheme, url.Host)
+	}
+
+	return endpoint, nil
 }
 
 func loginUsingAPIKey(reader *bufio.Reader, creds *session.StoredCredentials) error {
