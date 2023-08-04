@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v2"
 
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -16,6 +18,51 @@ import (
 // It can be used to interact with the run during the log reading,
 // for example to confirm a run.
 type actionOnRunState func(state structs.RunState, stackID, runID string) error
+
+func runLogs(cliCtx *cli.Context) error {
+	stackID, err := getStackID(cliCtx)
+	if err != nil {
+		return err
+	}
+
+	if (!cliCtx.IsSet(flagRun.Name) && !cliCtx.IsSet(flagRunLatest.Name)) ||
+		(cliCtx.IsSet(flagRun.Name) && cliCtx.IsSet(flagRunLatest.Name)) {
+		return errors.New("you must specify either --run or --run-latest")
+	}
+
+	runID := cliCtx.String(flagRun.Name)
+	if cliCtx.IsSet(flagRunLatest.Name) {
+		type runsQuery struct {
+			ID string `graphql:"id"`
+		}
+
+		var query struct {
+			Stack *struct {
+				Runs []runsQuery `graphql:"runs(before: $before)"`
+			} `graphql:"stack(id: $stackId)"`
+		}
+
+		var before *string
+		if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
+			return errors.Wrap(err, "failed to query run list")
+		}
+
+		if query.Stack == nil {
+			return fmt.Errorf("failed to lookup logs with flag --run-latest, stack %q not found", stackID)
+		}
+
+		if len(query.Stack.Runs) == 0 {
+			return errors.New("failed to lookup logs with flag --run-latest, no runs found")
+		}
+
+		runID = query.Stack.Runs[0].ID
+
+		fmt.Println("Using latest run", runID)
+	}
+
+	_, err = runLogsWithAction(context.Background(), stackID, runID, nil)
+	return err
+}
 
 func runLogsWithAction(ctx context.Context, stack, run string, acFn actionOnRunState) (terminal *structs.RunStateTransition, err error) {
 	lines := make(chan string)

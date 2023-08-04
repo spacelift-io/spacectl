@@ -52,7 +52,12 @@ var flagRequiredRun = &cli.StringFlag{
 
 var flagRun = &cli.StringFlag{
 	Name:  "run",
-	Usage: "`ID` of the run",
+	Usage: "[Optional] `ID` of the run",
+}
+
+var flagRunLatest = &cli.BoolFlag{
+	Name:  "run-latest",
+	Usage: "[Optional] Indicates that the latest run should be used",
 }
 
 var flagNoInit = &cli.BoolFlag{
