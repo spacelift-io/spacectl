@@ -12,6 +12,13 @@ jobs:
       packages: write
 
     steps:
+      - name: Generate winget token
+        id: winget_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.WINGET_APP_ID }}
+          private_key: ${{ secrets.WINGET_APP_PRIVATE_KEY }}
+
       - name: Checkout
         uses: actions/checkout@v3
         with: { fetch-depth: 0 }
@@ -56,3 +63,4 @@ jobs:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          WINGET_GITHUB_TOKEN: ${{ steps.winget_token.outputs.token }}
