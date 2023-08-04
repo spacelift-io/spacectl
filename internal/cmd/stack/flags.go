@@ -72,6 +72,13 @@ var flagTail = &cli.BoolFlag{
 	Value: false,
 }
 
+var flagAutoConfirm = &cli.BoolFlag{
+	Name:     "auto-confirm",
+	Usage:    "Indicate whether to automatically confirm the run. It also forces the run log tailing.",
+	Value:    false,
+	Required: false,
+}
+
 var flagNoTail = &cli.BoolFlag{
 	Name:  "no-tail",
 	Usage: "Indicate whether not to tail the run",

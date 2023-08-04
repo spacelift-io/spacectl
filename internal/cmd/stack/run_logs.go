@@ -11,11 +11,13 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func runLogs(ctx context.Context, stack, run string) (terminal *structs.RunStateTransition, err error) {
+type actionOnRunState func(state structs.RunState, stackID, runID string) error
+
+func runLogsWithAction(ctx context.Context, stack, run string, acFn actionOnRunState) (terminal *structs.RunStateTransition, err error) {
 	lines := make(chan string)
 
 	go func() {
-		terminal, err = runStates(ctx, stack, run, lines)
+		terminal, err = runStates(ctx, stack, run, lines, acFn)
 		close(lines)
 	}()
 
@@ -26,7 +28,22 @@ func runLogs(ctx context.Context, stack, run string) (terminal *structs.RunState
 	return
 }
 
-func runStates(ctx context.Context, stack, run string, sink chan<- string) (*structs.RunStateTransition, error) {
+func runLogs(ctx context.Context, stack, run string) (terminal *structs.RunStateTransition, err error) {
+	lines := make(chan string)
+
+	go func() {
+		terminal, err = runStates(ctx, stack, run, lines, nil)
+		close(lines)
+	}()
+
+	for line := range lines {
+		fmt.Print(line)
+	}
+
+	return
+}
+
+func runStates(ctx context.Context, stack, run string, sink chan<- string, acFn actionOnRunState) (*structs.RunStateTransition, error) {
 	var query struct {
 		Stack *struct {
 			Run *struct {
@@ -78,6 +95,12 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string) (*str
 			if transition.HasLogs {
 				if err := runStateLogs(ctx, stack, run, transition.State, transition.StateVersion, sink); err != nil {
 					return nil, err
+				}
+			}
+
+			if acFn != nil {
+				if err := acFn(transition.State, stack, run); err != nil {
+					return nil, fmt.Errorf("failed to execute action on run state: %w", err)
 				}
 			}
 

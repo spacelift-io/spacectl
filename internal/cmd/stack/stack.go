@@ -77,6 +77,7 @@ func Command() *cli.Command {
 					flagCommitSHA,
 					flagRunMetadata,
 					flagTail,
+					flagAutoConfirm,
 				},
 				Action:    runTrigger("TRACKED", "deployment"),
 				Before:    authenticated.Ensure,

@@ -54,11 +54,39 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 			mutation.RunTrigger.ID,
 		))
 
-		if !cliCtx.Bool(flagTail.Name) {
+		if !cliCtx.Bool(flagTail.Name) && !cliCtx.Bool(flagAutoConfirm.Name) {
 			return nil
 		}
 
-		terminal, err := runLogs(ctx, stackID, mutation.RunTrigger.ID)
+		actionFn := func(state structs.RunState, stackID, runID string) error {
+			if state != "UNCONFIRMED" {
+				return nil
+			}
+
+			if !cliCtx.Bool(flagAutoConfirm.Name) {
+				return nil
+			}
+
+			var mutation struct {
+				RunConfirm struct {
+					ID string `graphql:"id"`
+				} `graphql:"runConfirm(stack: $stack, run: $run)"`
+			}
+
+			variables := map[string]interface{}{
+				"stack": graphql.ID(stackID),
+				"run":   graphql.ID(runID),
+			}
+
+			if err := authenticated.Client.Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
+				return err
+			}
+
+			fmt.Println("Deployment was automatically confirmed because of --auto-confirm flag")
+			return nil
+		}
+
+		terminal, err := runLogsWithAction(ctx, stackID, mutation.RunTrigger.ID, actionFn)
 		if err != nil {
 			return err
 		}
