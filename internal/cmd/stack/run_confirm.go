@@ -52,7 +52,7 @@ func runConfirm() cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := runLogs(ctx, stackID, mutation.RunConfirm.ID)
+		terminal, err := runLogsWithAction(ctx, stackID, mutation.RunConfirm.ID, nil)
 		if err != nil {
 			return err
 		}

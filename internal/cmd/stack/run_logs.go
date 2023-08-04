@@ -11,6 +11,10 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
+// actionOnRunState is a function that can be executed on a run state.
+//
+// It can be used to interact with the run during the log reading,
+// for example to confirm a run.
 type actionOnRunState func(state structs.RunState, stackID, runID string) error
 
 func runLogsWithAction(ctx context.Context, stack, run string, acFn actionOnRunState) (terminal *structs.RunStateTransition, err error) {
@@ -18,21 +22,6 @@ func runLogsWithAction(ctx context.Context, stack, run string, acFn actionOnRunS
 
 	go func() {
 		terminal, err = runStates(ctx, stack, run, lines, acFn)
-		close(lines)
-	}()
-
-	for line := range lines {
-		fmt.Print(line)
-	}
-
-	return
-}
-
-func runLogs(ctx context.Context, stack, run string) (terminal *structs.RunStateTransition, err error) {
-	lines := make(chan string)
-
-	go func() {
-		terminal, err = runStates(ctx, stack, run, lines, nil)
 		close(lines)
 	}()
 

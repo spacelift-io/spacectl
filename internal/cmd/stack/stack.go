@@ -140,7 +140,7 @@ func Command() *cli.Command {
 					if err != nil {
 						return err
 					}
-					_, err = runLogs(context.Background(), stackID, cliCtx.String(flagRequiredRun.Name))
+					_, err = runLogsWithAction(context.Background(), stackID, cliCtx.String(flagRequiredRun.Name), nil)
 					return err
 				},
 				Before:    authenticated.Ensure,
