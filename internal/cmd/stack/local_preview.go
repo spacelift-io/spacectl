@@ -131,7 +131,7 @@ func localPreview() cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := runLogs(ctx, stackID, triggerMutation.RunProposeLocalWorkspace.ID)
+		terminal, err := runLogsWithAction(ctx, stackID, triggerMutation.RunProposeLocalWorkspace.ID, nil)
 		if err != nil {
 			return err
 		}

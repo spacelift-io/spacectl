@@ -46,7 +46,7 @@ func runDiscard() cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := runLogs(ctx, stackID, mutation.RunDiscard.ID)
+		terminal, err := runLogsWithAction(ctx, stackID, mutation.RunDiscard.ID, nil)
 		if err != nil {
 			return err
 		}

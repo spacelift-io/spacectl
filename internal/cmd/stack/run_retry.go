@@ -42,7 +42,7 @@ func runRetry(cliCtx *cli.Context) error {
 		return nil
 	}
 
-	terminal, err := runLogs(cliCtx.Context, stackID, mutation.RunRetry.ID)
+	terminal, err := runLogsWithAction(cliCtx.Context, stackID, mutation.RunRetry.ID, nil)
 	if err != nil {
 		return err
 	}
