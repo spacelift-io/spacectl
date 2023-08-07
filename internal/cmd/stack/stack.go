@@ -1,8 +1,6 @@
 package stack
 
 import (
-	"context"
-
 	"github.com/urfave/cli/v2"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
@@ -133,16 +131,10 @@ func Command() *cli.Command {
 				Usage:    "Show logs for a particular run",
 				Flags: []cli.Flag{
 					flagStackID,
-					flagRequiredRun,
+					flagRun,
+					flagRunLatest,
 				},
-				Action: func(cliCtx *cli.Context) error {
-					stackID, err := getStackID(cliCtx)
-					if err != nil {
-						return err
-					}
-					_, err = runLogsWithAction(context.Background(), stackID, cliCtx.String(flagRequiredRun.Name), nil)
-					return err
-				},
+				Action:    runLogs,
 				Before:    authenticated.Ensure,
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
