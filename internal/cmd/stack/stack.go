@@ -260,6 +260,7 @@ func Command() *cli.Command {
 				Name:     "open",
 				Usage:    "Open a stack in your browser",
 				Flags: []cli.Flag{
+					flagStackID,
 					flagIgnoreSubdir,
 					flagCurrentBranch,
 					flagSearchCount,

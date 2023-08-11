@@ -18,6 +18,13 @@ import (
 )
 
 func openCommandInBrowser(cliCtx *cli.Context) error {
+	if stackID := cliCtx.String(flagStackID.Name); stackID != "" {
+		return browser.OpenURL(authenticated.Client.URL(
+			"/stack/%s",
+			stackID,
+		))
+	}
+
 	ignoreSubdir := cliCtx.Bool(flagIgnoreSubdir.Name)
 	getCurrentBranch := cliCtx.Bool(flagCurrentBranch.Name)
 	count := cliCtx.Int(flagSearchCount.Name)
