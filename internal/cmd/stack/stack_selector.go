@@ -38,7 +38,7 @@ func getStackID(cliCtx *cli.Context) (string, error) {
 	}, true)
 	if err != nil {
 		if errors.Is(err, errNoStackFound) {
-			return "", errors.New("no --id flag was provided and stack could not be found by searching the current directory")
+			return "", fmt.Errorf("%w: no --id flag was provided and stack could not be found by searching the current directory", err)
 		}
 
 		return "", err
