@@ -328,6 +328,22 @@ func Command() *cli.Command {
 				Before:    authenticated.Ensure,
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
+			{
+				Name:  "resources",
+				Usage: "Manage and view resources for stacks",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "list",
+						Usage: "Sets an environment variable.",
+						Flags: []cli.Flag{
+							flagStackID,
+						},
+						Action:    resourcesList,
+						Before:    authenticated.Ensure,
+						ArgsUsage: cmd.EmptyArgsUsage,
+					},
+				},
+			},
 		},
 	}
 }
