@@ -125,7 +125,12 @@ func getGitRepositorySubdir() (string, error) {
 		root = filepath.Dir(root)
 	}
 
-	return strings.TrimPrefix(strings.ReplaceAll(current, root, ""), "/"), nil
+	pathWithoutRoot, err := filepath.Rel(root, current)
+	if err != nil {
+		return "", fmt.Errorf("couldn't get relative path: %w", err)
+	}
+
+	return filepath.ToSlash(pathWithoutRoot), nil
 }
 
 type stackSearchParams struct {
