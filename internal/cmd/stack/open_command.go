@@ -130,6 +130,10 @@ func getGitRepositorySubdir() (string, error) {
 		return "", fmt.Errorf("couldn't get relative path: %w", err)
 	}
 
+	if pathWithoutRoot == "." {
+		return "", nil
+	}
+
 	return filepath.ToSlash(pathWithoutRoot), nil
 }
 
