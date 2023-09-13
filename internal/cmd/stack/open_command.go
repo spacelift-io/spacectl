@@ -122,6 +122,13 @@ func getGitRepositorySubdir() (string, error) {
 		} else if !os.IsNotExist(err) {
 			return "", fmt.Errorf("couldn't stat .git directory: %w", err)
 		}
+
+		if newRoot := filepath.Dir(root); newRoot != root {
+			root = newRoot
+		} else {
+			return "", fmt.Errorf("couldn't find .git directory in %s or any of its parents", current)
+		}
+
 		root = filepath.Dir(root)
 	}
 
