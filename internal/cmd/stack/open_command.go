@@ -122,10 +122,26 @@ func getGitRepositorySubdir() (string, error) {
 		} else if !os.IsNotExist(err) {
 			return "", fmt.Errorf("couldn't stat .git directory: %w", err)
 		}
+
+		if newRoot := filepath.Dir(root); newRoot != root {
+			root = newRoot
+		} else {
+			return "", fmt.Errorf("couldn't find .git directory in %s or any of its parents", current)
+		}
+
 		root = filepath.Dir(root)
 	}
 
-	return strings.TrimPrefix(strings.ReplaceAll(current, root, ""), "/"), nil
+	pathWithoutRoot, err := filepath.Rel(root, current)
+	if err != nil {
+		return "", fmt.Errorf("couldn't get relative path: %w", err)
+	}
+
+	if pathWithoutRoot == "." {
+		return "", nil
+	}
+
+	return filepath.ToSlash(pathWithoutRoot), nil
 }
 
 type stackSearchParams struct {
