@@ -128,8 +128,6 @@ func getGitRepositorySubdir() (string, error) {
 		} else {
 			return "", fmt.Errorf("couldn't find .git directory in %s or any of its parents", current)
 		}
-
-		root = filepath.Dir(root)
 	}
 
 	pathWithoutRoot, err := filepath.Rel(root, current)
