@@ -3,11 +3,13 @@ package module
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,7 +17,6 @@ import (
 	"github.com/mholt/archiver/v3"
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -131,7 +132,8 @@ func localPreview() cli.ActionFunc {
 					})
 				}
 				if err := g.Wait(); err != nil {
-					log.Fatal("couldn't get runs: ", err)
+					slog.Error("couldn't get runs", "err", err)
+					os.Exit(1)
 				}
 				model.setRuns(newRuns)
 			}
