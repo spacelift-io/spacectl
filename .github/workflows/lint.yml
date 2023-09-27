@@ -8,7 +8,7 @@ jobs:
   lint:
     name: Lint the code
     runs-on: ubuntu-latest
-    container: golang:1.19
+    container: golang:1.21
 
     steps:
       - name: Check out repository code
