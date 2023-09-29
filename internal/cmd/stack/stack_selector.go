@@ -73,10 +73,7 @@ func stackExists(ctx context.Context, stackId string) (bool, error) {
 		return false, fmt.Errorf("failed to query GraphQL API when checking if a stack exists: %w", err)
 	}
 
-	if query.Stack.ID == "" {
-		return false, nil
-	}
-	return true, nil
+	return query.Stack.ID != "", nil
 }
 
 func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt bool) (string, error) {
