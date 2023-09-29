@@ -75,7 +75,7 @@ func stackExists(ctx context.Context, stackId string) error {
 
 	err := authenticated.Client.Query(ctx, &query, variables)
 	if err != nil {
-		return fmt.Errorf("failed to query GraphQL API: %w", err)
+		return fmt.Errorf("failed to query GraphQL API when checking if a stack exists: %w", err)
 	}
 
 	if query.Stack.ID == "" {
