@@ -8,11 +8,14 @@ jobs:
   lint:
     name: Lint the code
     runs-on: ubuntu-latest
-    container: golang:1.19
+    container: golang:1.21
 
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
+
+      - name: Mark source directory as safe.
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
 
       - name: Check formatting using gofmt
         run: gofmt -s -l -d .
