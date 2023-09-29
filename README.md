@@ -2,9 +2,15 @@
 
 `spacectl` is a utility wrapping Spacelift's [GraphQL API](https://docs.spacelift.io/integrations/api) for easy programmatic access in command-line contexts - either in manual interactive mode (in your local shell), or in a predefined CI pipeline (GitHub actions, CircleCI, Jenkins etc).
 
+It's main purpose is to help you explore and execute actions inside Spacelift. It provides limited functionality for creating or editting resources. To do that programatically see the [Spacelift Terraform Provider](https://github.com/spacelift-io/terraform-provider-spacelift).
+
 ## Installation
 
-### Homebrew
+### Officially supported packages
+
+Officially supported packages are maintained by [Spacelift](https://spacelift.io/) and are the best way to install `spacectl`
+
+#### Homebrew
 
 You can install `spacectl` using Homebrew on MacOS or Linux:
 
@@ -12,27 +18,7 @@ You can install `spacectl` using Homebrew on MacOS or Linux:
 brew install spacelift-io/spacelift/spacectl
 ```
 
-### Arch linux
-
-Install [`spacectl-bin`](https://aur.archlinux.org/packages/spacectl-bin) from the Arch User Repository ([AUR](https://aur.archlinux.org/)):
-
-```bash
-yay -S spacectl-bin
-```
-
-Disclaimer: The package is community-maintained, please make sure to verify the [`PKGBUILD`](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=spacectl-bin) before installing/updating.
-
-### Alpine linux
-
-Install [`spacectl`](https://pkgs.alpinelinux.org/packages?name=spacectl&branch=edge&repo=&arch=&maintainer=) from the Alpine Repository ([alpine packages](https://pkgs.alpinelinux.org/packages)):
-
-```bash
-apk add spacectl --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing
-```
-
-Disclaimer: The package is community-maintained, please make sure to verify the [`APKBUILD`](https://git.alpinelinux.org/aports/tree/testing/spacectl/APKBUILD) before installing/updating.
-
-### Windows
+#### Windows
 
 You can install `spacectl` using winget:
 
@@ -46,15 +32,7 @@ or
 winget install --id spacelift-io.spacectl
 ```
 
-### asdf
-
-```bash
-asdf plugin add spacectl
-asdf install spacectl latest
-asdf global spacectl latest
-```
-
-### Docker image
+#### Docker image
 
 `spacectl` is distributed as a Docker image, which can be used as follows:
 
@@ -64,11 +42,19 @@ docker run -it --rm ghcr.io/spacelift-io/spacectl stack deploy --id my-infra-sta
 
 > Don't forget to add the [required environment variables](#authenticating-using-environment-variables) in order to authenticate.
 
-### GitHub Release
+#### asdf
+
+```bash
+asdf plugin add spacectl
+asdf install spacectl latest
+asdf global spacectl latest
+```
+
+#### GitHub Release
 
 Alternatively, `spacectl` is distributed through GitHub Releases as a zip file containing a self-contained statically linked executable built from the source in this repository. Binaries can be download directly from the [Releases page](https://github.com/spacelift-io/spacectl/releases).
 
-### Usage on GitHub Actions
+#### Usage on GitHub Actions
 
 We have [setup-spacectl](https://github.com/spacelift-io/setup-spacectl) GitHub Action that can be used to install `spacectl`:
 
@@ -86,6 +72,30 @@ steps:
       SPACELIFT_API_KEY_SECRET: ${{ secrets.SPACELIFT_API_KEY_SECRET }}
     run: spacectl stack deploy --id my-infra-stack
 ```
+---
+### Community supported packages
+
+**Disclaimer:** These packages are community-maintained, please verify the package integrity yourself before using them to install or update `spacectl`.
+
+#### Arch linux
+
+Install [`spacectl-bin`](https://aur.archlinux.org/packages/spacectl-bin) from the Arch User Repository ([AUR](https://aur.archlinux.org/)):
+
+```bash
+yay -S spacectl-bin
+```
+
+Please make sure to verify the [`PKGBUILD`](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=spacectl-bin) before installing/updating.
+
+#### Alpine linux
+
+Install [`spacectl`](https://pkgs.alpinelinux.org/packages?name=spacectl&branch=edge&repo=&arch=&maintainer=) from the Alpine Repository ([alpine packages](https://pkgs.alpinelinux.org/packages)):
+
+```bash
+apk add spacectl --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing
+```
+
+Please make sure to verify the [`APKBUILD`](https://git.alpinelinux.org/aports/tree/testing/spacectl/APKBUILD) before installing/updating.
 
 ## Quick Start
 
@@ -123,19 +133,22 @@ USAGE:
    spacectl [global options] command [command options] [arguments...]
 
 VERSION:
-   0.14.0
+   0.26.0
 
 COMMANDS:
-   profile     Manage Spacelift profiles
-   stack       Manage a Spacelift stack
-   module      Manage a Spacelift module
-   version     Print out CLI version
-   workerpool  Manages workerpools and their workers.
-   help, h     Shows a list of commands or help for one command
+   module                   Manage a Spacelift module
+   profile                  Manage Spacelift profiles
+   provider                 Manage a Terraform provider
+   run-external-dependency  Manage Spacelift Run external dependencies
+   stack                    Manage a Spacelift stack
+   whoami                   Print out logged-in users information
+   version                  Print out CLI version
+   workerpool               Manages workerpools and their workers
+   help, h                  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   --help, -h     show help (default: false)
-   --version, -v  print the version (default: false)
+   --help, -h     show help
+   --version, -v  print the version
 ```
 
 To get help about a particular command or subcommand, use the `-h` flag:
@@ -233,7 +246,12 @@ OPTIONS:
 
 Each of the subcommands requires an account **alias**, which is a short, user-friendly name for each set of credentials (account profiles). Profiles don't need to be unique - you can have multiple sets of credentials for a single account too.
 
-Account profiles support three authentication methods: GitHub access tokens, API keys and login with a browser (API token). In order to authenticate to your first profile, type in the following (make sure to replace `${MY_ALIAS}` with the actual profile alias):
+Account profiles support three authentication methods: 
+* GitHub access tokens
+* API keys
+* Login with a browser (API token).
+
+In order to authenticate to your first profile, type in the following (make sure to replace `${MY_ALIAS}` with the actual profile alias):
 
 ```bash
 ❯ spacectl profile login ${MY_ALIAS}
@@ -241,6 +259,12 @@ Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/):
 ```
 
 In the next step, you will be asked to choose which authentication method you are going to use. Note that if your account is using [SAML-based SSO authentication](https://docs.spacelift.io/integrations/single-sign-on), then API keys and login with a browser are your only options. After you're done entering credentials, the CLI will validate them against the server, and assuming that they're valid, will persist them in a credentials file in `.spacelift/${MY_ALIAS}`. It will also create a symlink in `${HOME}/.spacelift/current` pointing to the current profile.
+
+By default the login process is interactive, however if that not does fit your workflow the steps can be predefined using flags, for example:
+
+```bash
+❯ spacectl profile login --method browser --endpoint https://unicorn.app.spacelift.io local-test
+```
 
 You can switch between account profiles by using `spacectl profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacectl profile logout ${MY_ALIAS}` command.
 
