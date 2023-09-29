@@ -14,14 +14,6 @@ import (
 
 var errNoStackFound = errors.New("no stack found")
 
-type errStackWithIdNotFound struct {
-	stackId string
-}
-
-func (e errStackWithIdNotFound) Error() string {
-	return fmt.Sprintf("Stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", e.stackId)
-}
-
 // getStackID will try to retreive a stack ID from multiple sources.
 // It will do so in the following order:
 // 1. Check the --id flag, if set, use that value.
@@ -29,9 +21,12 @@ func (e errStackWithIdNotFound) Error() string {
 func getStackID(cliCtx *cli.Context) (string, error) {
 	if cliCtx.IsSet(flagStackID.Name) {
 		stackId := cliCtx.String(flagStackID.Name)
-		err := stackExists(cliCtx.Context, stackId)
+		exists, err := stackExists(cliCtx.Context, stackId)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to check if stack exists: %w", err)
+		}
+		if !exists {
+			return "", fmt.Errorf("Stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackId)
 		}
 		return stackId, nil
 	}
@@ -62,7 +57,7 @@ func getStackID(cliCtx *cli.Context) (string, error) {
 	return got, nil
 }
 
-func stackExists(ctx context.Context, stackId string) error {
+func stackExists(ctx context.Context, stackId string) (bool, error) {
 	var query struct {
 		Stack struct {
 			ID string `graphql:"id"`
@@ -75,14 +70,13 @@ func stackExists(ctx context.Context, stackId string) error {
 
 	err := authenticated.Client.Query(ctx, &query, variables)
 	if err != nil {
-		return fmt.Errorf("failed to query GraphQL API when checking if a stack exists: %w", err)
+		return false, fmt.Errorf("failed to query GraphQL API when checking if a stack exists: %w", err)
 	}
 
 	if query.Stack.ID == "" {
-		return errStackWithIdNotFound{stackId: stackId}
+		return false, nil
 	}
-
-	return nil
+	return true, nil
 }
 
 func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt bool) (string, error) {
