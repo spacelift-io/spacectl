@@ -61,7 +61,7 @@ func localPreview() cli.ActionFunc {
 		}
 
 		if err := authenticated.Client.Mutate(ctx, &uploadMutation, uploadVariables); err != nil {
-			return err
+			return fmt.Errorf("failed to upload local workspace: %w", err)
 		}
 
 		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", uploadMutation.UploadLocalWorkspace.ID))
