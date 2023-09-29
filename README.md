@@ -22,6 +22,16 @@ yay -S spacectl-bin
 
 Disclaimer: The package is community-maintained, please make sure to verify the [`PKGBUILD`](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=spacectl-bin) before installing/updating.
 
+### Alpine linux
+
+Install [`spacectl`](https://pkgs.alpinelinux.org/packages?name=spacectl&branch=edge&repo=&arch=&maintainer=) from the Alpine Repository ([alpine packages](https://pkgs.alpinelinux.org/packages)):
+
+```bash
+apk add spacectl --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing
+```
+
+Disclaimer: The package is community-maintained, please make sure to verify the [`APKBUILD`](https://git.alpinelinux.org/aports/tree/testing/spacectl/APKBUILD) before installing/updating.
+
 ### Windows
 
 You can install `spacectl` using winget:
