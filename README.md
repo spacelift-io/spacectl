@@ -2,13 +2,13 @@
 
 `spacectl` is a utility wrapping Spacelift's [GraphQL API](https://docs.spacelift.io/integrations/api) for easy programmatic access in command-line contexts - either in manual interactive mode (in your local shell), or in a predefined CI pipeline (GitHub actions, CircleCI, Jenkins etc).
 
-It's main purpose is to help you explore and execute actions inside Spacelift. It provides limited functionality for creating or editting resources. To do that programatically see the [Spacelift Terraform Provider](https://github.com/spacelift-io/terraform-provider-spacelift).
+Its primary purpose is to help you explore and execute actions inside Spacelift. It provides limited functionality for creating or editing resources. To do that programatically, you can use the [Spacelift Terraform Provider](https://github.com/spacelift-io/terraform-provider-spacelift).
 
 ## Installation
 
 ### Officially supported packages
 
-Officially supported packages are maintained by [Spacelift](https://spacelift.io/) and are the best way to install `spacectl`
+Officially supported packages are maintained by [Spacelift](https://spacelift.io/) and are the preferred ways to install `spacectl`
 
 #### Homebrew
 
@@ -260,7 +260,7 @@ Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/):
 
 In the next step, you will be asked to choose which authentication method you are going to use. Note that if your account is using [SAML-based SSO authentication](https://docs.spacelift.io/integrations/single-sign-on), then API keys and login with a browser are your only options. After you're done entering credentials, the CLI will validate them against the server, and assuming that they're valid, will persist them in a credentials file in `.spacelift/${MY_ALIAS}`. It will also create a symlink in `${HOME}/.spacelift/current` pointing to the current profile.
 
-By default the login process is interactive, however if that not does fit your workflow the steps can be predefined using flags, for example:
+By default the login process is interactive, however, if that does not fit your workflow, the steps can be predefined using flags, for example:
 
 ```bash
 ❯ spacectl profile login --method browser --endpoint https://unicorn.app.spacelift.io local-test
