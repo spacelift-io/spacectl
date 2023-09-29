@@ -7,10 +7,20 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/shurcooL/graphql"
+	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
 )
 
 var errNoStackFound = errors.New("no stack found")
+
+type errStackWithIdNotFound struct {
+	stackId string
+}
+
+func (e errStackWithIdNotFound) Error() string {
+	return fmt.Sprintf("Stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", e.stackId)
+}
 
 // getStackID will try to retreive a stack ID from multiple sources.
 // It will do so in the following order:
@@ -18,7 +28,12 @@ var errNoStackFound = errors.New("no stack found")
 // 2. Check the current directory to determine repository and subdirectory and search for a stack.
 func getStackID(cliCtx *cli.Context) (string, error) {
 	if cliCtx.IsSet(flagStackID.Name) {
-		return cliCtx.String(flagStackID.Name), nil
+		stackId := cliCtx.String(flagStackID.Name)
+		err := stackExists(cliCtx.Context, stackId)
+		if err != nil {
+			return "", err
+		}
+		return stackId, nil
 	}
 
 	subdir, err := getGitRepositorySubdir()
@@ -45,6 +60,29 @@ func getStackID(cliCtx *cli.Context) (string, error) {
 	}
 
 	return got, nil
+}
+
+func stackExists(ctx context.Context, stackId string) error {
+	var query struct {
+		Stack struct {
+			ID string `graphql:"id"`
+		} `graphql:"stack(id: $id)"`
+	}
+
+	variables := map[string]interface{}{
+		"id": graphql.ID(stackId),
+	}
+
+	err := authenticated.Client.Query(ctx, &query, variables)
+	if err != nil {
+		return fmt.Errorf("failed to query GraphQL API: %w", err)
+	}
+
+	if query.Stack.ID == "" {
+		return errStackWithIdNotFound{stackId: stackId}
+	}
+
+	return nil
 }
 
 func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt bool) (string, error) {

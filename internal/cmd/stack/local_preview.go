@@ -61,11 +61,7 @@ func localPreview() cli.ActionFunc {
 		}
 
 		if err := authenticated.Client.Mutate(ctx, &uploadMutation, uploadVariables); err != nil {
-			baseErrorMessage := "failed to upload local workspace"
-			if strings.Contains(err.Error(), "not found") {
-				return fmt.Errorf("%s: stack with ID %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", baseErrorMessage, stackID)
-			}
-			return fmt.Errorf("%s: %w", baseErrorMessage, err)
+			return fmt.Errorf("failed to upload local workspace: %w", err)
 		}
 
 		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", uploadMutation.UploadLocalWorkspace.ID))
