@@ -27,7 +27,7 @@ func getStackID(cliCtx *cli.Context) (string, error) {
 			return "", fmt.Errorf("failed to check if stack exists: %w", err)
 		}
 		if !exists {
-			return "", fmt.Errorf("Stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackID)
+			return "", fmt.Errorf("stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackID)
 		}
 		return stackID, nil
 	}
