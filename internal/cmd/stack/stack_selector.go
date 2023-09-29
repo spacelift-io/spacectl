@@ -20,15 +20,15 @@ var errNoStackFound = errors.New("no stack found")
 // 2. Check the current directory to determine repository and subdirectory and search for a stack.
 func getStackID(cliCtx *cli.Context) (string, error) {
 	if cliCtx.IsSet(flagStackID.Name) {
-		stackId := cliCtx.String(flagStackID.Name)
-		exists, err := stackExists(cliCtx.Context, stackId)
+		stackID := cliCtx.String(flagStackID.Name)
+		exists, err := stackExists(cliCtx.Context, stackID)
 		if err != nil {
 			return "", fmt.Errorf("failed to check if stack exists: %w", err)
 		}
 		if !exists {
-			return "", fmt.Errorf("Stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackId)
+			return "", fmt.Errorf("Stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackID)
 		}
-		return stackId, nil
+		return stackID, nil
 	}
 
 	subdir, err := getGitRepositorySubdir()
@@ -57,7 +57,7 @@ func getStackID(cliCtx *cli.Context) (string, error) {
 	return got, nil
 }
 
-func stackExists(ctx context.Context, stackId string) (bool, error) {
+func stackExists(ctx context.Context, stackID string) (bool, error) {
 	var query struct {
 		Stack struct {
 			ID string `graphql:"id"`
@@ -65,7 +65,7 @@ func stackExists(ctx context.Context, stackId string) (bool, error) {
 	}
 
 	variables := map[string]interface{}{
-		"id": graphql.ID(stackId),
+		"id": graphql.ID(stackID),
 	}
 
 	err := authenticated.Client.Query(ctx, &query, variables)
