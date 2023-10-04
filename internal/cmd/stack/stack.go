@@ -344,6 +344,34 @@ func Command() *cli.Command {
 					},
 				},
 			},
+			{
+				Name:  "dependencies",
+				Usage: "View stack dependencies",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "on",
+						Usage: "Get stacks which the provided that depends on",
+						Flags: []cli.Flag{
+							flagStackID,
+							cmd.FlagOutputFormat,
+						},
+						Action:    dependenciesOn,
+						Before:    authenticated.Ensure,
+						ArgsUsage: cmd.EmptyArgsUsage,
+					},
+					{
+						Name:  "off",
+						Usage: "Get stacks that depend on the provided stack",
+						Flags: []cli.Flag{
+							flagStackID,
+							cmd.FlagOutputFormat,
+						},
+						Action:    dependenciesOff,
+						Before:    authenticated.Ensure,
+						ArgsUsage: cmd.EmptyArgsUsage,
+					},
+				},
+			},
 		},
 	}
 }
