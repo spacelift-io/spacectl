@@ -8,6 +8,14 @@ type SearchInput struct {
 	After          *graphql.String   `json:"after"`
 	FullTextSearch *graphql.String   `json:"fullTextSearch"`
 	Predicates     *[]QueryPredicate `json:"predicates"`
+	OrderBy        *QueryOrder       `json:"orderBy"`
+}
+
+// QueryOrder is the order in which the results
+// should be returned.
+type QueryOrder struct {
+	Field     graphql.String `json:"field"`
+	Direction graphql.String `json:"direction"`
 }
 
 // QueryPredicate Field and Constraint pair
