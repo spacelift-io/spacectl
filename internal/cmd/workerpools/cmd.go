@@ -22,6 +22,12 @@ func Command() *cli.Command {
 				Before: authenticated.Ensure,
 			},
 			{
+				Name:   "watch",
+				Usage:  "Starts an interactive watcher for a worker pool",
+				Action: watch,
+				Before: authenticated.Ensure,
+			},
+			{
 				Name:  "worker",
 				Usage: "Contains commands for managing workers within a pool.",
 				Subcommands: []*cli.Command{
