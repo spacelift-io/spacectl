@@ -42,6 +42,19 @@ func Command() *cli.Command {
 			},
 			{
 				Category: "Run management",
+				Name:     "cancel",
+				Usage:    "Cancel a run that hasn't started yet",
+				Flags: []cli.Flag{
+					flagStackID,
+					flagRequiredRun,
+					flagTail,
+				},
+				Action:    runCancel(),
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
+				Category: "Run management",
 				Name:     "approve",
 				Usage:    "Approves a run or task. If no run is specified, the approval will be added to the current stack blocker.",
 				Flags: []cli.Flag{
