@@ -241,10 +241,10 @@ func TestProfileManager(t *testing.T) {
 		g.Describe("Get", func() {
 			g.It("can get a profile", func() {
 				profileAlias := "test-profile"
-				manager.Create(&session.Profile{
+				Expect(manager.Create(&session.Profile{
 					Alias:       profileAlias,
 					Credentials: createValidGitHubCredentials(),
-				})
+				})).To(Succeed())
 
 				testProfile, err := manager.Get(profileAlias)
 
@@ -269,10 +269,10 @@ func TestProfileManager(t *testing.T) {
 
 		g.Describe("Select", func() {
 			g.It("can set the current profile", func() {
-				manager.Create(createValidProfile("profile1"))
-				manager.Create(createValidProfile("profile2"))
+				Expect(manager.Create(createValidProfile("profile1"))).To(Succeed())
+				Expect(manager.Create(createValidProfile("profile2"))).To(Succeed())
 
-				manager.Select("profile1")
+				Expect(manager.Select("profile1")).To(Succeed())
 
 				currentProfile := manager.Current()
 				Expect(currentProfile).NotTo(BeNil())
@@ -290,9 +290,9 @@ func TestProfileManager(t *testing.T) {
 
 		g.Describe("Delete", func() {
 			g.It("can delete a profile", func() {
-				manager.Create(createValidProfile("profile1"))
+				Expect(manager.Create(createValidProfile("profile1"))).To(Succeed())
 
-				manager.Delete("profile1")
+				Expect(manager.Delete("profile1")).To(Succeed())
 
 				profile, err := manager.Get("profile1")
 				Expect(err).To(BeNil())
@@ -312,19 +312,19 @@ func TestProfileManager(t *testing.T) {
 			})
 
 			g.It("unsets profile if it is the current profile", func() {
-				manager.Create(createValidProfile("profile1"))
+				Expect(manager.Create(createValidProfile("profile1"))).To(Succeed())
 
-				manager.Delete("profile1")
+				Expect(manager.Delete("profile1")).To(Succeed())
 
 				current := manager.Current()
 				Expect(current).To(BeNil())
 			})
 
 			g.It("does not unset profile if it is not the current profile", func() {
-				manager.Create(createValidProfile("profile1"))
-				manager.Create(createValidProfile("profile2"))
+				Expect(manager.Create(createValidProfile("profile1"))).To(Succeed())
+				Expect(manager.Create(createValidProfile("profile2"))).To(Succeed())
 
-				manager.Delete("profile1")
+				Expect(manager.Delete("profile1")).To(Succeed())
 
 				current := manager.Current()
 				Expect(current).NotTo(BeNil())
@@ -340,9 +340,9 @@ func TestProfileManager(t *testing.T) {
 			})
 
 			g.It("returns all profiles", func() {
-				manager.Create(createValidProfile("profile-1"))
-				manager.Create(createValidProfile("profile-2"))
-				manager.Create(createValidProfile("profile-3"))
+				Expect(manager.Create(createValidProfile("profile-1"))).To(Succeed())
+				Expect(manager.Create(createValidProfile("profile-2"))).To(Succeed())
+				Expect(manager.Create(createValidProfile("profile-3"))).To(Succeed())
 
 				profiles := manager.GetAll()
 

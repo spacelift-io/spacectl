@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 // GoReleaserVersionData contains the data we get from GoReleaser's distribution
@@ -153,7 +152,7 @@ func (a *GoReleaserArtifact) Upload(ctx context.Context, dir string, url string)
 		return errors.Wrapf(err, "could not read artifact content for %s", a.Name)
 	}
 
-	request, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(data))
+	request, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(data))
 	if err != nil {
 		return errors.Wrapf(err, "could not create request for %s", a.Name)
 	}
@@ -170,7 +169,7 @@ func (a *GoReleaserArtifact) Upload(ctx context.Context, dir string, url string)
 		request.Header.Set("x-amz-meta-binary-checksum", checksum)
 	}
 
-	response, err := ctxhttp.Do(ctx, http.DefaultClient, request)
+	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return errors.Wrapf(err, "could not upload %s", a.Name)
 	}

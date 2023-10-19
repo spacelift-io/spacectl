@@ -2,10 +2,11 @@ package session
 
 import (
 	"context"
-	"github.com/franela/goblin"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/franela/goblin"
 )
 
 // lookupWithEnv creates a custom lookup func which will return desired test values
@@ -49,7 +50,8 @@ func TestFromEnvironment(t *testing.T) {
 			g.It("expect EnvSpaceliftAPIToken to be used and EnvSpaceliftAPIKeyID and EnvSpaceliftAPIKeySecret to be ignored", func() {
 				// Create a mock http server to handle JWT exchange
 				server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-					rw.Write([]byte(`{"data":{"apiKeyUser":{"jwt":"SuperSecretJWT","validUntil":123}}}`))
+					_, err := rw.Write([]byte(`{"data":{"apiKeyUser":{"jwt":"SuperSecretJWT","validUntil":123}}}`))
+					g.Assert(err).IsNil()
 				}))
 				// Close the server when test finishes
 				defer server.Close()
@@ -68,7 +70,8 @@ func TestFromEnvironment(t *testing.T) {
 				g.It("expect a CredentialsTypeAPIKey session to be created", func() {
 					// Create a mock http server to handle JWT exchange
 					server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-						rw.Write([]byte(`{"data":{"apiKeyUser":{"jwt":"SuperSecretJWT","validUntil":123}}}`))
+						_, err := rw.Write([]byte(`{"data":{"apiKeyUser":{"jwt":"SuperSecretJWT","validUntil":123}}}`))
+						g.Assert(err).IsNil()
 					}))
 					// Close the server when test finishes
 					defer server.Close()
