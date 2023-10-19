@@ -2,10 +2,10 @@ package runexternaldependency
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/urfave/cli/v2"
-	"golang.org/x/exp/slices"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )

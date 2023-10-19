@@ -4,6 +4,10 @@ on:
   push: { branches: [main] }
   pull_request: { branches: [main] }
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Lint the code
@@ -12,7 +16,7 @@ jobs:
 
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Mark source directory as safe.
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
@@ -23,8 +27,8 @@ jobs:
       - name: Check for suspicious constructs using "go vet"
         run: go vet ./...
 
-      - name: Lint the code using "golint"
-        run: go install golang.org/x/lint/golint@latest && golint -set_exit_status ./...
-
-      - name: Run staticcheck
-        run: go install honnef.co/go/tools/cmd/staticcheck@latest && staticcheck ./...
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --verbose

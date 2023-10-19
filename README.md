@@ -72,7 +72,9 @@ steps:
       SPACELIFT_API_KEY_SECRET: ${{ secrets.SPACELIFT_API_KEY_SECRET }}
     run: spacectl stack deploy --id my-infra-stack
 ```
+
 ---
+
 ### Community supported packages
 
 **Disclaimer:** These packages are community-maintained, please verify the package integrity yourself before using them to install or update `spacectl`.
@@ -246,10 +248,11 @@ OPTIONS:
 
 Each of the subcommands requires an account **alias**, which is a short, user-friendly name for each set of credentials (account profiles). Profiles don't need to be unique - you can have multiple sets of credentials for a single account too.
 
-Account profiles support three authentication methods: 
-* GitHub access tokens
-* API keys
-* Login with a browser (API token).
+Account profiles support three authentication methods:
+
+- GitHub access tokens
+- API keys
+- Login with a browser (API token).
 
 In order to authenticate to your first profile, type in the following (make sure to replace `${MY_ALIAS}` with the actual profile alias):
 
