@@ -74,7 +74,7 @@ type listEnvCommand struct{}
 
 func setVar(cliCtx *cli.Context) error {
 	if nArgs := cliCtx.NArg(); nArgs != 2 {
-		return fmt.Errorf("expected two arguments to `environment setenv` but got %d", nArgs)
+		return fmt.Errorf("expected two arguments to `environment setvar` but got %d", nArgs)
 	}
 
 	envName := cliCtx.Args().Get(0)
