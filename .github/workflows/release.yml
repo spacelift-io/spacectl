@@ -53,7 +53,7 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Set up release notes
+      - name: Export GPG key
         run: |
           echo ${{ steps.import_gpg.outputs.fingerprint }} > key.fingerprint
           gpg --armor --export ${{ steps.import_gpg.outputs.keyid }} > key.asc
