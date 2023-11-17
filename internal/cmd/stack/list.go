@@ -132,7 +132,13 @@ type stack struct {
 	State               string   `graphql:"state" json:"state,omitempty"`
 	StateSetAt          int64    `graphql:"stateSetAt" json:"stateSetAt,omitempty"`
 	TerraformVersion    string   `graphql:"terraformVersion" json:"terraformVersion,omitempty"`
-	TrackedCommit       struct {
+	SpaceDetails        struct {
+		ID          string  `graphql:"id" json:"id,omitempty"`
+		Name        string  `graphql:"name" json:"name,omitempty"`
+		Description string  `graphql:"description" json:"description,omitempty"`
+		ParentSpace *string `graphql:"parentSpace" json:"parentSpace,omitempty"`
+	} `graphql:"spaceDetails" json:"spaceDetails,omitempty"`
+	TrackedCommit struct {
 		AuthorLogin string `graphql:"authorLogin" json:"authorLogin,omitempty"`
 		AuthorName  string `graphql:"authorName" json:"authorName,omitempty"`
 		Hash        string `graphql:"hash" json:"hash,omitempty"`
