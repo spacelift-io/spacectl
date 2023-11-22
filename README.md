@@ -50,6 +50,14 @@ asdf install spacectl latest
 asdf global spacectl latest
 ```
 
+#### aqua
+
+You can install this tool with [aqua](https://aquaproj.github.io/).
+
+```
+aqua g -i spacelift-io/spacectl
+```
+
 #### GitHub Release
 
 Alternatively, `spacectl` is distributed through GitHub Releases as a zip file containing a self-contained statically linked executable built from the source in this repository. Binaries can be download directly from the [Releases page](https://github.com/spacelift-io/spacectl/releases).
