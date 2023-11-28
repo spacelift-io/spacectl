@@ -75,6 +75,17 @@ release:
   draft: false
   extra_files:
     - glob: ./key.*
+  header: |
+    ## Artifacts
+    ### Binaries
+    
+    The binaries are available at the bottom of this release.
+
+    ### Docker images
+    The following multi-arch (amd64 and arm64) Docker images have been published:
+
+    - `ghcr.io/spacelift-io/spacectl:latest`
+    - `ghcr.io/spacelift-io/spacectl:{{ .Version }}`
 
 changelog:
   use: github-native
