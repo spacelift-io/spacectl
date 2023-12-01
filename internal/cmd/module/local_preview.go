@@ -83,12 +83,17 @@ func localPreview() cli.ActionFunc {
 		}
 
 		var triggerMutation struct {
-			VersionProposeLocalWorkspace []runQuery `graphql:"versionProposeLocalWorkspace(module: $module, workspace: $workspace)"`
+			VersionProposeLocalWorkspace []runQuery `graphql:"versionProposeLocalWorkspace(module: $module, workspace: $workspace, testIds: $testIds)"`
 		}
 
+		tests := []graphql.String{}
+		for _, test := range cliCtx.StringSlice(flagTests.Name) {
+			tests = append(tests, graphql.String(test))
+		}
 		triggerVariables := map[string]interface{}{
 			"module":    graphql.ID(moduleID),
 			"workspace": graphql.ID(uploadMutation.UploadLocalWorkspace.ID),
+			"testIds":   tests,
 		}
 
 		var requestOpts []graphql.RequestOption
