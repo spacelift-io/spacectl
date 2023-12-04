@@ -43,5 +43,5 @@ var flagDisregardGitignore = &cli.BoolFlag{
 
 var flagTests = &cli.StringSliceFlag{
 	Name:  "tests",
-	Usage: "[Optional] Provide a list of tests to run",
+	Usage: "[Optional] A list of test IDs to run",
 }
