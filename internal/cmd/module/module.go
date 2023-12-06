@@ -36,6 +36,7 @@ func Command() *cli.Command {
 					flagNoUpload,
 					flagRunMetadata,
 					flagDisregardGitignore,
+					flagTests,
 				},
 				Action:    localPreview(),
 				Before:    authenticated.Ensure,

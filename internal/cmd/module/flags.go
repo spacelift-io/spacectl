@@ -40,3 +40,8 @@ var flagDisregardGitignore = &cli.BoolFlag{
 	Name:  "disregard-gitignore",
 	Usage: "[Optional] Disregard the .gitignore file when reading files in a directory",
 }
+
+var flagTests = &cli.StringSliceFlag{
+	Name:  "tests",
+	Usage: "[Optional] A list of test IDs to run",
+}
