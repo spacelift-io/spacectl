@@ -15,3 +15,5 @@ build
 dist
 key.*
 *.asc
+
+completions
