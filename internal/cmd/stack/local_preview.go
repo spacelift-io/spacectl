@@ -148,35 +148,34 @@ type EnvironmentVariable struct {
 	Value graphql.String `json:"value"`
 }
 
+func parseEnvVar(env string, envVars []EnvironmentVariable, mutateKey func(string) string) ([]EnvironmentVariable, error) {
+	parts := strings.SplitN(env, "=", 2)
+	if len(parts) != 2 {
+		return envVars, fmt.Errorf("invalid environment variable %q, must be in the form of KEY=VALUE", env)
+	}
+
+	if mutateKey != nil {
+		parts[0] = mutateKey(parts[0])
+	}
+
+	return append(envVars, EnvironmentVariable{
+		Key:   graphql.String(parts[0]),
+		Value: graphql.String(parts[1]),
+	}), nil
+}
+
 func parseEnvVariablesForLocalPreview(cliCtx *cli.Context) ([]EnvironmentVariable, error) {
 	envVars := make([]EnvironmentVariable, 0)
 
-	parseFn := func(ev string, mutateKey func(string) string) error {
-		parts := strings.Split(ev, "=")
-		if len(parts) != 2 {
-			return fmt.Errorf("invalid environment variable %q, must be in the form of KEY=VALUE", ev)
-		}
-
-		if mutateKey != nil {
-			parts[0] = mutateKey(parts[0])
-		}
-
-		envVars = append(envVars, EnvironmentVariable{
-			Key:   graphql.String(parts[0]),
-			Value: graphql.String(parts[1]),
-		})
-
-		return nil
-	}
-
+	var err error
 	for _, ev := range cliCtx.StringSlice(flagOverrideEnvVars.Name) {
-		if err := parseFn(ev, nil); err != nil {
+		if envVars, err = parseEnvVar(ev, envVars, nil); err != nil {
 			return nil, err
 		}
 	}
 
 	for _, ev := range cliCtx.StringSlice(flagOverrideEnvVarsTF.Name) {
-		if err := parseFn(ev, func(s string) string {
+		if envVars, err = parseEnvVar(ev, envVars, func(s string) string {
 			return strings.Join([]string{"TF_", s}, "")
 		}); err != nil {
 			return nil, err
