@@ -7,6 +7,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/spacelift-io/spacectl/internal/cmd/completion"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider"
@@ -26,10 +27,11 @@ func main() {
 		log.Fatalf("Could not parse compilation date: %v", err)
 	}
 	app := &cli.App{
-		Name:     "spacectl",
-		Version:  version,
-		Compiled: compileTime,
-		Usage:    "Programmatic access to Spacelift GraphQL API.",
+		Name:                 "spacectl",
+		Version:              version,
+		Compiled:             compileTime,
+		Usage:                "Programmatic access to Spacelift GraphQL API.",
+		EnableBashCompletion: true,
 		Commands: []*cli.Command{
 			module.Command(),
 			profile.Command(),
@@ -39,6 +41,7 @@ func main() {
 			whoami.Command(),
 			versioncmd.Command(version),
 			workerpools.Command(),
+			completion.Command(),
 		},
 	}
 

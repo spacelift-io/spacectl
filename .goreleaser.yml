@@ -1,3 +1,7 @@
+before:
+  hooks:
+    - ./scripts/completions.sh
+
 builds:
   - env:
       - CGO_ENABLED=0
@@ -13,6 +17,10 @@ archives:
   # https://github.com/spacelift-io/setup-spacectl
   - format: zip
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+      - completions/*
 
 dockers:
   - use: buildx
@@ -99,6 +107,10 @@ brews:
     homepage: https://github.com/spacelift-io/spacectl
     description: "Spacelift client and CLI"
     license: "MIT"
+    extra_install: |
+      bash_completion.install "completions/{{ .ProjectName }}.bash" => "{{ .ProjectName }}"
+      zsh_completion.install "completions/{{ .ProjectName }}.zsh" => "_{{ .ProjectName }}"
+      fish_completion.install "completions/{{ .ProjectName }}.fish"
 
 winget:
   - name: "{{ .ProjectName }}"
