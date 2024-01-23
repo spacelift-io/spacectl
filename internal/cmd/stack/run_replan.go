@@ -86,7 +86,7 @@ func interactiveResourceSelection(cliCtx *cli.Context, stackID, runID string) ([
 		Label:    "{{ . }}?",
 		Active:   fmt.Sprintf("%s {{ .Address | cyan }} %s", rocketEmoji, rocketEmoji),
 		Inactive: "  {{ .Address | cyan }}",
-		Selected: "\U0001F680 {{ .Address cyan }} \U0001F680",
+		Selected: fmt.Sprintf("%s {{ .Address cyan }} %s", rocketEmoji, rocketEmoji),
 		Details: `
 ----------- Details ------------
 {{ "Address:" | faint }}	{{ .Address }}
