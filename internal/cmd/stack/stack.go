@@ -108,6 +108,33 @@ func Command() *cli.Command {
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
+				Category: "Run management",
+				Name:     "replan",
+				Usage:    "Replan an unconfirmed tracked run",
+				Flags: []cli.Flag{
+					flagStackID,
+					flagRequiredRun,
+					flagTail,
+					flagResources,
+					flagInteractive,
+				},
+				Action:    runReplan,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
+				Category: "Run management",
+				Name:     "changes",
+				Usage:    "Show a list of changes for a given run",
+				Flags: []cli.Flag{
+					flagStackID,
+					flagRequiredRun,
+				},
+				Action:    runChanges,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
 				Name:  "list",
 				Usage: "List the stacks you have access to",
 				Flags: []cli.Flag{

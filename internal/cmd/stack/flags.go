@@ -141,3 +141,14 @@ var flagDisregardGitignore = &cli.BoolFlag{
 	Name:  "disregard-gitignore",
 	Usage: "[Optional] Disregard the .gitignore file when reading files in a directory",
 }
+
+var flagResources = &cli.StringSliceFlag{
+	Name:  "resources",
+	Usage: "[Optional] A comma separeted list of resources to be used when applying, example: 'aws_instance.foo'",
+}
+
+var flagInteractive = &cli.BoolFlag{
+	Name:    "interactive",
+	Aliases: []string{"i"},
+	Usage:   "[Optional] Whether to run the command in interactive mode",
+}
