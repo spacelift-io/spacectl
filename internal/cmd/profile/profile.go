@@ -27,6 +27,7 @@ func Command() *cli.Command {
 		Subcommands: []*cli.Command{
 			currentCommand(),
 			exportTokenCommand(),
+			usageViewCSVCommand(),
 			listCommand(),
 			loginCommand(),
 			logoutCommand(),
