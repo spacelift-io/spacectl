@@ -276,6 +276,8 @@ You can switch between account profiles by using `spacectl profile select ${MY_A
 To release a new version of spacectl, tag the repo and then push that tag. For example:
 
 ```shell
+git checkout main
+git pull
 git tag -a v0.24.2 -m"Releasing v0.24.2"
 git push origin v0.24.2
 ```
