@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/shurcooL/graphql"
 	"golang.org/x/oauth2"
@@ -66,14 +67,50 @@ func (c *client) URL(format string, a ...interface{}) string {
 }
 
 func (c *client) apiClient(ctx context.Context) (*graphql.Client, error) {
+	httpC, err := c.httpClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("graphql client creation failed at http client creation: %w", err)
+	}
+
+	return graphql.NewClient(c.session.Endpoint(), httpC), nil
+}
+
+func (c *client) Do(req *http.Request) (*http.Response, error) {
+	// get http client
+	httpC, err := c.httpClient(req.Context())
+	if err != nil {
+		return nil, fmt.Errorf("http client creation failed: %w", err)
+	}
+
+	// prepend request URL with spacelift endpoint
+	endpoint := strings.TrimRight(c.session.Endpoint(), "/graphql")
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse endpoint: %w", err)
+	}
+	req.URL.Scheme = u.Scheme
+	req.URL.Host = u.Host
+
+	// execute request
+	resp, err := httpC.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error executing request: %w", err)
+	}
+	if resp.StatusCode == http.StatusUnauthorized {
+		return nil, fmt.Errorf("unauthorized: you can re-login using `spacectl profile login`")
+	}
+	return resp, err
+}
+
+func (c *client) httpClient(ctx context.Context) (*http.Client, error) {
 	bearerToken, err := c.session.BearerToken(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return graphql.NewClient(c.session.Endpoint(), oauth2.NewClient(
+	return oauth2.NewClient(
 		context.WithValue(ctx, oauth2.HTTPClient, c.wraps), oauth2.StaticTokenSource(
 			&oauth2.Token{AccessToken: bearerToken},
 		),
-	)), nil
+	), nil
 }

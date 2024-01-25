@@ -17,3 +17,5 @@ key.*
 *.asc
 
 completions
+
+*.csv
