@@ -2,7 +2,8 @@ package session
 
 import (
 	"context"
-	"log"
+	"log/slog"
+	"os"
 )
 
 // Session is an abstraction around session creation based on credentials from
@@ -16,7 +17,8 @@ type Session interface {
 // Must provides a helper that either creates a Session or dies trying.
 func Must(out Session, err error) Session {
 	if err != nil {
-		log.Fatalf("Could not create a Spacelift session: %v", err)
+		slog.Error("Could not create a Spacelift session", "err", err)
+		os.Exit(1)
 	}
 
 	return out

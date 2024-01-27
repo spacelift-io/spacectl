@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -14,11 +14,12 @@ import (
 	"syscall"
 	"time"
 
+	"golang.org/x/term"
+
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/term"
 
 	"github.com/spacelift-io/spacectl/client/session"
 	"github.com/spacelift-io/spacectl/internal"
@@ -226,11 +227,12 @@ func loginUsingWebBrowser(ctx *cli.Context, creds *session.StoredCredentials) er
 
 		infoPage, err := url.Parse(creds.Endpoint)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Error parsing URL", "err", err)
+			os.Exit(1)
 		}
 
 		if handlerErr != nil {
-			log.Println(handlerErr)
+			slog.Error("login error", "err", handlerErr)
 			infoPage.Path = cliAuthFailurePage
 			http.Redirect(w, r, infoPage.String(), http.StatusTemporaryRedirect)
 		} else {
@@ -320,7 +322,8 @@ func serveOnOpenPort(host *string, port *int, handler func(w http.ResponseWriter
 	go func() {
 		if err := server.Serve(l); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
-				log.Fatalf("could not start local server: %s", err)
+				slog.Error("could not start local server", "err", err)
+				os.Exit(1)
 			}
 		}
 	}()
