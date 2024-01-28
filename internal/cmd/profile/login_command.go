@@ -3,11 +3,7 @@ package profile
 import (
 	"bufio"
 	"context"
-	"encoding/base64"
 	"fmt"
-	"log"
-	"net"
-	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -20,8 +16,8 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
 
+	"github.com/spacelift-io/spacectl/browserauth"
 	"github.com/spacelift-io/spacectl/client/session"
-	"github.com/spacelift-io/spacectl/internal"
 )
 
 const (
@@ -179,114 +175,39 @@ func loginUsingGitHubAccessToken(creds *session.StoredCredentials) error {
 }
 
 func loginUsingWebBrowser(ctx *cli.Context, creds *session.StoredCredentials) error {
-	pubKey, privKey, err := internal.GenerateRSAKeyPair()
-	if err != nil {
-		return errors.Wrap(err, "could not generate RSA key pair")
-	}
-
-	keyBase64 := base64.RawURLEncoding.EncodeToString(pubKey)
-
-	done := make(chan bool, 1)
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		handlerErr := func() error {
-			base64Token := r.URL.Query().Get("token")
-			if base64Token == "" {
-				return errors.New("missing token parameter")
-			}
-
-			base64Key := r.URL.Query().Get("key")
-			if base64Key == "" {
-				return errors.New("missing key parameter")
-			}
-
-			encToken, err := base64.RawURLEncoding.DecodeString(base64Token)
-			if err != nil {
-				return errors.Wrap(err, "could not decode session token")
-			}
-
-			encKey, err := base64.RawURLEncoding.DecodeString(base64Key)
-			if err != nil {
-				return errors.Wrap(err, "could not decode key")
-			}
-
-			key, err := internal.DecryptRSA(privKey, []byte(encKey))
-			if err != nil {
-				return errors.Wrap(err, "could not decrypt key")
-			}
-
-			jwt, err := internal.DecryptAES(key, []byte(encToken))
-			if err != nil {
-				return errors.Wrap(err, "could not decrypt session token")
-			}
-
-			creds.AccessToken = string(jwt)
-
-			return persistAccessCredentials(creds)
-		}()
-
-		infoPage, err := url.Parse(creds.Endpoint)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if handlerErr != nil {
-			log.Println(handlerErr)
-			infoPage.Path = cliAuthFailurePage
-			http.Redirect(w, r, infoPage.String(), http.StatusTemporaryRedirect)
-		} else {
-			fmt.Println("Done!")
-			infoPage.Path = cliAuthSuccessPage
-			http.Redirect(w, r, infoPage.String(), http.StatusTemporaryRedirect)
-		}
-
-		done <- true
-	}
-
-	server, port, err := serveOnOpenPort(&bindHost, &bindPort, handler)
+	// Begin the interactive browser auth flow
+	handler, err := browserauth.BeginWithBindAddress(creds, bindHost, bindPort)
 	if err != nil {
 		return err
 	}
 
-	browserURL, err := buildBrowserURL(creds.Endpoint, keyBase64, port)
-	if err != nil {
-		server.Close()
-		return errors.Wrap(err, "could not build browser URL")
-	}
+	fmt.Printf("Waiting for login responses at %s:%d\n", handler.Host, handler.Port)
+	fmt.Printf("\nOpening browser to %s\n\n", handler.AuthenticationURL)
 
-	fmt.Printf("\nOpening browser to %s\n\n", browserURL)
-
-	if err := browser.OpenURL(browserURL); err != nil {
+	// Attempt to automatically open the URL in the user's browser
+	if err := browser.OpenURL(handler.AuthenticationURL); err != nil {
 		fmt.Printf("Failed to open the browser: %s\nPlease open the URL manually\n\n", err.Error())
 	}
 
 	fmt.Println("Waiting for login...")
 
-	select {
-	case <-done:
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	// Create a context that will timeout after 2 minutes while we wait for auth completion
+	waitCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
 
-		return errors.Wrap(server.Shutdown(shutdownCtx), "could not stop the server")
-	case <-time.After(2 * time.Minute):
-		server.Close()
-		return errors.New("login timeout exceeded")
+	// Wait for the timeout or an auth callback
+	if err := handler.Wait(waitCtx); err != nil {
+		return err
 	}
-}
 
-func buildBrowserURL(endpoint, pubKey string, port int) (string, error) {
-	base, err := url.Parse(endpoint)
-	if err != nil {
-		return "", err
+	// Save the shiny new token
+	if err := persistAccessCredentials(creds); err != nil {
+		return err
 	}
-	base.Path = cliBrowserPath
 
-	q := url.Values{}
-	q.Add("key", pubKey)
-	q.Add("port", fmt.Sprint(port))
+	fmt.Println("Done!")
 
-	base.RawQuery = q.Encode()
-
-	return base.String(), nil
+	return nil
 }
 
 func persistAccessCredentials(creds *session.StoredCredentials) error {
@@ -294,36 +215,4 @@ func persistAccessCredentials(creds *session.StoredCredentials) error {
 		Alias:       profileAlias,
 		Credentials: creds,
 	})
-}
-
-func serveOnOpenPort(host *string, port *int, handler func(w http.ResponseWriter, r *http.Request)) (*http.Server, int, error) {
-
-	bindOn := fmt.Sprintf("%s:%d", *host, *port)
-
-	addr, err := net.ResolveTCPAddr("tcp", bindOn)
-	if err != nil {
-		return nil, 0, errors.Wrap(err, "failed to resolve tcp address")
-	}
-
-	l, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		return nil, 0, errors.Wrapf(err, "failed to start listening on %s", addr.String())
-	}
-
-	m := http.NewServeMux()
-	m.HandleFunc("/", handler)
-
-	bound := l.Addr().(*net.TCPAddr).Port
-	fmt.Printf("Waiting for login responses at %v\n", l.Addr())
-
-	server := &http.Server{Handler: m, ReadHeaderTimeout: 5 * time.Second}
-	go func() {
-		if err := server.Serve(l); err != nil {
-			if !errors.Is(err, http.ErrServerClosed) {
-				log.Fatalf("could not start local server: %s", err)
-			}
-		}
-	}()
-
-	return server, bound, nil
 }
