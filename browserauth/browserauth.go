@@ -151,7 +151,7 @@ func (h *Handler) Wait(ctx context.Context) error {
 		return callbackErr
 	case <-ctx.Done():
 		h.Cancel()
-		return errors.New("login context cancelled")
+		return ctx.Err()
 	}
 }
 
