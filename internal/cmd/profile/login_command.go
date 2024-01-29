@@ -20,12 +20,6 @@ import (
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
-const (
-	cliBrowserPath     = "/cli_login"
-	cliAuthSuccessPage = "/auth_success"
-	cliAuthFailurePage = "/auth_failure"
-)
-
 func loginCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "login",
