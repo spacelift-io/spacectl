@@ -112,14 +112,19 @@ func attachAwsSession(cliCtx *cli.Context) error {
 	}
 
 	// Lock the stack
-	err = lock(cliCtx)
+	err = authenticated.Client.Mutate(ctx, &stackLockMutation{}, map[string]interface{}{
+		"stack": graphql.ID(stackID),
+		"note":  graphql.String(cliCtx.String(flagStackLockNote.Name)),
+	})
 	if err != nil {
 		return err
 	}
 
 	// Ensure the stack is unlocked
 	defer func() {
-		err := unlock(cliCtx)
+		err := authenticated.Client.Mutate(cliCtx.Context, &stackUnlockMutation{}, map[string]interface{}{
+			"stack": graphql.ID(stackID),
+		})
 		if err != nil {
 			fmt.Printf("failed to unlock stack: %v\n", err)
 		}
@@ -148,29 +153,24 @@ func attachAwsSession(cliCtx *cli.Context) error {
 		}
 	}()
 
-	envMap := map[string]string{}
-	if len(stack.AttachedAWSIntegrations) > 0 {
-		// If there are AWS integrations, override the AWS integration envvars
-		envMap = map[string]string{
-			"ro_AWS_ACCESS_KEY_ID":     awsCreds.AccessKeyID,
-			"ro_AWS_SECRET_ACCESS_KEY": awsCreds.SecretAccessKey,
-			"ro_AWS_SESSION_TOKEN":     awsCreds.SessionToken,
-			"ro_AWS_SECURITY_TOKEN":    "",
-			"wo_AWS_ACCESS_KEY_ID":     awsCreds.AccessKeyID,
-			"wo_AWS_SECRET_ACCESS_KEY": awsCreds.SecretAccessKey,
-			"wo_AWS_SESSION_TOKEN":     awsCreds.SessionToken,
-			"wo_AWS_SECURITY_TOKEN":    "",
-		}
-		fmt.Printf("Overriding Read/Write AWS Integration Credentials\n")
-	} else {
-		// No AWS integrations, so just override the regular AWS auth envvars
-		envMap = map[string]string{
-			"AWS_ACCESS_KEY_ID":     awsCreds.AccessKeyID,
-			"AWS_SECRET_ACCESS_KEY": awsCreds.SecretAccessKey,
-			"AWS_SESSION_TOKEN":     awsCreds.SessionToken,
-			"AWS_SECURITY_TOKEN":    "",
-		}
-		fmt.Printf("Overriding AWS Credentials\n")
+	// We set the credentials for RO, WO, and unspecified environment variables
+	// just to cover the bases of any configuration in the target stack. The
+	// ro/wo is most common w/ the AWS integration, but the stack could have
+	// unqualified environment variables attached.
+	fmt.Println("Applying AWS credential environment variables to context")
+	envMap := map[string]string{
+		"AWS_ACCESS_KEY_ID":        awsCreds.AccessKeyID,
+		"AWS_SECRET_ACCESS_KEY":    awsCreds.SecretAccessKey,
+		"AWS_SESSION_TOKEN":        awsCreds.SessionToken,
+		"AWS_SECURITY_TOKEN":       "",
+		"ro_AWS_ACCESS_KEY_ID":     awsCreds.AccessKeyID,
+		"ro_AWS_SECRET_ACCESS_KEY": awsCreds.SecretAccessKey,
+		"ro_AWS_SESSION_TOKEN":     awsCreds.SessionToken,
+		"ro_AWS_SECURITY_TOKEN":    "",
+		"wo_AWS_ACCESS_KEY_ID":     awsCreds.AccessKeyID,
+		"wo_AWS_SECRET_ACCESS_KEY": awsCreds.SecretAccessKey,
+		"wo_AWS_SESSION_TOKEN":     awsCreds.SessionToken,
+		"wo_AWS_SECURITY_TOKEN":    "",
 	}
 
 	for key, value := range envMap {
