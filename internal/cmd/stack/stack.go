@@ -325,6 +325,18 @@ func Command() *cli.Command {
 			},
 			{
 				Category: "Stack management",
+				Name:     "attach-aws-session",
+				Usage:    "Lock the stack and then create and attach a temporary context containing your current AWS credentials. Reverts changes on exit.",
+				Flags: []cli.Flag{
+					flagStackID,
+					flagStackLockNote,
+				},
+				Action:    attachAwsSession,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
+				Category: "Stack management",
 				Name:     "lock",
 				Usage:    "Locks a stack for exclusive use.",
 				Flags: []cli.Flag{
