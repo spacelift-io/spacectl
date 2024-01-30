@@ -45,15 +45,8 @@ type addContextConfigMutext struct {
 
 type stackInfoQuery struct {
 	Stack *struct {
-		ID                      string `graphql:"id"`
-		Name                    string `graphql:"name"`
-		AttachedAWSIntegrations []struct {
-			ID            string `graphql:"id"`
-			IntegrationID string `graphql:"integrationId"`
-			Name          string `graphql:"name"`
-			Read          bool   `graphql:"read"`
-			Write         bool   `graphql:"write"`
-		} `graphql:"attachedAwsIntegrations"`
+		ID    string `graphql:"id"`
+		Name  string `graphql:"name"`
 		Space string `graphql:"space"`
 	} `graphql:"stack(id: $stackId)" json:"stacks,omitempty"`
 }
@@ -153,24 +146,20 @@ func attachAwsSession(cliCtx *cli.Context) error {
 		}
 	}()
 
-	// We set the credentials for RO, WO, and unspecified environment variables
-	// just to cover the bases of any configuration in the target stack. The
-	// ro/wo is most common w/ the AWS integration, but the stack could have
-	// unqualified environment variables attached.
-	fmt.Println("Applying AWS credential environment variables to context")
 	envMap := map[string]string{
-		"AWS_ACCESS_KEY_ID":        awsCreds.AccessKeyID,
-		"AWS_SECRET_ACCESS_KEY":    awsCreds.SecretAccessKey,
-		"AWS_SESSION_TOKEN":        awsCreds.SessionToken,
-		"AWS_SECURITY_TOKEN":       "",
-		"ro_AWS_ACCESS_KEY_ID":     awsCreds.AccessKeyID,
-		"ro_AWS_SECRET_ACCESS_KEY": awsCreds.SecretAccessKey,
-		"ro_AWS_SESSION_TOKEN":     awsCreds.SessionToken,
-		"ro_AWS_SECURITY_TOKEN":    "",
 		"wo_AWS_ACCESS_KEY_ID":     awsCreds.AccessKeyID,
 		"wo_AWS_SECRET_ACCESS_KEY": awsCreds.SecretAccessKey,
 		"wo_AWS_SESSION_TOKEN":     awsCreds.SessionToken,
 		"wo_AWS_SECURITY_TOKEN":    "",
+	}
+	if cliCtx.Bool(flagIncludeReadOnly.Name) {
+		fmt.Println("Applying AWS credential to Read and Write environment variables")
+		envMap["ro_AWS_ACCESS_KEY_ID"] = awsCreds.AccessKeyID
+		envMap["ro_AWS_SECRET_ACCESS_KEY"] = awsCreds.SecretAccessKey
+		envMap["ro_AWS_SESSION_TOKEN"] = awsCreds.SessionToken
+		envMap["ro_AWS_SECURITY_TOKEN"] = ""
+	} else {
+		fmt.Println("Applying AWS credential to Write-Only environment variables")
 	}
 
 	for key, value := range envMap {

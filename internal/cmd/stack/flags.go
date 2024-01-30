@@ -152,3 +152,9 @@ var flagInteractive = &cli.BoolFlag{
 	Aliases: []string{"i"},
 	Usage:   "[Optional] Whether to run the command in interactive mode",
 }
+
+var flagIncludeReadOnly = &cli.BoolFlag{
+	Name:    "attach-read",
+	Aliases: []string{"r"},
+	Usage:   "Attach temporary read credentials along with write credentials overrides",
+}
