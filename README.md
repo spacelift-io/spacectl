@@ -62,8 +62,6 @@ We have [setup-spacectl](https://github.com/spacelift-io/setup-spacectl) GitHub 
 steps:
   - name: Install spacectl
     uses: spacelift-io/setup-spacectl@main
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   - name: Deploy infrastructure
     env:
