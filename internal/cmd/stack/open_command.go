@@ -68,7 +68,7 @@ func findAndOpenStackInBrowser(ctx context.Context, p *stackSearchParams) error 
 
 	return browser.OpenURL(authenticated.Client.URL(
 		"/stack/%s",
-		got,
+		got.ID,
 	))
 }
 

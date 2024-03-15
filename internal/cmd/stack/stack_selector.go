@@ -20,26 +20,35 @@ var errNoStackFound = errors.New("no stack found")
 // 1. Check the --id flag, if set, use that value.
 // 2. Check the current directory to determine repository and subdirectory and search for a stack.
 func getStackID(cliCtx *cli.Context) (string, error) {
+	stack, err := getStack(cliCtx)
+	if err != nil {
+		return "", err
+	}
+
+	return stack.ID, nil
+}
+
+func getStack(cliCtx *cli.Context) (*stack, error) {
 	if cliCtx.IsSet(flagStackID.Name) {
 		stackID := cliCtx.String(flagStackID.Name)
-		exists, err := stackExists(cliCtx.Context, stackID)
+		stack, err := stackGetByID(cliCtx.Context, stackID)
 		if err != nil {
-			return "", fmt.Errorf("failed to check if stack exists: %w", err)
+			return nil, fmt.Errorf("failed to check if stack exists: %w", err)
 		}
-		if !exists {
-			return "", fmt.Errorf("stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackID)
+		if errors.Is(err, errNoStackFound) {
+			return nil, fmt.Errorf("stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackID)
 		}
-		return stackID, nil
+		return stack, nil
 	}
 
 	subdir, err := getGitRepositorySubdir()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	name, err := getRepositoryName()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	got, err := findAndSelectStack(cliCtx.Context, &stackSearchParams{
@@ -49,19 +58,19 @@ func getStackID(cliCtx *cli.Context) (string, error) {
 	}, true)
 	if err != nil {
 		if errors.Is(err, errNoStackFound) {
-			return "", fmt.Errorf("%w: no --id flag was provided and stack could not be found by searching the current directory", err)
+			return nil, fmt.Errorf("%w: no --id flag was provided and stack could not be found by searching the current directory", err)
 		}
 
-		return "", err
+		return nil, err
 	}
 
 	return got, nil
 }
 
-func stackExists(ctx context.Context, stackID string) (bool, error) {
+func stackGetByID(ctx context.Context, stackID string) (*stack, error) {
 	var query struct {
 		Stack struct {
-			ID string `graphql:"id"`
+			stack
 		} `graphql:"stack(id: $id)"`
 	}
 
@@ -71,27 +80,31 @@ func stackExists(ctx context.Context, stackID string) (bool, error) {
 
 	err := authenticated.Client.Query(ctx, &query, variables)
 	if err != nil {
-		return false, fmt.Errorf("failed to query GraphQL API when checking if a stack exists: %w", err)
+		return nil, fmt.Errorf("failed to query GraphQL API when checking if a stack exists: %w", err)
 	}
 
-	return query.Stack.ID != "", nil
+	if query.Stack.ID != stackID {
+		return nil, errNoStackFound
+	}
+
+	return &query.Stack.stack, nil
 }
 
-func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt bool) (string, error) {
+func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt bool) (*stack, error) {
 	stacks, err := searchStacks(ctx, p)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	items := []string{}
-	found := map[string]string{}
+	found := map[string]stack{}
 	for _, stack := range stacks {
 		items = append(items, stack.Name)
-		found[stack.Name] = stack.ID
+		found[stack.Name] = stack
 	}
 
 	if len(found) == 0 {
-		return "", errNoStackFound
+		return nil, errNoStackFound
 	}
 
 	selected := found[items[0]]
@@ -112,11 +125,11 @@ func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt b
 
 		_, result, err := prompt.Run()
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
 		selected = found[result]
 	}
 
-	return selected, nil
+	return &selected, nil
 }

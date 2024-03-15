@@ -22,9 +22,14 @@ func localPreview() cli.ActionFunc {
 			return err
 		}
 
-		stackID, err := getStackID(cliCtx)
+		stack, err := getStack(cliCtx)
 		if err != nil {
 			return err
+		}
+
+		if !stack.LocalPreviewEnabled {
+			linkToStack := authenticated.Client.URL("/stack/%s", stack.ID)
+			return fmt.Errorf("local preview is not enabled for this stack, enable it in the stack settings: %s", linkToStack)
 		}
 
 		ctx := context.Background()
@@ -57,7 +62,7 @@ func localPreview() cli.ActionFunc {
 		}
 
 		uploadVariables := map[string]interface{}{
-			"stack": graphql.ID(stackID),
+			"stack": graphql.ID(stack.ID),
 		}
 
 		if err := authenticated.Client.Mutate(ctx, &uploadMutation, uploadVariables); err != nil {
@@ -104,7 +109,7 @@ func localPreview() cli.ActionFunc {
 		}
 
 		triggerVariables := map[string]interface{}{
-			"stack":                    graphql.ID(stackID),
+			"stack":                    graphql.ID(stack.ID),
 			"workspace":                graphql.ID(uploadMutation.UploadLocalWorkspace.ID),
 			"environmentVarsOverrides": envVars,
 		}
@@ -122,7 +127,7 @@ func localPreview() cli.ActionFunc {
 
 		linkToRun := authenticated.Client.URL(
 			"/stack/%s/run/%s",
-			stackID,
+			stack.ID,
 			triggerMutation.RunProposeLocalWorkspace.ID,
 		)
 		fmt.Println("The live run can be visited at", linkToRun)
@@ -131,7 +136,7 @@ func localPreview() cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := runLogsWithAction(ctx, stackID, triggerMutation.RunProposeLocalWorkspace.ID, nil)
+		terminal, err := runLogsWithAction(ctx, stack.ID, triggerMutation.RunProposeLocalWorkspace.ID, nil)
 		if err != nil {
 			return err
 		}
