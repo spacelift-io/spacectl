@@ -29,7 +29,7 @@ func localPreview() cli.ActionFunc {
 
 		if !stack.LocalPreviewEnabled {
 			linkToStack := authenticated.Client.URL("/stack/%s", stack.ID)
-			return fmt.Errorf("local preview is not enabled for this stack, enable it in the stack settings: %s", linkToStack)
+			return fmt.Errorf("local preview has not been enabled for this stack, please enable local preview in the stack settings: %s", linkToStack)
 		}
 
 		ctx := context.Background()
