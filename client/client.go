@@ -72,7 +72,11 @@ func (c *client) apiClient(ctx context.Context) (*graphql.Client, error) {
 		return nil, fmt.Errorf("graphql client creation failed at http client creation: %w", err)
 	}
 
-	return graphql.NewClient(c.session.Endpoint(), httpC), nil
+	requestOptions := []graphql.RequestOption{
+		graphql.WithHeader("Spacelift-Client-Type", "spacectl"),
+	}
+
+	return graphql.NewClient(c.session.Endpoint(), httpC, requestOptions...), nil
 }
 
 func (c *client) Do(req *http.Request) (*http.Response, error) {
