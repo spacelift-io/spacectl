@@ -35,6 +35,12 @@ type drainWorkerMutation struct {
 	} `graphql:"workerDrainSet(workerPool: $workerPool, id: $worker, drain: $drain)"`
 }
 
+type cycleWorkerMutation struct {
+	WorkerPoolCycle bool `graphql:"workerPoolCycle(id: $workerPoolId)"`
+}
+
+type cycleWorkersCommand struct{}
+
 type listWorkersCommand struct{}
 
 type drainWorkerCommand struct{}
@@ -214,6 +220,23 @@ func (c *undrainWorkerCommand) undrainWorker(cliCtx *cli.Context) error {
 	}
 
 	fmt.Printf("Successfully undrained worker %s\n", workerID)
+
+	return nil
+}
+
+func (c *cycleWorkersCommand) cycleWorkers(cliCtx *cli.Context) error {
+	var mutation cycleWorkerMutation
+	variables := map[string]interface{}{
+		"workerPoolId": graphql.ID(cliCtx.String(flagPoolIDNamed.Name)),
+	}
+
+	err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Successfully cycled worker pool %s\n", cliCtx.String(flagPoolIDNamed.Name))
 
 	return nil
 }
