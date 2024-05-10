@@ -32,6 +32,15 @@ func Command() *cli.Command {
 				Usage: "Contains commands for managing workers within a pool.",
 				Subcommands: []*cli.Command{
 					{
+						Name:  "cycle",
+						Usage: "Sends a kill signal to all workers in a workerpool.",
+						Flags: []cli.Flag{
+							flagPoolIDNamed,
+						},
+						Action: (&cycleWorkersCommand{}).cycleWorkers,
+						Before: authenticated.Ensure,
+					},
+					{
 						Name:  "list",
 						Usage: "Lists all workers of a workerpool.",
 						Flags: []cli.Flag{
