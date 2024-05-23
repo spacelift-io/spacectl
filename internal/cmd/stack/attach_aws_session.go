@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"os/user"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -15,6 +16,7 @@ import (
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v2"
 
+	"github.com/spacelift-io/spacectl/client/session"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
@@ -51,10 +53,34 @@ type stackInfoQuery struct {
 	} `graphql:"stack(id: $stackId)" json:"stacks,omitempty"`
 }
 
+type userInfoQuery struct {
+	Viewer *struct {
+		ID   string `graphql:"id" json:"id"`
+		Name string `graphql:"name" json:"name"`
+	}
+}
+
 func attachAwsSession(cliCtx *cli.Context) error {
 	// Ensure we capture SIGINT, and cleanup properly
 	ctx, cancel := signal.NotifyContext(cliCtx.Context, os.Interrupt)
 	defer cancel()
+
+	manager, err := session.UserProfileManager()
+	if err != nil {
+		return fmt.Errorf("could not access profile manager: %w", err)
+	}
+
+	profile := manager.Current()
+	if profile == nil {
+		return fmt.Errorf("no active spacectl profile")
+	}
+
+	var userInfo userInfoQuery
+	if err := authenticated.Client.Query(ctx, &userInfo, map[string]interface{}{}); err != nil {
+		return errors.New("failed to query user information: unauthorized")
+	}
+
+	minimumCredLifetime := cliCtx.Duration(flagMinimumCredentialLifetime.Name)
 
 	// Load the current AWS config or active profile
 	cfg, err := config.LoadDefaultConfig(ctx)
@@ -78,9 +104,8 @@ func attachAwsSession(cliCtx *cli.Context) error {
 		return errors.New("AWS credentials do not have keys")
 	}
 
-	identityArn, err := getAwsIdentityArn(ctx, cfg)
-	if err != nil {
-		return errors.Wrap(err, "could not get AWS identity ARN")
+	if awsCreds.CanExpire && time.Until(awsCreds.Expires) < minimumCredLifetime {
+		return fmt.Errorf("AWS credentials expire in %v which is less than the minimum %v", time.Until(awsCreds.Expires), minimumCredLifetime)
 	}
 
 	// Get the stack ID from the arguments/flags or infer it
@@ -123,13 +148,13 @@ func attachAwsSession(cliCtx *cli.Context) error {
 		}
 	}()
 
-	contextName := generateRandomContextName()
-	fmt.Printf("Creating temporary context '%v' for '%v'\n", contextName, identityArn)
+	contextName := generateRandomContextName(userInfo.Viewer.Name)
+	fmt.Printf("Creating temporary context '%v'\n", contextName)
 
 	var createMutation createContextMutation
 	err = authenticated.Client.Mutate(ctx, &createMutation, map[string]interface{}{
 		"name":  graphql.String(contextName),
-		"desc":  graphql.String(fmt.Sprintf("Temporary AWS credential context for %v", identityArn)),
+		"desc":  graphql.String(fmt.Sprintf("Temporary AWS credential context")),
 		"space": graphql.ID(stack.Space),
 	})
 	if err != nil {
@@ -187,18 +212,26 @@ func attachAwsSession(cliCtx *cli.Context) error {
 		return errors.Wrap(err, "could not attach temporary credentials to stack")
 	}
 
+	fmt.Printf("Temporary credentials attached to '%v'\n", stack.Name)
+
+	// If the credentials can expire, we should automatically exit after they do. Otherwise,
+	// we could have stale credentials hanging around in the context.
+	if awsCreds.CanExpire {
+		fmt.Printf("Temporary credentials will expire in %v (at %v)\n", time.Until(awsCreds.Expires), awsCreds.Expires.Local())
+		ctx, cancel = context.WithDeadlineCause(
+			ctx,
+			awsCreds.Expires,
+			errors.New("AWS credentials expired"),
+		)
+		defer cancel()
+	}
+
 	// Wait for the context to close (probably a SIGINT)
-	fmt.Printf("Temporary credentials attached to '%v'. Press CTRL+C to revert changes..\n", stack.Name)
+	fmt.Println("Press CTRL+C to quit and revert changes")
 	<-ctx.Done()
 
-	// Show the reason for exit
-	switch {
-	case errors.Is(ctx.Err(), context.Canceled):
-		fmt.Println("Context canceled; shutting down...")
-	case errors.Is(ctx.Err(), context.DeadlineExceeded):
-		fmt.Println("Context deadline exceeded; shutting down...")
-	default:
-		fmt.Printf("Unknown context error: %v\n", ctx.Err())
+	if err := context.Cause(ctx); err != nil {
+		fmt.Printf("%v; shutting down...\n", err)
 	}
 
 	return nil
@@ -206,20 +239,8 @@ func attachAwsSession(cliCtx *cli.Context) error {
 
 var letters []rune = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 
-func generateRandomContextName() string {
-	contextName := ""
-
-	info, err := user.Current()
-	if err == nil {
-		contextName += info.Username + "_"
-	}
-
-	hostname, err := os.Hostname()
-	if err == nil {
-		contextName += hostname + "_"
-	}
-
-	contextName += "tmp_creds_"
+func generateRandomContextName(userName string) string {
+	contextName := "tmp_creds_" + userName + "_"
 
 	for i := 0; i < 8; i++ {
 		contextName += string(letters[rand.Intn(len(letters))])

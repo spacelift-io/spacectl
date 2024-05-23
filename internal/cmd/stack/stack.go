@@ -331,6 +331,7 @@ func Command() *cli.Command {
 					flagStackID,
 					flagStackLockNote,
 					flagIncludeReadOnly,
+					flagMinimumCredentialLifetime,
 				},
 				Action:    attachAwsSession,
 				Before:    authenticated.Ensure,

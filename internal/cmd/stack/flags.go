@@ -1,6 +1,10 @@
 package stack
 
-import "github.com/urfave/cli/v2"
+import (
+	"time"
+
+	"github.com/urfave/cli/v2"
+)
 
 // flagStackID is flag used for passing the ID for a stack.
 //
@@ -157,4 +161,11 @@ var flagIncludeReadOnly = &cli.BoolFlag{
 	Name:    "attach-read",
 	Aliases: []string{"r"},
 	Usage:   "Attach temporary read credentials along with write credentials overrides",
+}
+
+var flagMinimumCredentialLifetime = &cli.DurationFlag{
+	Name:    "minimum-credential-lifetime",
+	Aliases: []string{"l"},
+	Usage:   "Minimum amount of time that the AWS credentials must be valid",
+	Value:   5 * time.Minute,
 }
