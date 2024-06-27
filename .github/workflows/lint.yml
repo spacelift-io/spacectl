@@ -12,7 +12,6 @@ jobs:
   lint:
     name: Lint the code
     runs-on: ubuntu-latest
-    container: golang:1.22
 
     steps:
       - name: Check out repository code
@@ -20,6 +19,10 @@ jobs:
 
       - name: Mark source directory as safe.
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
 
       - name: Check formatting using gofmt
         run: gofmt -s -l -d .
