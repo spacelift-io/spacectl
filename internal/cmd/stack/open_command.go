@@ -85,11 +85,24 @@ func getRepositoryName() (string, error) {
 		return "", err
 	}
 
-	result := strings.SplitN(string(out), ":", 2)
-	if len(result) != 2 {
-		return "", errors.New("could not parse result")
+	return cleanupRepositoryString(string(out))
+}
+
+func cleanupRepositoryString(s string) (string, error) {
+	var userRepo string
+
+	switch {
+	case strings.HasPrefix(s, "https://"):
+		userRepo = strings.TrimPrefix(s, "https://")
+		userRepo = userRepo[strings.Index(userRepo, "/")+1:]
+	case strings.HasPrefix(s, "git@"):
+		userRepo = strings.TrimPrefix(s, "git@")
+		userRepo = userRepo[strings.Index(userRepo, ":")+1:]
+	default:
+		return "", fmt.Errorf("unsupported repository string: %s", s)
 	}
-	return strings.TrimSuffix(strings.TrimSpace(result[1]), ".git"), nil
+
+	return strings.TrimSuffix(strings.TrimSpace(userRepo), ".git"), nil
 }
 
 func getGitCurrentBranch() (string, error) {
