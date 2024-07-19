@@ -42,6 +42,29 @@ func Command() *cli.Command {
 				Before:    authenticated.Ensure,
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
+			{
+				Category: "Module management",
+				Name:     "list",
+				Usage:    "List all modules available and their current version",
+				Flags: []cli.Flag{
+					cmd.FlagOutputFormat,
+				},
+				Action:    listModules(),
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
+				Category: "Module management",
+				Name:     "list-versions",
+				Usage:    "List 20 latest non failed versions for a module",
+				Flags: []cli.Flag{
+					flagModuleID,
+					cmd.FlagOutputFormat,
+				},
+				Action:    listVersions(),
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
 		},
 	}
 }
