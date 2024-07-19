@@ -55,7 +55,9 @@ func Ensure(*cli.Context) error {
 
 // configureTLS configures client TLS from the environment.
 func configureTLS(httpClient *http.Client) error {
-	clientTLS := &tls.Config{}
+	clientTLS := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+	}
 
 	if caFile, ok := os.LookupEnv(EnvSpaceliftAPIClientCA); ok && caFile != "" {
 		caCert, err := os.ReadFile("cacert")
