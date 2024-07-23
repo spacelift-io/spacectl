@@ -85,9 +85,10 @@ func configureTLS(httpClient *http.Client) error {
 		clientTLS.Certificates = []tls.Certificate{cert}
 	}
 
-	httpClient.Transport = &http.Transport{
-		TLSClientConfig: clientTLS,
-	}
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = clientTLS
+
+	httpClient.Transport = transport
 
 	return nil
 }
