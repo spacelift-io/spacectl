@@ -49,7 +49,7 @@ func (s *StoredCredentials) Session(ctx context.Context, client *http.Client) (S
 	case CredentialsTypeGitHubToken:
 		return FromGitHubToken(ctx, client)(s.Endpoint, s.AccessToken)
 	case CredentialsTypeAPIToken:
-		return FromAPIToken(ctx, client)(s.AccessToken)
+		return FromAPIToken(ctx, client)(s.Endpoint, s.AccessToken)
 	default:
 		return nil, fmt.Errorf("unexpected credentials type: %d", s.Type)
 	}
