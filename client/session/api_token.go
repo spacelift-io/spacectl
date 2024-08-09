@@ -18,8 +18,8 @@ import (
 const timePadding = 30 * time.Second
 
 // FromAPIToken creates a session from a ready API token.
-func FromAPIToken(_ context.Context, client *http.Client) func(string) (Session, error) {
-	return func(token string) (Session, error) {
+func FromAPIToken(_ context.Context, client *http.Client) func(string, string) (Session, error) {
+	return func(endpoint, token string) (Session, error) {
 		var claims jwt.RegisteredClaims
 
 		_, _, err := (&jwt.Parser{}).ParseUnverified(token, &claims)
@@ -31,9 +31,14 @@ func FromAPIToken(_ context.Context, client *http.Client) func(string) (Session,
 			return nil, fmt.Errorf("unexpected audience: %v", claims.Audience)
 		}
 
+		apiEndpoint := claims.Audience[0]
+		if endpoint != "" {
+			apiEndpoint = endpoint
+		}
+
 		return &apiToken{
 			client:          client,
-			endpoint:        claims.Audience[0],
+			endpoint:        apiEndpoint,
 			jwt:             token,
 			tokenValidUntil: claims.ExpiresAt.Time,
 			timer:           time.Now,

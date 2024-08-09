@@ -50,7 +50,7 @@ func FromEnvironment(ctx context.Context, client *http.Client) func(func(string)
 		}
 
 		if token, ok := lookup(EnvSpaceliftAPIToken); ok && token != "" {
-			return FromAPIToken(ctx, client)(token)
+			return FromAPIToken(ctx, client)("", token)
 		}
 
 		endpoint, ok := lookup(EnvSpaceliftAPIKeyEndpoint)
