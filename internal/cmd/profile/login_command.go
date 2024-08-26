@@ -142,7 +142,7 @@ func loginUsingAPIKey(reader *bufio.Reader, creds *session.StoredCredentials) er
 	creds.KeyID = strings.TrimSpace(keyID)
 
 	fmt.Print("Enter API key secret: ")
-	keySecret, err := term.ReadPassword(syscall.Stdin)
+	keySecret, err := term.ReadPassword(int(syscall.Stdin)) //nolint: unconvert
 	if err != nil {
 		return err
 	}
@@ -156,7 +156,7 @@ func loginUsingAPIKey(reader *bufio.Reader, creds *session.StoredCredentials) er
 func loginUsingGitHubAccessToken(creds *session.StoredCredentials) error {
 	fmt.Print("Enter GitHub access token: ")
 
-	accessToken, err := term.ReadPassword(syscall.Stdin)
+	accessToken, err := term.ReadPassword(int(syscall.Stdin)) //nolint: unconvert
 	if err != nil {
 		return err
 	}
