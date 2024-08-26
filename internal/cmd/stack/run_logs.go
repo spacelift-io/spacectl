@@ -175,7 +175,7 @@ func runStateLogs(ctx context.Context, stack, run string, state structs.RunState
 		"run":          graphql.ID(run),
 		"state":        state,
 		"token":        token,
-		"stateVersion": graphql.Int(version),
+		"stateVersion": graphql.Int(version), //nolint: gosec
 	}
 
 	var backOff time.Duration

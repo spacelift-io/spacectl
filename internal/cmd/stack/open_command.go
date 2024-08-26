@@ -201,7 +201,7 @@ func searchStacks(ctx context.Context, p *stackSearchParams) ([]stack, error) {
 	}
 
 	variables := map[string]interface{}{"input": structs.SearchInput{
-		First:      graphql.NewInt(graphql.Int(p.count)),
+		First:      graphql.NewInt(graphql.Int(p.count)), //nolint: gosec
 		Predicates: &conditions,
 	}}
 

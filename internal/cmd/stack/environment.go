@@ -206,7 +206,7 @@ func (e *configElement) toConfigElementOutput(contextName *string) (listEnvEleme
 
 		if err != nil {
 			message := fmt.Sprintf("failed to decode base64-encoded file with id %s", e.ID)
-			return listEnvElementOutput{}, errors.Wrapf(err, message)
+			return listEnvElementOutput{}, errors.Wrap(err, message)
 		}
 
 		stringValue := string(result)

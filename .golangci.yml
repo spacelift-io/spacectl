@@ -80,7 +80,6 @@ linters:
     - bodyclose
     - depguard
     - errorlint
-    - exportloopref
     - gci
     - gocheckcompilerdirectives
     - gocritic
