@@ -207,6 +207,19 @@ func Command() *cli.Command {
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
+				Category: "Run management",
+				Name:     "deprioritize",
+				Usage:    "Deprioritize a run",
+				Flags: []cli.Flag{
+					flagStackID,
+					flagRequiredRun,
+					flagTail,
+				},
+				Action:    runDeprioritize,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
 				Name:  "run",
 				Usage: "Manage a stack's runs",
 				Subcommands: []*cli.Command{
