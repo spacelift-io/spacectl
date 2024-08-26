@@ -119,11 +119,26 @@ func localPreview() cli.ActionFunc {
 			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {
+		if err = authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {
 			return err
 		}
 
 		fmt.Println("You have successfully created a local preview run!")
+
+		if cliCtx.Bool(flagPrioritizeRun.Name) {
+			var prioritizeMutation setRunPriorityMutation
+			variables := map[string]interface{}{
+				"stackId":    graphql.ID(stack.ID),
+				"runId":      graphql.ID(triggerMutation.RunProposeLocalWorkspace.ID),
+				"prioritize": graphql.Boolean(true),
+			}
+
+			if err = authenticated.Client.Mutate(ctx, &prioritizeMutation, variables); err != nil {
+				return err
+			}
+
+			fmt.Print("The run has been successfully prioritized!\n")
+		}
 
 		linkToRun := authenticated.Client.URL(
 			"/stack/%s/run/%s",
