@@ -1,0 +1,102 @@
+linters-settings:
+  depguard:
+    rules:
+      main:
+        deny:
+          - pkg: "io/ioutil"
+            # https://go.dev/doc/go1.16#ioutil
+            desc:  io/ioutil package has been deprecated.
+  dupl:
+    threshold: 100
+  funlen:
+    lines: 100
+    statements: 50
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/spacelift-io/backend)
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - performance
+    disabled-checks:
+      - ifElseChain
+      - wrapperFunc
+      - hugeParam
+      - rangeValCopy
+      - appendCombine
+      - commentedOutCode
+      - sloppyReassign
+      - filepathJoin
+      - evalOrder
+      - equalFold
+      - returnAfterHttpError
+      - preferStringWriter
+      - sprintfQuotedString
+      - preferFprint
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/spacelift-io/backend
+  govet:
+    check-shadowing: false
+    enable:
+      - nilness
+  nolintlint:
+    require-explanation: false # don't require an explanation for nolint directives
+    require-specific: false # don't require nolint directives to be specific about which linter is being skipped
+  revive:
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: increment-decrement
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: time-naming
+      - name: errorf
+      - name: unreachable-code
+      - name: redefines-builtin-id
+  staticcheck:
+    checks: [ "all", "-SA1019"]
+
+  errorlint:
+    errorf: false
+    errorf-multi: false
+    asserts: false
+    comparison: true
+
+linters:
+  disable-all: true
+  enable:
+    - asasalint
+    - bodyclose
+    - depguard
+    - errorlint
+    - exportloopref
+    - gci
+    - gocheckcompilerdirectives
+    - gocritic
+    - gofmt
+    - goimports
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - makezero
+    - noctx
+    - nolintlint
+    - staticcheck
+    - revive
+    - typecheck
+    - unconvert
+    - wastedassign
+    - unparam

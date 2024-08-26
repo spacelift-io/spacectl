@@ -14,11 +14,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mholt/archiver/v3"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
-	"golang.org/x/sync/errgroup"
-
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/urfave/cli/v2"
+	"golang.org/x/sync/errgroup"
 )
 
 func localPreview() cli.ActionFunc {

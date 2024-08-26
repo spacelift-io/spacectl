@@ -17,11 +17,11 @@ const (
 
 	// EnvSpaceliftAPIKeyEndpoint represents the name of the environment variable
 	// pointing to the Spacelift API endpoint.
-	EnvSpaceliftAPIKeyEndpoint = "SPACELIFT_API_KEY_ENDPOINT"
+	EnvSpaceliftAPIKeyEndpoint = "SPACELIFT_API_KEY_ENDPOINT" //nolint: gosec
 
 	// EnvSpaceliftAPIKeyID represents the name of the environment variable
 	// pointing to the Spacelift API key ID.
-	EnvSpaceliftAPIKeyID = "SPACELIFT_API_KEY_ID"
+	EnvSpaceliftAPIKeyID = "SPACELIFT_API_KEY_ID" //nolint: gosec
 
 	// EnvSpaceliftAPIKeySecret represents the name of the environment variable
 	// pointing to the Spacelift API key secret.

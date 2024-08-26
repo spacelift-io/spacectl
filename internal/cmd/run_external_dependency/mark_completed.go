@@ -5,9 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/urfave/cli/v2"
-
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/urfave/cli/v2"
 )
 
 func markRunExternalDependencyAsCompleted(cliCtx *cli.Context) error {

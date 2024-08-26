@@ -8,14 +8,13 @@ import (
 	"testing"
 
 	"github.com/franela/goblin"
-	. "github.com/onsi/gomega"
-
+	"github.com/onsi/gomega"
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
 func TestProfileManager(t *testing.T) {
 	g := goblin.Goblin(t)
-	RegisterFailHandler(func(m string, _ ...int) { g.Fail(m) })
+	gomega.RegisterFailHandler(func(m string, _ ...int) { g.Fail(m) })
 
 	g.Describe("ProfileManager", func() {
 		var testDirectory string
@@ -44,7 +43,7 @@ func TestProfileManager(t *testing.T) {
 		g.Describe("NewProfileManager", func() {
 			g.Describe("profiles directory doesn't exist", func() {
 				g.It("creates directory", func() {
-					Expect(profilesDirectory).Should(BeADirectory())
+					gomega.Expect(profilesDirectory).Should(gomega.BeADirectory())
 				})
 			})
 
@@ -52,12 +51,12 @@ func TestProfileManager(t *testing.T) {
 				g.It("initializes profiles map", func() {
 					configFilename := path.Join(profilesDirectory, session.ConfigFileName)
 					err := os.WriteFile(configFilename, []byte("{}"), 0600)
-					Expect(err).ShouldNot(HaveOccurred())
+					gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 
 					manager, err = session.NewProfileManager(profilesDirectory)
-					Expect(err).ShouldNot(HaveOccurred())
+					gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 
-					Expect(manager.Configuration.Profiles).ToNot(BeNil())
+					gomega.Expect(manager.Configuration.Profiles).ToNot(gomega.BeNil())
 				})
 			})
 		})
@@ -67,7 +66,7 @@ func TestProfileManager(t *testing.T) {
 				g.It("returns nil", func() {
 					profile := manager.Current()
 
-					Expect(profile).To(BeNil())
+					gomega.Expect(profile).To(gomega.BeNil())
 				})
 			})
 		})
@@ -84,12 +83,12 @@ func TestProfileManager(t *testing.T) {
 				}
 
 				err := manager.Create(testProfile)
-				Expect(err).To(BeNil())
+				gomega.Expect(err).To(gomega.BeNil())
 
 				currentProfile := manager.Current()
 
-				Expect(currentProfile).NotTo(BeNil())
-				Expect(currentProfile.Alias).To(Equal(testProfile.Alias))
+				gomega.Expect(currentProfile).NotTo(gomega.BeNil())
+				gomega.Expect(currentProfile.Alias).To(gomega.Equal(testProfile.Alias))
 			})
 
 			g.It("rejects invalid credential types", func() {
@@ -104,7 +103,7 @@ func TestProfileManager(t *testing.T) {
 
 				err := manager.Create(testProfile)
 
-				Expect(err).Should(MatchError(fmt.Sprintf("'%d' is an invalid credential type", credentialType)))
+				gomega.Expect(err).Should(gomega.MatchError(fmt.Sprintf("'%d' is an invalid credential type", credentialType)))
 			})
 
 			g.Describe("All credential types", func() {
@@ -114,7 +113,7 @@ func TestProfileManager(t *testing.T) {
 
 						err := manager.Create(testProfile)
 
-						Expect(err).Should(MatchError("'Endpoint' must be provided"))
+						gomega.Expect(err).Should(gomega.MatchError("'Endpoint' must be provided"))
 					})
 				}
 			})
@@ -129,15 +128,15 @@ func TestProfileManager(t *testing.T) {
 					}
 
 					err := manager.Create(testProfile)
-					Expect(err).To(BeNil())
+					gomega.Expect(err).To(gomega.BeNil())
 
 					savedProfile, err := manager.Get(testProfile.Alias)
 
-					Expect(err).To(BeNil())
-					Expect(savedProfile).ToNot(BeNil())
-					Expect(savedProfile.Credentials.Type).To(Equal(testProfile.Credentials.Type))
-					Expect(savedProfile.Credentials.Endpoint).To(Equal(testProfile.Credentials.Endpoint))
-					Expect(savedProfile.Credentials.AccessToken).To(Equal(testProfile.Credentials.AccessToken))
+					gomega.Expect(err).To(gomega.BeNil())
+					gomega.Expect(savedProfile).ToNot(gomega.BeNil())
+					gomega.Expect(savedProfile.Credentials.Type).To(gomega.Equal(testProfile.Credentials.Type))
+					gomega.Expect(savedProfile.Credentials.Endpoint).To(gomega.Equal(testProfile.Credentials.Endpoint))
+					gomega.Expect(savedProfile.Credentials.AccessToken).To(gomega.Equal(testProfile.Credentials.AccessToken))
 				})
 
 				g.It("rejects GitHub credentials if no access token is specified", func() {
@@ -151,7 +150,7 @@ func TestProfileManager(t *testing.T) {
 
 					err := manager.Create(testProfile)
 
-					Expect(err).Should(MatchError("'AccessToken' must be provided for GitHub token credentials"))
+					gomega.Expect(err).Should(gomega.MatchError("'AccessToken' must be provided for GitHub token credentials"))
 				})
 			})
 
@@ -165,16 +164,16 @@ func TestProfileManager(t *testing.T) {
 					}
 
 					err := manager.Create(testProfile)
-					Expect(err).To(BeNil())
+					gomega.Expect(err).To(gomega.BeNil())
 
 					savedProfile, err := manager.Get(testProfile.Alias)
 
-					Expect(err).To(BeNil())
-					Expect(savedProfile).ToNot(BeNil())
-					Expect(savedProfile.Credentials.Type).To(Equal(testProfile.Credentials.Type))
-					Expect(savedProfile.Credentials.Endpoint).To(Equal(testProfile.Credentials.Endpoint))
-					Expect(savedProfile.Credentials.KeyID).To(Equal(testProfile.Credentials.KeyID))
-					Expect(savedProfile.Credentials.KeySecret).To(Equal(testProfile.Credentials.KeySecret))
+					gomega.Expect(err).To(gomega.BeNil())
+					gomega.Expect(savedProfile).ToNot(gomega.BeNil())
+					gomega.Expect(savedProfile.Credentials.Type).To(gomega.Equal(testProfile.Credentials.Type))
+					gomega.Expect(savedProfile.Credentials.Endpoint).To(gomega.Equal(testProfile.Credentials.Endpoint))
+					gomega.Expect(savedProfile.Credentials.KeyID).To(gomega.Equal(testProfile.Credentials.KeyID))
+					gomega.Expect(savedProfile.Credentials.KeySecret).To(gomega.Equal(testProfile.Credentials.KeySecret))
 				})
 
 				g.It("rejects credentials if no KeyID is specified", func() {
@@ -189,7 +188,7 @@ func TestProfileManager(t *testing.T) {
 
 					err := manager.Create(testProfile)
 
-					Expect(err).Should(MatchError("'KeyID' must be provided for API Key credentials"))
+					gomega.Expect(err).Should(gomega.MatchError("'KeyID' must be provided for API Key credentials"))
 				})
 
 				g.It("rejects credentials if no KeySecret is specified", func() {
@@ -204,20 +203,20 @@ func TestProfileManager(t *testing.T) {
 
 					err := manager.Create(testProfile)
 
-					Expect(err).Should(MatchError("'KeySecret' must be provided for API Key credentials"))
+					gomega.Expect(err).Should(gomega.MatchError("'KeySecret' must be provided for API Key credentials"))
 				})
 			})
 
 			g.It("fails if profile alias is not specified", func() {
 				err := manager.Create(&session.Profile{Alias: ""})
 
-				Expect(err).Should(MatchError("a profile alias must be specified"))
+				gomega.Expect(err).Should(gomega.MatchError("a profile alias must be specified"))
 			})
 
 			g.It("fails if profile is nil", func() {
 				err := manager.Create(nil)
 
-				Expect(err).Should(MatchError("profile must not be nil"))
+				gomega.Expect(err).Should(gomega.MatchError("profile must not be nil"))
 			})
 
 			g.It("rejects invalid profile aliases", func() {
@@ -233,7 +232,7 @@ func TestProfileManager(t *testing.T) {
 					testProfile := createValidProfile(profileAlias)
 					err := manager.Create(testProfile)
 
-					Expect(err).Should(MatchError(fmt.Sprintf("'%s' is not a valid profile alias", profileAlias)))
+					gomega.Expect(err).Should(gomega.MatchError(fmt.Sprintf("'%s' is not a valid profile alias", profileAlias)))
 				}
 			})
 		})
@@ -241,42 +240,42 @@ func TestProfileManager(t *testing.T) {
 		g.Describe("Get", func() {
 			g.It("can get a profile", func() {
 				profileAlias := "test-profile"
-				Expect(manager.Create(&session.Profile{
+				gomega.Expect(manager.Create(&session.Profile{
 					Alias:       profileAlias,
 					Credentials: createValidGitHubCredentials(),
-				})).To(Succeed())
+				})).To(gomega.Succeed())
 
 				testProfile, err := manager.Get(profileAlias)
 
-				Expect(err).To(BeNil())
-				Expect(testProfile.Alias).To(Equal(profileAlias))
+				gomega.Expect(err).To(gomega.BeNil())
+				gomega.Expect(testProfile.Alias).To(gomega.Equal(profileAlias))
 			})
 
 			g.It("returns nil if profile does not exist", func() {
 				profileAlias := "non-existent"
 				profile, err := manager.Get(profileAlias)
 
-				Expect(err).Should(BeNil())
-				Expect(profile).Should(BeNil())
+				gomega.Expect(err).Should(gomega.BeNil())
+				gomega.Expect(profile).Should(gomega.BeNil())
 			})
 
 			g.It("returns error if profile alias is empty", func() {
 				_, err := manager.Get("")
 
-				Expect(err).Should(MatchError("a profile alias must be specified"))
+				gomega.Expect(err).Should(gomega.MatchError("a profile alias must be specified"))
 			})
 		})
 
 		g.Describe("Select", func() {
 			g.It("can set the current profile", func() {
-				Expect(manager.Create(createValidProfile("profile1"))).To(Succeed())
-				Expect(manager.Create(createValidProfile("profile2"))).To(Succeed())
+				gomega.Expect(manager.Create(createValidProfile("profile1"))).To(gomega.Succeed())
+				gomega.Expect(manager.Create(createValidProfile("profile2"))).To(gomega.Succeed())
 
-				Expect(manager.Select("profile1")).To(Succeed())
+				gomega.Expect(manager.Select("profile1")).To(gomega.Succeed())
 
 				currentProfile := manager.Current()
-				Expect(currentProfile).NotTo(BeNil())
-				Expect(currentProfile.Alias).To(Equal("profile1"))
+				gomega.Expect(currentProfile).NotTo(gomega.BeNil())
+				gomega.Expect(currentProfile.Alias).To(gomega.Equal("profile1"))
 			})
 
 			g.It("returns error if profile to select does not exist", func() {
@@ -284,51 +283,51 @@ func TestProfileManager(t *testing.T) {
 
 				err := manager.Select(profileAlias)
 
-				Expect(err).Should(MatchError(fmt.Sprintf("could not find a profile named '%s'", "non-existent")))
+				gomega.Expect(err).Should(gomega.MatchError(fmt.Sprintf("could not find a profile named '%s'", "non-existent")))
 			})
 		})
 
 		g.Describe("Delete", func() {
 			g.It("can delete a profile", func() {
-				Expect(manager.Create(createValidProfile("profile1"))).To(Succeed())
+				gomega.Expect(manager.Create(createValidProfile("profile1"))).To(gomega.Succeed())
 
-				Expect(manager.Delete("profile1")).To(Succeed())
+				gomega.Expect(manager.Delete("profile1")).To(gomega.Succeed())
 
 				profile, err := manager.Get("profile1")
-				Expect(err).To(BeNil())
-				Expect(profile).To(BeNil())
+				gomega.Expect(err).To(gomega.BeNil())
+				gomega.Expect(profile).To(gomega.BeNil())
 			})
 
 			g.It("returns error if profile does not exist", func() {
 				err := manager.Delete("non-existent")
 
-				Expect(err).Should(MatchError(fmt.Sprintf("no profile named '%s' exists", "non-existent")))
+				gomega.Expect(err).Should(gomega.MatchError(fmt.Sprintf("no profile named '%s' exists", "non-existent")))
 			})
 
 			g.It("returns error if profile alias is empty", func() {
 				err := manager.Delete("")
 
-				Expect(err).Should(MatchError("a profile alias must be specified"))
+				gomega.Expect(err).Should(gomega.MatchError("a profile alias must be specified"))
 			})
 
 			g.It("unsets profile if it is the current profile", func() {
-				Expect(manager.Create(createValidProfile("profile1"))).To(Succeed())
+				gomega.Expect(manager.Create(createValidProfile("profile1"))).To(gomega.Succeed())
 
-				Expect(manager.Delete("profile1")).To(Succeed())
+				gomega.Expect(manager.Delete("profile1")).To(gomega.Succeed())
 
 				current := manager.Current()
-				Expect(current).To(BeNil())
+				gomega.Expect(current).To(gomega.BeNil())
 			})
 
 			g.It("does not unset profile if it is not the current profile", func() {
-				Expect(manager.Create(createValidProfile("profile1"))).To(Succeed())
-				Expect(manager.Create(createValidProfile("profile2"))).To(Succeed())
+				gomega.Expect(manager.Create(createValidProfile("profile1"))).To(gomega.Succeed())
+				gomega.Expect(manager.Create(createValidProfile("profile2"))).To(gomega.Succeed())
 
-				Expect(manager.Delete("profile1")).To(Succeed())
+				gomega.Expect(manager.Delete("profile1")).To(gomega.Succeed())
 
 				current := manager.Current()
-				Expect(current).NotTo(BeNil())
-				Expect(current.Alias).To(Equal("profile2"))
+				gomega.Expect(current).NotTo(gomega.BeNil())
+				gomega.Expect(current.Alias).To(gomega.Equal("profile2"))
 			})
 		})
 
@@ -336,13 +335,13 @@ func TestProfileManager(t *testing.T) {
 			g.It("returns empty when no profiles exist", func() {
 				profiles := manager.GetAll()
 
-				Expect(profiles).To(BeEmpty())
+				gomega.Expect(profiles).To(gomega.BeEmpty())
 			})
 
 			g.It("returns all profiles", func() {
-				Expect(manager.Create(createValidProfile("profile-1"))).To(Succeed())
-				Expect(manager.Create(createValidProfile("profile-2"))).To(Succeed())
-				Expect(manager.Create(createValidProfile("profile-3"))).To(Succeed())
+				gomega.Expect(manager.Create(createValidProfile("profile-1"))).To(gomega.Succeed())
+				gomega.Expect(manager.Create(createValidProfile("profile-2"))).To(gomega.Succeed())
+				gomega.Expect(manager.Create(createValidProfile("profile-3"))).To(gomega.Succeed())
 
 				profiles := manager.GetAll()
 
@@ -351,10 +350,10 @@ func TestProfileManager(t *testing.T) {
 					return profiles[i].Alias < profiles[j].Alias
 				})
 
-				Expect(len(profiles)).To(Equal(3))
-				Expect(profiles[0].Alias).To(Equal("profile-1"))
-				Expect(profiles[1].Alias).To(Equal("profile-2"))
-				Expect(profiles[2].Alias).To(Equal("profile-3"))
+				gomega.Expect(len(profiles)).To(gomega.Equal(3))
+				gomega.Expect(profiles[0].Alias).To(gomega.Equal("profile-1"))
+				gomega.Expect(profiles[1].Alias).To(gomega.Equal("profile-2"))
+				gomega.Expect(profiles[2].Alias).To(gomega.Equal("profile-3"))
 			})
 		})
 	})
