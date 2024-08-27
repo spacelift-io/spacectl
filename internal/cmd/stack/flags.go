@@ -147,6 +147,11 @@ var flagResources = &cli.StringSliceFlag{
 	Usage: "[Optional] A comma separeted list of resources to be used when applying, example: 'aws_instance.foo'",
 }
 
+var flagPrioritizeRun = &cli.BoolFlag{
+	Name:  "prioritize-run",
+	Usage: "[Optional] Indicate whether to prioritize the run",
+}
+
 var flagInteractive = &cli.BoolFlag{
 	Name:    "interactive",
 	Aliases: []string{"i"},
