@@ -21,6 +21,7 @@ func TestTrimmedValue(t *testing.T) {
 	}
 
 	for _, testCase := range testTable {
+		testCase := testCase
 		o := listEnvElementOutput{
 			Value: &testCase.input,
 		}

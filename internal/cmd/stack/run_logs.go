@@ -7,10 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
-
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/urfave/cli/v2"
 )
 
 // actionOnRunState is a function that can be executed on a run state.
@@ -176,7 +175,7 @@ func runStateLogs(ctx context.Context, stack, run string, state structs.RunState
 		"run":          graphql.ID(run),
 		"state":        state,
 		"token":        token,
-		"stateVersion": graphql.Int(version),
+		"stateVersion": graphql.Int(version), //nolint: gosec
 	}
 
 	var backOff time.Duration

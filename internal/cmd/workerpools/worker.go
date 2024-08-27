@@ -66,7 +66,7 @@ func (c *listWorkersCommand) listWorkers(cliCtx *cli.Context) error {
 	}
 
 	if query.Pool == nil {
-		return errors.New(fmt.Sprintf("workerpool with id %s not found", workerPoolID))
+		return fmt.Errorf("workerpool with id %s not found", workerPoolID)
 	}
 
 	switch outputFormat {

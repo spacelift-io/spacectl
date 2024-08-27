@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/urfave/cli/v2"
-
 	"github.com/spacelift-io/spacectl/client/session"
+	"github.com/urfave/cli/v2"
 )
 
 var bindHost string

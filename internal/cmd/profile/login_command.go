@@ -13,11 +13,10 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli/v2"
-	"golang.org/x/term"
-
 	"github.com/spacelift-io/spacectl/browserauth"
 	"github.com/spacelift-io/spacectl/client/session"
+	"github.com/urfave/cli/v2"
+	"golang.org/x/term"
 )
 
 func loginCommand() *cli.Command {
@@ -88,7 +87,7 @@ func loginAction(ctx *cli.Context) error {
 func getCredentialsType(ctx *cli.Context) (session.CredentialsType, error) {
 	if ctx.IsSet(flagMethod.Name) {
 		got := methodToCredentialsType[ctx.String(flagMethod.Name)]
-		return session.CredentialsType(got), nil
+		return got, nil
 	}
 
 	prompt := promptui.Select{
@@ -143,7 +142,7 @@ func loginUsingAPIKey(reader *bufio.Reader, creds *session.StoredCredentials) er
 	creds.KeyID = strings.TrimSpace(keyID)
 
 	fmt.Print("Enter API key secret: ")
-	keySecret, err := term.ReadPassword(int(syscall.Stdin))
+	keySecret, err := term.ReadPassword(int(syscall.Stdin)) //nolint: unconvert
 	if err != nil {
 		return err
 	}
@@ -157,7 +156,7 @@ func loginUsingAPIKey(reader *bufio.Reader, creds *session.StoredCredentials) er
 func loginUsingGitHubAccessToken(creds *session.StoredCredentials) error {
 	fmt.Print("Enter GitHub access token: ")
 
-	accessToken, err := term.ReadPassword(int(syscall.Stdin))
+	accessToken, err := term.ReadPassword(int(syscall.Stdin)) //nolint: unconvert
 	if err != nil {
 		return err
 	}
@@ -168,7 +167,7 @@ func loginUsingGitHubAccessToken(creds *session.StoredCredentials) error {
 	return nil
 }
 
-func loginUsingWebBrowser(ctx *cli.Context, creds *session.StoredCredentials) error {
+func loginUsingWebBrowser(_ *cli.Context, creds *session.StoredCredentials) error {
 	// Begin the interactive browser auth flow
 	handler, err := browserauth.BeginWithBindAddress(creds, bindHost, bindPort)
 	if err != nil {

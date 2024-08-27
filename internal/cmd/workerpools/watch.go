@@ -5,11 +5,10 @@ import (
 	"strings"
 
 	"github.com/manifoldco/promptui"
-	"github.com/urfave/cli/v2"
-
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/draw"
 	"github.com/spacelift-io/spacectl/internal/cmd/draw/data"
+	"github.com/urfave/cli/v2"
 )
 
 func watch(cliCtx *cli.Context) error {

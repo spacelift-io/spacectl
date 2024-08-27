@@ -9,12 +9,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
-
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/urfave/cli/v2"
 )
 
 // ConfigType is a type of configuration element.
@@ -140,6 +138,7 @@ func (e *listEnvCommand) listEnv(cliCtx *cli.Context) error {
 
 	var elements []listEnvElementOutput
 	for _, config := range query.Stack.RuntimeConfig {
+		config := config
 		var contextName *string
 		if config.Context != nil {
 			contextName = &config.Context.ContextName

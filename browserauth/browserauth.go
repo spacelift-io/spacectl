@@ -212,13 +212,13 @@ func (h *Handler) extractToken(r *http.Request) error {
 	}
 
 	// Decrypt the token AES key using our private key
-	key, err := rsa.DecryptOAEP(sha512.New(), rand.Reader, h.key, []byte(encKey), nil)
+	key, err := rsa.DecryptOAEP(sha512.New(), rand.Reader, h.key, encKey, nil)
 	if err != nil {
 		return errors.Wrap(err, "could not decrypt key")
 	}
 
 	// Decrypt the token using the decrypted AES key
-	jwt, err := internal.DecryptAES(key, []byte(encToken))
+	jwt, err := internal.DecryptAES(key, encToken)
 	if err != nil {
 		return errors.Wrap(err, "could not decrypt session token")
 	}

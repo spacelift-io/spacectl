@@ -6,10 +6,9 @@ import (
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
-
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
+	"github.com/urfave/cli/v2"
 )
 
 func addGPGKey() cli.ActionFunc {
@@ -81,7 +80,7 @@ func generateGPGKey(cliCtx *cli.Context, keyName, keyPath string) (string, error
 	return key.GetArmoredPublicKey()
 }
 
-func importGPGKey(cliCtx *cli.Context, keyPath string) (string, error) {
+func importGPGKey(_ *cli.Context, keyPath string) (string, error) {
 	// #nosec G304
 	bytes, err := os.ReadFile(keyPath)
 	if err != nil {

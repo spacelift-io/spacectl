@@ -3,10 +3,9 @@ package stack
 import (
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
-
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/urfave/cli/v2"
 )
 
 func runChanges(cliCtx *cli.Context) error {
