@@ -1,9 +1,11 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
+	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/urfave/cli/v2"
@@ -28,7 +30,9 @@ func listStacks() cli.ActionFunc {
 }
 
 func listStacksJSON(ctx *cli.Context) error {
-	stacks, err := searchStacks(ctx.Context, structs.SearchInput{})
+	stacks, err := searchAllStacks(ctx.Context, structs.SearchInput{
+		First: graphql.NewInt(50),
+	})
 	if err != nil {
 		return err
 	}
@@ -37,7 +41,8 @@ func listStacksJSON(ctx *cli.Context) error {
 }
 
 func listStacksTable(ctx *cli.Context) error {
-	stacks, err := searchStacks(ctx.Context, structs.SearchInput{
+	stacks, err := searchAllStacks(ctx.Context, structs.SearchInput{
+		First: graphql.NewInt(50),
 		OrderBy: &structs.QueryOrder{
 			Field:     "starred",
 			Direction: "DESC",
@@ -53,24 +58,45 @@ func listStacksTable(ctx *cli.Context) error {
 	}
 
 	tableData := [][]string{columns}
-	for _, stack := range stacks {
+	for _, s := range stacks {
 		row := []string{
-			stack.Name,
-			stack.ID,
-			cmd.HumanizeGitHash(stack.TrackedCommit.Hash),
-			stack.TrackedCommit.AuthorName,
-			stack.State,
-			stack.WorkerPool.Name,
-			stack.LockedBy,
+			s.Name,
+			s.ID,
+			cmd.HumanizeGitHash(s.TrackedCommit.Hash),
+			s.TrackedCommit.AuthorName,
+			s.State,
+			s.WorkerPool.Name,
+			s.LockedBy,
 		}
 		if ctx.Bool(flagShowLabels.Name) {
-			row = append(row, strings.Join(stack.Labels, ", "))
+			row = append(row, strings.Join(s.Labels, ", "))
 		}
 
 		tableData = append(tableData, row)
 	}
 
 	return cmd.OutputTable(tableData, true)
+}
+
+func searchAllStacks(ctx context.Context, input structs.SearchInput) ([]stack, error) {
+	out := []stack{}
+
+	for {
+		result, err := searchStacks(ctx, input)
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, result.Stacks...)
+
+		if !result.PageInfo.HasNextPage {
+			break
+		} else {
+			input.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+		}
+	}
+
+	return out, nil
 }
 
 type stack struct {

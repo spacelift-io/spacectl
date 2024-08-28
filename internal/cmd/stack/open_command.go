@@ -163,7 +163,12 @@ type stackSearchParams struct {
 	branch      *string
 }
 
-func searchStacks(ctx context.Context, input structs.SearchInput) ([]stack, error) {
+type searchStacksResult struct {
+	Stacks   []stack
+	PageInfo structs.PageInfo
+}
+
+func searchStacks(ctx context.Context, input structs.SearchInput) (searchStacksResult, error) {
 	var query struct {
 		SearchStacksOutput struct {
 			Edges []struct {
@@ -179,13 +184,16 @@ func searchStacks(ctx context.Context, input structs.SearchInput) ([]stack, erro
 		map[string]interface{}{"input": input},
 		graphql.WithHeader("Spacelift-GraphQL-Query", "StacksPage"),
 	); err != nil {
-		return nil, errors.Wrap(err, "failed search for stacks")
+		return searchStacksResult{}, errors.Wrap(err, "failed search for stacks")
 	}
 
-	result := make([]stack, 0)
+	stacks := make([]stack, 0)
 	for _, q := range query.SearchStacksOutput.Edges {
-		result = append(result, q.Node)
+		stacks = append(stacks, q.Node)
 	}
 
-	return result, nil
+	return searchStacksResult{
+		Stacks:   stacks,
+		PageInfo: query.SearchStacksOutput.PageInfo,
+	}, nil
 }

@@ -124,16 +124,16 @@ func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt b
 		Predicates: &conditions,
 	}
 
-	stacks, err := searchStacks(ctx, input)
+	result, err := searchStacks(ctx, input)
 	if err != nil {
 		return nil, err
 	}
 
 	items := []string{}
 	found := map[string]stack{}
-	for _, stack := range stacks {
-		items = append(items, stack.Name)
-		found[stack.Name] = stack
+	for _, s := range result.Stacks {
+		items = append(items, s.Name)
+		found[s.Name] = s
 	}
 
 	if len(found) == 0 {
