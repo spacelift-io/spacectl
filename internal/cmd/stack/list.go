@@ -2,9 +2,9 @@ package stack
 
 import (
 	"fmt"
-	"github.com/spacelift-io/spacectl/client/structs"
 	"strings"
 
+	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/urfave/cli/v2"
 )

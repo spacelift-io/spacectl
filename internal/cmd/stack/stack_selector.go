@@ -3,12 +3,12 @@ package stack
 import (
 	"context"
 	"fmt"
-	"github.com/spacelift-io/spacectl/client/structs"
 	"strings"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
 )
