@@ -1,14 +1,11 @@
 package stack
 
 import (
-	"context"
 	"fmt"
-	"sort"
+	"github.com/spacelift-io/spacectl/client/structs"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/spacelift-io/spacectl/internal/cmd"
-	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
 )
 
@@ -23,49 +20,33 @@ func listStacks() cli.ActionFunc {
 		case cmd.OutputFormatTable:
 			return listStacksTable(cliCtx)
 		case cmd.OutputFormatJSON:
-			return listStacksJSON(cliCtx.Context)
+			return listStacksJSON(cliCtx)
 		}
 
 		return fmt.Errorf("unknown output format: %v", outputFormat)
 	}
 }
 
-func listStacksJSON(ctx context.Context) error {
-	var query struct {
-		Stacks []stack `graphql:"stacks" json:"stacks,omitempty"`
+func listStacksJSON(ctx *cli.Context) error {
+	stacks, err := searchStacks(ctx.Context, structs.SearchInput{})
+	if err != nil {
+		return err
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
-		return errors.Wrap(err, "failed to query list of stacks")
-	}
-	return cmd.OutputJSON(query.Stacks)
+	return cmd.OutputJSON(stacks)
 }
 
 func listStacksTable(ctx *cli.Context) error {
-	var query struct {
-		Stacks []struct {
-			ID            string   `graphql:"id" json:"id,omitempty"`
-			LockedBy      string   `graphql:"lockedBy"`
-			Name          string   `graphql:"name"`
-			State         string   `graphql:"state"`
-			Labels        []string `graphql:"labels"`
-			TrackedCommit struct {
-				AuthorName string `graphql:"authorName"`
-				Hash       string `graphql:"hash"`
-			} `graphql:"trackedCommit"`
-			WorkerPool struct {
-				Name string `graphql:"name"`
-			} `graphql:"workerPool"`
-		} `graphql:"stacks"`
-	}
-
-	if err := authenticated.Client.Query(ctx.Context, &query, map[string]interface{}{}); err != nil {
-		return errors.Wrap(err, "failed to query list of stacks")
-	}
-
-	sort.SliceStable(query.Stacks, func(i, j int) bool {
-		return strings.Compare(strings.ToLower(query.Stacks[i].Name), strings.ToLower(query.Stacks[j].Name)) < 0
+	stacks, err := searchStacks(ctx.Context, structs.SearchInput{
+		OrderBy: &structs.QueryOrder{
+			Field: "name",
+			// TODO: Make sure the order is correct
+			Direction: "ASC",
+		},
 	})
+	if err != nil {
+		return err
+	}
 
 	columns := []string{"Name", "ID", "Commit", "Author", "State", "Worker Pool", "Locked By"}
 	if ctx.Bool(flagShowLabels.Name) {
@@ -73,7 +54,7 @@ func listStacksTable(ctx *cli.Context) error {
 	}
 
 	tableData := [][]string{columns}
-	for _, stack := range query.Stacks {
+	for _, stack := range stacks {
 		row := []string{
 			stack.Name,
 			stack.ID,

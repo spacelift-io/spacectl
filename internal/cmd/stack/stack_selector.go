@@ -3,6 +3,7 @@ package stack
 import (
 	"context"
 	"fmt"
+	"github.com/spacelift-io/spacectl/client/structs"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -90,7 +91,40 @@ func stackGetByID(ctx context.Context, stackID string) (*stack, error) {
 }
 
 func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt bool) (*stack, error) {
-	stacks, err := searchStacks(ctx, p)
+	conditions := []structs.QueryPredicate{
+		{
+			Field: graphql.String("repository"),
+			Constraint: structs.QueryFieldConstraint{
+				StringMatches: &[]graphql.String{graphql.String(p.repositoryName)},
+			},
+		},
+	}
+
+	if p.projectRoot != nil && *p.projectRoot != "" {
+		root := strings.TrimSuffix(*p.projectRoot, "/")
+		conditions = append(conditions, structs.QueryPredicate{
+			Field: "projectRoot",
+			Constraint: structs.QueryFieldConstraint{
+				StringMatches: &[]graphql.String{graphql.String(root), graphql.String(root + "/")},
+			},
+		})
+	}
+
+	if p.branch != nil {
+		conditions = append(conditions, structs.QueryPredicate{
+			Field: "branch",
+			Constraint: structs.QueryFieldConstraint{
+				StringMatches: &[]graphql.String{graphql.String(*p.branch)},
+			},
+		})
+	}
+
+	input := structs.SearchInput{
+		First:      graphql.NewInt(graphql.Int(p.count)), //nolint: gosec
+		Predicates: &conditions,
+	}
+
+	stacks, err := searchStacks(ctx, input)
 	if err != nil {
 		return nil, err
 	}
