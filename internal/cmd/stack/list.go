@@ -39,8 +39,8 @@ func listStacksJSON(ctx *cli.Context) error {
 func listStacksTable(ctx *cli.Context) error {
 	stacks, err := searchStacks(ctx.Context, structs.SearchInput{
 		OrderBy: &structs.QueryOrder{
-			Field:     "name",
-			Direction: "ASC",
+			Field:     "starred",
+			Direction: "DESC",
 		},
 	})
 	if err != nil {
