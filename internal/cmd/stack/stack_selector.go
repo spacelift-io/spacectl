@@ -15,7 +15,7 @@ import (
 
 var errNoStackFound = errors.New("no stack found")
 
-// getStackID will try to retreive a stack ID from multiple sources.
+// getStackID will try to retrieve a stack ID from multiple sources.
 // It will do so in the following order:
 // 1. Check the --id flag, if set, use that value.
 // 2. Check the current directory to determine repository and subdirectory and search for a stack.
