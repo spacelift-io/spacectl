@@ -163,7 +163,12 @@ type stackSearchParams struct {
 	branch      *string
 }
 
-func searchStacks(ctx context.Context, p *stackSearchParams) ([]stack, error) {
+type searchStacksResult struct {
+	Stacks   []stack
+	PageInfo structs.PageInfo
+}
+
+func searchStacks(ctx context.Context, input structs.SearchInput) (searchStacksResult, error) {
 	var query struct {
 		SearchStacksOutput struct {
 			Edges []struct {
@@ -172,52 +177,23 @@ func searchStacks(ctx context.Context, p *stackSearchParams) ([]stack, error) {
 			PageInfo structs.PageInfo `graphql:"pageInfo"`
 		} `graphql:"searchStacks(input: $input)"`
 	}
-	conditions := []structs.QueryPredicate{
-		{
-			Field: graphql.String("repository"),
-			Constraint: structs.QueryFieldConstraint{
-				StringMatches: &[]graphql.String{graphql.String(p.repositoryName)},
-			},
-		},
-	}
-
-	if p.projectRoot != nil && *p.projectRoot != "" {
-		root := strings.TrimSuffix(*p.projectRoot, "/")
-		conditions = append(conditions, structs.QueryPredicate{
-			Field: graphql.String("projectRoot"),
-			Constraint: structs.QueryFieldConstraint{
-				StringMatches: &[]graphql.String{graphql.String(root), graphql.String(root + "/")},
-			},
-		})
-	}
-
-	if p.branch != nil {
-		conditions = append(conditions, structs.QueryPredicate{
-			Field: graphql.String("branch"),
-			Constraint: structs.QueryFieldConstraint{
-				StringMatches: &[]graphql.String{graphql.String(*p.branch)},
-			},
-		})
-	}
-
-	variables := map[string]interface{}{"input": structs.SearchInput{
-		First:      graphql.NewInt(graphql.Int(p.count)), //nolint: gosec
-		Predicates: &conditions,
-	}}
 
 	if err := authenticated.Client.Query(
 		ctx,
 		&query,
-		variables,
+		map[string]interface{}{"input": input},
 		graphql.WithHeader("Spacelift-GraphQL-Query", "StacksPage"),
 	); err != nil {
-		return nil, errors.Wrap(err, "failed search for stacks")
+		return searchStacksResult{}, errors.Wrap(err, "failed search for stacks")
 	}
 
-	result := make([]stack, 0)
+	stacks := make([]stack, 0)
 	for _, q := range query.SearchStacksOutput.Edges {
-		result = append(result, q.Node)
+		stacks = append(stacks, q.Node)
 	}
 
-	return result, nil
+	return searchStacksResult{
+		Stacks:   stacks,
+		PageInfo: query.SearchStacksOutput.PageInfo,
+	}, nil
 }

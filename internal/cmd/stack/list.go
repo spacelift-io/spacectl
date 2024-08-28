@@ -3,12 +3,11 @@ package stack
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/shurcooL/graphql"
+	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd"
-	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
 )
 
@@ -23,49 +22,35 @@ func listStacks() cli.ActionFunc {
 		case cmd.OutputFormatTable:
 			return listStacksTable(cliCtx)
 		case cmd.OutputFormatJSON:
-			return listStacksJSON(cliCtx.Context)
+			return listStacksJSON(cliCtx)
 		}
 
 		return fmt.Errorf("unknown output format: %v", outputFormat)
 	}
 }
 
-func listStacksJSON(ctx context.Context) error {
-	var query struct {
-		Stacks []stack `graphql:"stacks" json:"stacks,omitempty"`
+func listStacksJSON(ctx *cli.Context) error {
+	stacks, err := searchAllStacks(ctx.Context, structs.SearchInput{
+		First: graphql.NewInt(50),
+	})
+	if err != nil {
+		return err
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
-		return errors.Wrap(err, "failed to query list of stacks")
-	}
-	return cmd.OutputJSON(query.Stacks)
+	return cmd.OutputJSON(stacks)
 }
 
 func listStacksTable(ctx *cli.Context) error {
-	var query struct {
-		Stacks []struct {
-			ID            string   `graphql:"id" json:"id,omitempty"`
-			LockedBy      string   `graphql:"lockedBy"`
-			Name          string   `graphql:"name"`
-			State         string   `graphql:"state"`
-			Labels        []string `graphql:"labels"`
-			TrackedCommit struct {
-				AuthorName string `graphql:"authorName"`
-				Hash       string `graphql:"hash"`
-			} `graphql:"trackedCommit"`
-			WorkerPool struct {
-				Name string `graphql:"name"`
-			} `graphql:"workerPool"`
-		} `graphql:"stacks"`
-	}
-
-	if err := authenticated.Client.Query(ctx.Context, &query, map[string]interface{}{}); err != nil {
-		return errors.Wrap(err, "failed to query list of stacks")
-	}
-
-	sort.SliceStable(query.Stacks, func(i, j int) bool {
-		return strings.Compare(strings.ToLower(query.Stacks[i].Name), strings.ToLower(query.Stacks[j].Name)) < 0
+	stacks, err := searchAllStacks(ctx.Context, structs.SearchInput{
+		First: graphql.NewInt(50),
+		OrderBy: &structs.QueryOrder{
+			Field:     "starred",
+			Direction: "DESC",
+		},
 	})
+	if err != nil {
+		return err
+	}
 
 	columns := []string{"Name", "ID", "Commit", "Author", "State", "Worker Pool", "Locked By"}
 	if ctx.Bool(flagShowLabels.Name) {
@@ -73,24 +58,45 @@ func listStacksTable(ctx *cli.Context) error {
 	}
 
 	tableData := [][]string{columns}
-	for _, stack := range query.Stacks {
+	for _, s := range stacks {
 		row := []string{
-			stack.Name,
-			stack.ID,
-			cmd.HumanizeGitHash(stack.TrackedCommit.Hash),
-			stack.TrackedCommit.AuthorName,
-			stack.State,
-			stack.WorkerPool.Name,
-			stack.LockedBy,
+			s.Name,
+			s.ID,
+			cmd.HumanizeGitHash(s.TrackedCommit.Hash),
+			s.TrackedCommit.AuthorName,
+			s.State,
+			s.WorkerPool.Name,
+			s.LockedBy,
 		}
 		if ctx.Bool(flagShowLabels.Name) {
-			row = append(row, strings.Join(stack.Labels, ", "))
+			row = append(row, strings.Join(s.Labels, ", "))
 		}
 
 		tableData = append(tableData, row)
 	}
 
 	return cmd.OutputTable(tableData, true)
+}
+
+func searchAllStacks(ctx context.Context, input structs.SearchInput) ([]stack, error) {
+	out := []stack{}
+
+	for {
+		result, err := searchStacks(ctx, input)
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, result.Stacks...)
+
+		if result.PageInfo.HasNextPage {
+			input.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+		} else {
+			break
+		}
+	}
+
+	return out, nil
 }
 
 type stack struct {

@@ -8,13 +8,14 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
 )
 
 var errNoStackFound = errors.New("no stack found")
 
-// getStackID will try to retreive a stack ID from multiple sources.
+// getStackID will try to retrieve a stack ID from multiple sources.
 // It will do so in the following order:
 // 1. Check the --id flag, if set, use that value.
 // 2. Check the current directory to determine repository and subdirectory and search for a stack.
@@ -90,16 +91,49 @@ func stackGetByID(ctx context.Context, stackID string) (*stack, error) {
 }
 
 func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt bool) (*stack, error) {
-	stacks, err := searchStacks(ctx, p)
+	conditions := []structs.QueryPredicate{
+		{
+			Field: graphql.String("repository"),
+			Constraint: structs.QueryFieldConstraint{
+				StringMatches: &[]graphql.String{graphql.String(p.repositoryName)},
+			},
+		},
+	}
+
+	if p.projectRoot != nil && *p.projectRoot != "" {
+		root := strings.TrimSuffix(*p.projectRoot, "/")
+		conditions = append(conditions, structs.QueryPredicate{
+			Field: "projectRoot",
+			Constraint: structs.QueryFieldConstraint{
+				StringMatches: &[]graphql.String{graphql.String(root), graphql.String(root + "/")},
+			},
+		})
+	}
+
+	if p.branch != nil {
+		conditions = append(conditions, structs.QueryPredicate{
+			Field: "branch",
+			Constraint: structs.QueryFieldConstraint{
+				StringMatches: &[]graphql.String{graphql.String(*p.branch)},
+			},
+		})
+	}
+
+	input := structs.SearchInput{
+		First:      graphql.NewInt(graphql.Int(p.count)), //nolint: gosec
+		Predicates: &conditions,
+	}
+
+	result, err := searchStacks(ctx, input)
 	if err != nil {
 		return nil, err
 	}
 
 	items := []string{}
 	found := map[string]stack{}
-	for _, stack := range stacks {
-		items = append(items, stack.Name)
-		found[stack.Name] = stack
+	for _, s := range result.Stacks {
+		items = append(items, s.Name)
+		found[s.Name] = s
 	}
 
 	if len(found) == 0 {
