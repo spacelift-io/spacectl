@@ -89,10 +89,10 @@ func searchAllStacks(ctx context.Context, input structs.SearchInput) ([]stack, e
 
 		out = append(out, result.Stacks...)
 
-		if !result.PageInfo.HasNextPage {
-			break
-		} else {
+		if result.PageInfo.HasNextPage {
 			input.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+		} else {
+			break
 		}
 	}
 
