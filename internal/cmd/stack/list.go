@@ -3,6 +3,7 @@ package stack
 import (
 	"context"
 	"fmt"
+	"math"
 	"slices"
 	"strings"
 
@@ -24,6 +25,10 @@ func listStacks() cli.ActionFunc {
 		if cliCtx.IsSet(flagLimit.Name) {
 			if cliCtx.Uint(flagLimit.Name) == 0 {
 				return fmt.Errorf("limit must be greater than 0")
+			}
+
+			if cliCtx.Uint(flagLimit.Name) >= math.MaxInt32 {
+				return fmt.Errorf("limit must be less than %d", math.MaxInt32)
 			}
 
 			limit = internal.ToPtr(cliCtx.Uint(flagLimit.Name))
