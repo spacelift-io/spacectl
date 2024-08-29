@@ -133,27 +133,26 @@ func listStacksTable(
 // searchStacks returns a list of stacks based on the provided search input.
 // input.First limits the total number of returned stacks, if not provided all stacks are returned.
 func searchAllStacks(ctx context.Context, input structs.SearchInput) ([]stack, error) {
-	const firstMaxValue = 50
+	const maxPageSize = 50
 
-	// 0 return all
-	var total int
+	var limit int
 	if input.First != nil {
-		total = int(*input.First)
+		limit = int(*input.First)
 	}
+	fetchAll := limit == 0
 
 	out := []stack{}
-
 	pageInput := structs.SearchInput{
-		First:          graphql.NewInt(firstMaxValue),
+		First:          graphql.NewInt(maxPageSize),
 		FullTextSearch: input.FullTextSearch,
 	}
 	for {
-		if total > 0 {
+		if !fetchAll {
 			// Fetch exactly the number of items requested
 			pageInput.First = graphql.NewInt(
 				//nolint: gosec
 				graphql.Int(
-					slices.Min([]int{firstMaxValue, total - len(out)}),
+					slices.Min([]int{maxPageSize, limit - len(out)}),
 				),
 			)
 		}
@@ -163,19 +162,13 @@ func searchAllStacks(ctx context.Context, input structs.SearchInput) ([]stack, e
 			return nil, err
 		}
 
-		fmt.Println("Fetched page with", len(result.Stacks), "stacks")
-
 		out = append(out, result.Stacks...)
 
-		if result.PageInfo.HasNextPage && (total == 0 || len(out) < total) {
+		if result.PageInfo.HasNextPage && (fetchAll || limit > len(out)) {
 			pageInput.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
 		} else {
 			break
 		}
-	}
-
-	if total > 0 && len(out) > total {
-		out = out[:total]
 	}
 
 	return out, nil
