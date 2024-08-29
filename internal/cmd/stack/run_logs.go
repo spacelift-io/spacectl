@@ -129,7 +129,7 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string, acFn 
 			fmt.Println("")
 
 			if transition.HasLogs {
-				if err := runStateLogs(ctx, stack, run, transition.State, transition.StateVersion, sink); err != nil {
+				if err := runStateLogs(ctx, stack, run, transition.State, transition.StateVersion, sink, transition.Terminal); err != nil {
 					return nil, err
 				}
 			}
@@ -153,7 +153,7 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string, acFn 
 	}
 }
 
-func runStateLogs(ctx context.Context, stack, run string, state structs.RunState, version int, sink chan<- string) error {
+func runStateLogs(ctx context.Context, stack, run string, state structs.RunState, version int, sink chan<- string, stateTerminal bool) error {
 	var query struct {
 		Stack *struct {
 			Run *struct {
@@ -205,7 +205,7 @@ func runStateLogs(ctx context.Context, stack, run string, state structs.RunState
 			sink <- message.Body
 		}
 
-		if logs.Finished {
+		if logs.Finished || (!logs.HasMore && stateTerminal) {
 			break
 		}
 
