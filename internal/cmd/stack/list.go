@@ -3,10 +3,12 @@ package stack
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
+	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/urfave/cli/v2"
 )
@@ -18,20 +20,53 @@ func listStacks() cli.ActionFunc {
 			return err
 		}
 
+		var limit *uint
+		if cliCtx.IsSet(flagLimit.Name) {
+			if cliCtx.Uint(flagLimit.Name) == 0 {
+				return fmt.Errorf("limit must be greater than 0")
+			}
+
+			limit = internal.ToPtr(cliCtx.Uint(flagLimit.Name))
+		}
+
+		var search *string
+		if cliCtx.IsSet(flagSearch.Name) {
+			if cliCtx.String(flagSearch.Name) == "" {
+				return fmt.Errorf("search must be non-empty")
+			}
+
+			search = internal.ToPtr(cliCtx.String(flagSearch.Name))
+		}
+
 		switch outputFormat {
 		case cmd.OutputFormatTable:
-			return listStacksTable(cliCtx)
+			return listStacksTable(cliCtx, search, limit)
 		case cmd.OutputFormatJSON:
-			return listStacksJSON(cliCtx)
+			return listStacksJSON(cliCtx, search, limit)
 		}
 
 		return fmt.Errorf("unknown output format: %v", outputFormat)
 	}
 }
 
-func listStacksJSON(ctx *cli.Context) error {
+func listStacksJSON(
+	ctx *cli.Context,
+	search *string,
+	limit *uint,
+) error {
+	var first *graphql.Int
+	if limit != nil {
+		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+	}
+
+	var fullTextSearch *graphql.String
+	if search != nil {
+		fullTextSearch = graphql.NewString(graphql.String(*search))
+	}
+
 	stacks, err := searchAllStacks(ctx.Context, structs.SearchInput{
-		First: graphql.NewInt(50),
+		First:          first,
+		FullTextSearch: fullTextSearch,
 	})
 	if err != nil {
 		return err
@@ -40,14 +75,31 @@ func listStacksJSON(ctx *cli.Context) error {
 	return cmd.OutputJSON(stacks)
 }
 
-func listStacksTable(ctx *cli.Context) error {
-	stacks, err := searchAllStacks(ctx.Context, structs.SearchInput{
-		First: graphql.NewInt(50),
+func listStacksTable(
+	ctx *cli.Context,
+	search *string,
+	limit *uint,
+) error {
+	var first *graphql.Int
+	if limit != nil {
+		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+	}
+
+	var fullTextSearch *graphql.String
+	if search != nil {
+		fullTextSearch = graphql.NewString(graphql.String(*search))
+	}
+
+	input := structs.SearchInput{
+		First:          first,
+		FullTextSearch: fullTextSearch,
 		OrderBy: &structs.QueryOrder{
 			Field:     "starred",
 			Direction: "DESC",
 		},
-	})
+	}
+
+	stacks, err := searchAllStacks(ctx.Context, input)
 	if err != nil {
 		return err
 	}
@@ -78,22 +130,52 @@ func listStacksTable(ctx *cli.Context) error {
 	return cmd.OutputTable(tableData, true)
 }
 
+// searchStacks returns a list of stacks based on the provided search input.
+// input.First limits the total number of returned stacks, if not provided all stacks are returned.
 func searchAllStacks(ctx context.Context, input structs.SearchInput) ([]stack, error) {
+	const firstMaxValue = 50
+
+	// 0 return all
+	var total int
+	if input.First != nil {
+		total = int(*input.First)
+	}
+
 	out := []stack{}
 
+	pageInput := structs.SearchInput{
+		First:          graphql.NewInt(firstMaxValue),
+		FullTextSearch: input.FullTextSearch,
+	}
 	for {
-		result, err := searchStacks(ctx, input)
+		if total > 0 {
+			// Fetch exactly the number of items requested
+			pageInput.First = graphql.NewInt(
+				//nolint: gosec
+				graphql.Int(
+					slices.Min([]int{firstMaxValue, total - len(out)}),
+				),
+			)
+		}
+
+		result, err := searchStacks(ctx, pageInput)
 		if err != nil {
 			return nil, err
 		}
 
+		fmt.Println("Fetched page with", len(result.Stacks), "stacks")
+
 		out = append(out, result.Stacks...)
 
-		if result.PageInfo.HasNextPage {
-			input.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+		if result.PageInfo.HasNextPage && (total == 0 || len(out) < total) {
+			pageInput.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
 		} else {
 			break
 		}
+	}
+
+	if total > 0 && len(out) > total {
+		out = out[:total]
 	}
 
 	return out, nil
