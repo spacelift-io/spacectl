@@ -1,5 +1,5 @@
 package internal
 
-func ToPtr[T any](v T) *T {
+func Ptr[T any](v T) *T {
 	return &v
 }

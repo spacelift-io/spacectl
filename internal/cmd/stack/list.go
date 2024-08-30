@@ -31,7 +31,7 @@ func listStacks() cli.ActionFunc {
 				return fmt.Errorf("limit must be less than %d", math.MaxInt32)
 			}
 
-			limit = internal.ToPtr(cliCtx.Uint(flagLimit.Name))
+			limit = internal.Ptr(cliCtx.Uint(flagLimit.Name))
 		}
 
 		var search *string
@@ -40,7 +40,7 @@ func listStacks() cli.ActionFunc {
 				return fmt.Errorf("search must be non-empty")
 			}
 
-			search = internal.ToPtr(cliCtx.String(flagSearch.Name))
+			search = internal.Ptr(cliCtx.String(flagSearch.Name))
 		}
 
 		switch outputFormat {
