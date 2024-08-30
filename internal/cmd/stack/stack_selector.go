@@ -18,6 +18,7 @@ var errNoStackFound = errors.New("no stack found")
 // getStackID will try to retrieve a stack ID from multiple sources.
 // It will do so in the following order:
 // 1. Check the --id flag, if set, use that value.
+// 2. Check the --run flag, if set, try to get the stack associated with the run.
 // 2. Check the current directory to determine repository and subdirectory and search for a stack.
 func getStackID(cliCtx *cli.Context) (string, error) {
 	stack, err := getStack(cliCtx)
@@ -39,6 +40,16 @@ func getStack(cliCtx *cli.Context) (*stack, error) {
 			return nil, fmt.Errorf("stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackID)
 		}
 		return stack, nil
+	} else {
+		if cliCtx.IsSet(flagRun.Name) {
+			runID := cliCtx.String(flagRun.Name)
+			stack, err := stackGetByRunID(cliCtx.Context, runID)
+			if err == nil {
+				return stack, nil
+			}
+
+			// TODO: Maybe we should log error here?
+		}
 	}
 
 	subdir, err := getGitRepositorySubdir()
@@ -88,6 +99,25 @@ func stackGetByID(ctx context.Context, stackID string) (*stack, error) {
 	}
 
 	return &query.Stack.stack, nil
+}
+
+func stackGetByRunID(ctx context.Context, runID string) (*stack, error) {
+	var query struct {
+		StackByRunId struct {
+			stack
+		} `graphql:"stackByRunId(runId: $runId)"`
+	}
+
+	variables := map[string]interface{}{
+		"runId": graphql.ID(runID),
+	}
+
+	err := authenticated.Client.Query(ctx, &query, variables)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query GraphQL API when getting stack by run id: %w", err)
+	}
+
+	return &query.StackByRunId.stack, nil
 }
 
 func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt bool) (*stack, error) {
