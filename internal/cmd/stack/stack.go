@@ -140,6 +140,8 @@ func Command() *cli.Command {
 					flagShowLabels,
 					cmd.FlagOutputFormat,
 					cmd.FlagNoColor,
+					flagLimit,
+					flagSearch,
 				},
 				Action:    listStacks(),
 				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),

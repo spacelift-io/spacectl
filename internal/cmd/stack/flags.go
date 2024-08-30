@@ -157,3 +157,13 @@ var flagInteractive = &cli.BoolFlag{
 	Aliases: []string{"i"},
 	Usage:   "[Optional] Whether to run the command in interactive mode",
 }
+
+var flagLimit = &cli.UintFlag{
+	Name:  "limit",
+	Usage: "[Optional] Limit the number of items to return",
+}
+
+var flagSearch = &cli.StringFlag{
+	Name:  "search",
+	Usage: "[Optional] Performs a full-text search.",
+}
