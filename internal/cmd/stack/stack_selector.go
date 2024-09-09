@@ -34,13 +34,13 @@ func getStackID(cliCtx *cli.Context) (string, error) {
 func getStack(cliCtx *cli.Context) (*stack, error) {
 	if cliCtx.IsSet(flagStackID.Name) {
 		stackID := cliCtx.String(flagStackID.Name)
-		stack, found, err := stackGetByID(cliCtx.Context, stackID)
+		stack, err := stackGetByID(cliCtx.Context, stackID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to check if stack exists: %w", err)
-		}
+			if errors.Is(err, errNoStackFound) {
+				return nil, fmt.Errorf("stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackID)
+			}
 
-		if !found {
-			return nil, fmt.Errorf("stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackID)
+			return nil, fmt.Errorf("failed to check if stack exists: %w", err)
 		}
 
 		return stack, nil
@@ -48,14 +48,14 @@ func getStack(cliCtx *cli.Context) (*stack, error) {
 		runID := cliCtx.String(flagRun.Name)
 		stack, found, err := stackGetByRunID(cliCtx.Context, runID)
 		if err != nil {
-			fmt.Printf("Failed to get stack by run id: %v\n", err)
-		} else {
-			if !found {
-				return nil, fmt.Errorf("run with id %q was not found. Please check that the run exists and that you have access to it. To list available stacks run: spacectl stack run list", runID)
-			}
-
-			return stack, nil
+			return nil, fmt.Errorf("failed to get stack by run id: %w", err)
 		}
+
+		if !found {
+			return nil, fmt.Errorf("run with id %q was not found. Please check that the run exists and that you have access to it. To list available stacks run: spacectl stack run list", runID)
+		}
+
+		return stack, nil
 	}
 
 	subdir, err := getGitRepositorySubdir()
@@ -84,7 +84,7 @@ func getStack(cliCtx *cli.Context) (*stack, error) {
 	return got, nil
 }
 
-func stackGetByID(ctx context.Context, stackID string) (*stack, bool, error) {
+func stackGetByID(ctx context.Context, stackID string) (*stack, error) {
 	var query struct {
 		Stack struct {
 			stack
@@ -97,14 +97,14 @@ func stackGetByID(ctx context.Context, stackID string) (*stack, bool, error) {
 
 	err := authenticated.Client.Query(ctx, &query, variables)
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to query GraphQL API when checking if a stack exists: %w", err)
+		return nil, fmt.Errorf("failed to query GraphQL API when checking if a stack exists: %w", err)
 	}
 
 	if query.Stack.ID != stackID {
-		return nil, false, nil
+		return nil, errNoStackFound
 	}
 
-	return &query.Stack.stack, true, nil
+	return &query.Stack.stack, nil
 }
 
 func stackGetByRunID(ctx context.Context, runID string) (*stack, bool, error) {
