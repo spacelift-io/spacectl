@@ -35,11 +35,10 @@ func getStack(cliCtx *cli.Context) (*stack, error) {
 	if cliCtx.IsSet(flagStackID.Name) {
 		stackID := cliCtx.String(flagStackID.Name)
 		stack, err := stackGetByID(cliCtx.Context, stackID)
+		if errors.Is(err, errNoStackFound) {
+			return nil, fmt.Errorf("stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackID)
+		}
 		if err != nil {
-			if errors.Is(err, errNoStackFound) {
-				return nil, fmt.Errorf("stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackID)
-			}
-
 			return nil, fmt.Errorf("failed to check if stack exists: %w", err)
 		}
 
@@ -47,11 +46,10 @@ func getStack(cliCtx *cli.Context) (*stack, error) {
 	} else if cliCtx.IsSet(flagRun.Name) {
 		runID := cliCtx.String(flagRun.Name)
 		stack, err := stackGetByRunID(cliCtx.Context, runID)
+		if errors.Is(err, errNoStackFound) {
+			return nil, fmt.Errorf("run with id %q was not found. Please check that the run exists and that you have access to it. To list available stacks run: spacectl stack run list", runID)
+		}
 		if err != nil {
-			if errors.Is(err, errNoStackFound) {
-				return nil, fmt.Errorf("run with id %q was not found. Please check that the run exists and that you have access to it. To list available stacks run: spacectl stack run list", runID)
-			}
-
 			return nil, fmt.Errorf("failed to get stack by run id: %w", err)
 		}
 
