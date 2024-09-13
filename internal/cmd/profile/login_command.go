@@ -100,6 +100,7 @@ func getCredentialsType(ctx *cli.Context) (session.CredentialsType, error) {
 		return 0, err
 	}
 
+	//nolint: gosec
 	return session.CredentialsType(result + 1), nil
 }
 

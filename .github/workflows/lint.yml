@@ -20,6 +20,9 @@ jobs:
       - name: Mark source directory as safe.
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
 
+      - name: Load .env file to env vars
+        run: cat .env >> $GITHUB_ENV
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with: { go-version-file: go.mod }
@@ -34,3 +37,4 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           args: --verbose
+          version: ${{ env.GOLANGCI_LINT_VERSION }}

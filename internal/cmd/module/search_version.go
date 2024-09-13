@@ -2,12 +2,20 @@ package module
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
+)
+
+const (
+	maxSearchModuleVersionsPageSize = 50
+	moduleVersionsTableLimit        = 20
+	moduleVersionsJSONLimit         = 0 // no limit
 )
 
 func listVersions() cli.ActionFunc {
@@ -19,70 +27,137 @@ func listVersions() cli.ActionFunc {
 
 		switch outputFormat {
 		case cmd.OutputFormatTable:
-			return listVersionsTable(cliCtx)
+			versions, err := getModuleVersions(cliCtx, moduleVersionsTableLimit)
+			if err != nil {
+				return err
+			}
+
+			return formatModuleVersionsTable(versions)
 		case cmd.OutputFormatJSON:
-			return listVersionsJSON(cliCtx)
+			versions, err := getModuleVersions(cliCtx, moduleVersionsJSONLimit)
+			if err != nil {
+				return err
+			}
+
+			return formatModuleVersionsJSON(versions)
 		}
 
 		return fmt.Errorf("unknown output format: %v", outputFormat)
 	}
 }
 
-func listVersionsJSON(cliCtx *cli.Context) error {
-	var query struct {
-		Module struct {
-			Verions []version `graphql:"versions(includeFailed: $includeFailed)"`
-		} `graphql:"module(id: $id)"`
+func getModuleVersions(cliCtx *cli.Context, limit int) ([]version, error) {
+	if limit < 0 {
+		return nil, errors.New("limit must be greater or equal to 0")
 	}
 
-	if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{
-		"id":            cliCtx.String(flagModuleID.Name),
-		"includeFailed": graphql.Boolean(false),
-	}); err != nil {
-		return errors.Wrap(err, "failed to query list of modules")
+	var cursor string
+	var versions []version
+
+	fetchAll := limit == 0
+
+	var pageSize int
+
+	for {
+		if fetchAll {
+			pageSize = maxSearchModuleVersionsPageSize
+		} else {
+			pageSize = slices.Min([]int{maxSearchModuleVersionsPageSize, limit - len(versions)})
+		}
+
+		result, err := getSearchModuleVersions(cliCtx, cursor, pageSize)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, edge := range result.Edges {
+			versions = append(versions, edge.Node)
+		}
+
+		if result.PageInfo.HasNextPage && (fetchAll || limit > len(versions)) {
+			cursor = result.PageInfo.EndCursor
+		} else {
+			break
+		}
 	}
-	return cmd.OutputJSON(query.Module.Verions)
+
+	return versions, nil
 }
 
-func listVersionsTable(cliCtx *cli.Context) error {
+func getSearchModuleVersions(cliCtx *cli.Context, cursor string, limit int) (searchModuleVersions, error) {
+	if limit <= 0 || limit > maxSearchModuleVersionsPageSize {
+		return searchModuleVersions{}, errors.New("limit must be between 1 and 50")
+	}
+
 	var query struct {
 		Module struct {
-			Verions []version `graphql:"versions(includeFailed: $includeFailed)"`
+			SearchModuleVersions searchModuleVersions `graphql:"searchModuleVersions(input: $input)"`
 		} `graphql:"module(id: $id)"`
 	}
 
-	if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{
-		"id":            cliCtx.String(flagModuleID.Name),
-		"includeFailed": graphql.Boolean(false),
-	}); err != nil {
-		return errors.Wrap(err, "failed to query list of modules")
+	var after *graphql.String
+	if cursor != "" {
+		after = graphql.NewString(graphql.String(cursor))
 	}
 
+	if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{
+		"id": cliCtx.String(flagModuleID.Name),
+		"input": structs.SearchInput{
+			First: graphql.NewInt(graphql.Int(int32(limit))), //nolint: gosec
+			After: after,
+			OrderBy: &structs.QueryOrder{
+				Field:     "createdAt",
+				Direction: "DESC",
+			},
+			Predicates: &[]structs.QueryPredicate{
+				{
+					Field:   "state",
+					Exclude: true,
+					Constraint: structs.QueryFieldConstraint{
+						EnumEquals: &[]graphql.String{
+							"FAILED",
+						},
+					},
+				},
+			},
+		},
+	}); err != nil {
+		return searchModuleVersions{}, errors.Wrap(err, "failed to query list of modules")
+	}
+
+	return query.Module.SearchModuleVersions, nil
+}
+
+func formatModuleVersionsJSON(versions []version) error {
+	return cmd.OutputJSON(versions)
+}
+
+func formatModuleVersionsTable(versions []version) error {
 	columns := []string{"ID", "Author", "Message", "Number", "State", "Tests", "Timestamp"}
 	tableData := [][]string{columns}
 
-	if len(query.Module.Verions) > 20 {
-		query.Module.Verions = query.Module.Verions[:20]
-	}
-
-	// We print the versions in reverse order
-	// so the latest version is at the bottom, much easier to read in terminal.
-	for i := len(query.Module.Verions) - 1; i >= 0; i-- {
-		module := query.Module.Verions[i]
-		row := []string{
-			module.ID,
-			module.Commit.AuthorName,
-			module.Commit.Message,
-			module.Number,
-			module.State,
-			fmt.Sprintf("%d", module.VersionCount),
-			fmt.Sprintf("%d", module.Commit.Timestamp),
-		}
-
-		tableData = append(tableData, row)
+	for _, v := range versions {
+		tableData = append(tableData, []string{
+			v.ID,
+			v.Commit.AuthorName,
+			v.Commit.Message,
+			v.Number,
+			v.State,
+			fmt.Sprintf("%d", v.VersionCount),
+			fmt.Sprintf("%d", v.Commit.Timestamp),
+		})
 	}
 
 	return cmd.OutputTable(tableData, true)
+}
+
+type searchModuleVersions struct {
+	PageInfo structs.PageInfo          `graphql:"pageInfo"`
+	Edges    []searchModuleVersionEdge `graphql:"edges"`
+}
+
+type searchModuleVersionEdge struct {
+	Node version `graphql:"node"`
 }
 
 type version struct {
