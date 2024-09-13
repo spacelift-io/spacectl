@@ -23,6 +23,7 @@ type QueryOrder struct {
 type QueryPredicate struct {
 	Field      graphql.String       `json:"field"`
 	Constraint QueryFieldConstraint `json:"constraint"`
+	Exclude    graphql.Boolean      `json:"exclude"`
 }
 
 // QueryFieldConstraint is a constraint used
