@@ -244,6 +244,7 @@ func Command() *cli.Command {
 				Usage:    "Set current commit on the stack",
 				Flags: []cli.Flag{
 					flagStackID,
+					flagRun,
 					flagRequiredCommitSHA,
 				},
 				Action:    setCurrentCommit,
@@ -259,6 +260,7 @@ func Command() *cli.Command {
 						Usage: "Sets an environment variable.",
 						Flags: []cli.Flag{
 							flagStackID,
+							flagRun,
 							flagEnvironmentWriteOnly,
 						},
 						Action:    setVar,
@@ -270,6 +272,7 @@ func Command() *cli.Command {
 						Usage: "Lists all the environment variables and mounted files for a stack.",
 						Flags: []cli.Flag{
 							flagStackID,
+							flagRun,
 							cmd.FlagOutputFormat,
 						},
 						Action: (&listEnvCommand{}).listEnv,
@@ -280,6 +283,7 @@ func Command() *cli.Command {
 						Usage: "Mount a file from existing file or STDIN.",
 						Flags: []cli.Flag{
 							flagStackID,
+							flagRun,
 							flagEnvironmentWriteOnly,
 						},
 						Action:    mountFile,
@@ -291,6 +295,7 @@ func Command() *cli.Command {
 						Usage: "Deletes an environment variable or mounted file.",
 						Flags: []cli.Flag{
 							flagStackID,
+							flagRun,
 						},
 						Action:    deleteEnvironment,
 						Before:    authenticated.Ensure,
@@ -303,6 +308,7 @@ func Command() *cli.Command {
 				Usage: "Shows current outputs for a specific stack. Does not show the value of sensitive outputs.",
 				Flags: []cli.Flag{
 					flagStackID,
+					flagRun,
 					flagOutputID,
 					cmd.FlagOutputFormat,
 					cmd.FlagNoColor,
@@ -316,6 +322,7 @@ func Command() *cli.Command {
 				Usage: "Shows detailed information about a specific stack",
 				Flags: []cli.Flag{
 					flagStackID,
+					flagRun,
 					cmd.FlagOutputFormat,
 					cmd.FlagNoColor,
 				},
@@ -329,6 +336,7 @@ func Command() *cli.Command {
 				Usage:    "Open a stack in your browser",
 				Flags: []cli.Flag{
 					flagStackID,
+					flagRun,
 					flagIgnoreSubdir,
 					flagCurrentBranch,
 					flagSearchCount,
@@ -405,6 +413,7 @@ func Command() *cli.Command {
 						Usage: "Sets an environment variable.",
 						Flags: []cli.Flag{
 							flagStackID,
+							flagRun,
 						},
 						Action:    resourcesList,
 						Before:    authenticated.Ensure,
@@ -421,6 +430,7 @@ func Command() *cli.Command {
 						Usage: "Get stacks which the provided that depends on",
 						Flags: []cli.Flag{
 							flagStackID,
+							flagRun,
 							cmd.FlagOutputFormat,
 						},
 						Action:    dependenciesOn,
@@ -432,6 +442,7 @@ func Command() *cli.Command {
 						Usage: "Get stacks that depend on the provided stack",
 						Flags: []cli.Flag{
 							flagStackID,
+							flagRun,
 							cmd.FlagOutputFormat,
 						},
 						Action:    dependenciesOff,
