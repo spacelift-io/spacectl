@@ -27,6 +27,18 @@ func Command() *cli.Command {
 			},
 			{
 				Category: "Module management",
+				Name:     "delete-version",
+				Usage:    "Delete a version of a module",
+				Flags: []cli.Flag{
+					flagModuleID,
+					flagVersionID,
+				},
+				Action:    deleteVersion,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
+				Category: "Module management",
 				Name:     "local-preview",
 				Usage:    "Start a preview (proposed version) based on the current project. Respects .gitignore and .terraformignore.",
 				Flags: []cli.Flag{
