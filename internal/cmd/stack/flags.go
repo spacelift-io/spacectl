@@ -62,7 +62,7 @@ var flagRunLatest = &cli.BoolFlag{
 
 var flagNoInit = &cli.BoolFlag{
 	Name:  "noinit",
-	Usage: "Indicate whether to skip initialization for a task",
+	Usage: "Indicate whether to skip initialization for a task.  Initializing the workspace before running a task means executing all the pre-initialization hooks as well as running the vendor-specific initialization procedure",
 	Value: false,
 }
 
