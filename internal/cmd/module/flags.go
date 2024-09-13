@@ -8,6 +8,12 @@ var flagModuleID = &cli.StringFlag{
 	Required: true,
 }
 
+var flagVersionID = &cli.StringFlag{
+	Name:     "versionid",
+	Usage:    "[Required] User-facing `ID` (slug) of the version",
+	Required: true,
+}
+
 var flagCommitSHA = &cli.StringFlag{
 	Name:  "sha",
 	Usage: "Commit `SHA` to use for the module version",
