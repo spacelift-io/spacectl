@@ -1,15 +1,19 @@
 package module
 
 import (
-	"context"
 	"fmt"
-	"sort"
-	"strings"
+	"slices"
 
 	"github.com/pkg/errors"
+	"github.com/shurcooL/graphql"
+	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
+)
+
+const (
+	maxSearchModulesPageSize = 50
 )
 
 func listModules() cli.ActionFunc {
@@ -21,52 +25,92 @@ func listModules() cli.ActionFunc {
 
 		switch outputFormat {
 		case cmd.OutputFormatTable:
-			return listModulesTable(cliCtx)
+			m, err := getModules(cliCtx, 20)
+			if err != nil {
+				return err
+			}
+			return listModulesTable(m)
 		case cmd.OutputFormatJSON:
-			return listModulesJSON(cliCtx.Context)
+			m, err := getModules(cliCtx, 0)
+			if err != nil {
+				return err
+			}
+			return cmd.OutputJSON(m)
 		}
 
 		return fmt.Errorf("unknown output format: %v", outputFormat)
 	}
 }
 
-func listModulesJSON(ctx context.Context) error {
-	var query struct {
-		Modules []module `graphql:"modules" json:"modules,omitempty"`
+func getModules(cliCtx *cli.Context, limit int) ([]module, error) {
+	if limit < 0 {
+		return nil, errors.New("limit must be greater or equal to 0")
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
-		return errors.Wrap(err, "failed to query list of modules")
+	var cursor string
+	var modules []module
+
+	for {
+		pageSize := 50
+		if limit != 0 {
+			pageSize = slices.Min([]int{maxSearchModulesPageSize, limit - len(modules)})
+		}
+
+		result, err := getSearchModules(cliCtx, cursor, pageSize)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, edge := range result.Edges {
+			modules = append(modules, edge.Node)
+		}
+
+		if result.PageInfo.HasNextPage && (limit == 0 || limit > len(modules)) {
+			cursor = result.PageInfo.EndCursor
+			continue
+		}
+
+		break
 	}
-	return cmd.OutputJSON(query.Modules)
+
+	return modules, nil
 }
 
-func listModulesTable(ctx *cli.Context) error {
+func getSearchModules(cliCtx *cli.Context, cursor string, limit int) (searchModules, error) {
+	if limit <= 0 || limit > maxSearchModulesPageSize {
+		return searchModules{}, errors.New("limit must be between 1 and 50")
+	}
+
 	var query struct {
-		Modules []struct {
-			ID      string `graphql:"id" json:"id,omitempty"`
-			Name    string `graphql:"name"`
-			Current struct {
-				ID     string `graphql:"id"`
-				Number string `graphql:"number"`
-				State  string `graphql:"state"`
-				Yanked bool   `graphql:"yanked"`
-			} `graphql:"current"`
-		} `graphql:"modules"`
+		SearchModules searchModules `graphql:"searchModules(input: $input)"`
 	}
 
-	if err := authenticated.Client.Query(ctx.Context, &query, map[string]interface{}{}); err != nil {
-		return errors.Wrap(err, "failed to query list of modules")
+	var after *graphql.String
+	if cursor != "" {
+		after = graphql.NewString(graphql.String(cursor))
 	}
 
-	sort.SliceStable(query.Modules, func(i, j int) bool {
-		return strings.Compare(strings.ToLower(query.Modules[i].Name), strings.ToLower(query.Modules[j].Name)) < 0
-	})
+	if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{
+		"input": structs.SearchInput{
+			First: graphql.NewInt(graphql.Int(int32(limit))), //nolint: gosec
+			After: after,
+			OrderBy: &structs.QueryOrder{
+				Field:     "starred",
+				Direction: "DESC",
+			},
+		},
+	}); err != nil {
+		return searchModules{}, errors.Wrap(err, "failed to query list of modules")
+	}
 
+	return query.SearchModules, nil
+}
+
+func listModulesTable(modules []module) error {
 	columns := []string{"Name", "ID", "Current Version", "Number", "State", "Yanked"}
 
 	tableData := [][]string{columns}
-	for _, module := range query.Modules {
+	for _, module := range modules {
 		row := []string{
 			module.Name,
 			module.ID,
@@ -80,6 +124,15 @@ func listModulesTable(ctx *cli.Context) error {
 	}
 
 	return cmd.OutputTable(tableData, true)
+}
+
+type searchModules struct {
+	PageInfo structs.PageInfo    `graphql:"pageInfo"`
+	Edges    []searchModulesEdge `graphql:"edges"`
+}
+
+type searchModulesEdge struct {
+	Node module `graphql:"node"`
 }
 
 type module struct {
