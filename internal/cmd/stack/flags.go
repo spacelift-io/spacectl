@@ -62,7 +62,7 @@ var flagRunLatest = &cli.BoolFlag{
 
 var flagNoInit = &cli.BoolFlag{
 	Name:  "noinit",
-	Usage: "Indicate whether to skip initialization for a task",
+	Usage: "Any pre-initialization hooks as well the vendor-specific initialization procedure will be skipped",
 	Value: false,
 }
 
