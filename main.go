@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
 	"log"
 	"os"
 	"time"
@@ -41,6 +42,7 @@ func main() {
 			versioncmd.Command(version),
 			workerpools.Command(),
 			completion.Command(),
+			blueprint.Command(),
 		},
 	}
 
