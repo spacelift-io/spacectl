@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
 	"log"
 	"os"
 	"time"
 
+	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
 	"github.com/spacelift-io/spacectl/internal/cmd/completion"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"

@@ -2,10 +2,11 @@ package blueprint
 
 import (
 	"fmt"
+	"math"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
-	"math"
 )
 
 // Command encapsulates the blueprintNode command subtree.
@@ -18,11 +19,11 @@ func Command() *cli.Command {
 				Name:  "list",
 				Usage: "List the blueprints you have access to",
 				Flags: []cli.Flag{
-					flagShowLabels,
+					cmd.FlagShowLabels,
 					cmd.FlagOutputFormat,
 					cmd.FlagNoColor,
-					flagLimit,
-					flagSearch,
+					cmd.FlagLimit,
+					cmd.FlagSearch,
 				},
 				Action: listBlueprints(),
 				Before: cmd.PerformAllBefore(
@@ -38,12 +39,12 @@ func Command() *cli.Command {
 }
 
 func validateLimit(cliCtx *cli.Context) error {
-	if cliCtx.IsSet(flagLimit.Name) {
-		if cliCtx.Uint(flagLimit.Name) == 0 {
+	if cliCtx.IsSet(cmd.FlagLimit.Name) {
+		if cliCtx.Uint(cmd.FlagLimit.Name) == 0 {
 			return fmt.Errorf("limit must be greater than 0")
 		}
 
-		if cliCtx.Uint(flagLimit.Name) >= math.MaxInt32 {
+		if cliCtx.Uint(cmd.FlagLimit.Name) >= math.MaxInt32 {
 			return fmt.Errorf("limit must be less than %d", math.MaxInt32)
 		}
 	}
@@ -52,8 +53,8 @@ func validateLimit(cliCtx *cli.Context) error {
 }
 
 func validateSearch(cliCtx *cli.Context) error {
-	if cliCtx.IsSet(flagSearch.Name) {
-		if cliCtx.String(flagSearch.Name) == "" {
+	if cliCtx.IsSet(cmd.FlagSearch.Name) {
+		if cliCtx.String(cmd.FlagSearch.Name) == "" {
 			return fmt.Errorf("search must be non-empty")
 		}
 

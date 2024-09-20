@@ -3,6 +3,9 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
@@ -10,8 +13,6 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
-	"slices"
-	"strings"
 )
 
 func listBlueprints() cli.ActionFunc {
@@ -22,13 +23,13 @@ func listBlueprints() cli.ActionFunc {
 		}
 
 		var limit *uint
-		if cliCtx.IsSet(flagLimit.Name) {
-			limit = internal.Ptr(cliCtx.Uint(flagLimit.Name))
+		if cliCtx.IsSet(cmd.FlagLimit.Name) {
+			limit = internal.Ptr(cliCtx.Uint(cmd.FlagLimit.Name))
 		}
 
 		var search *string
-		if cliCtx.IsSet(flagSearch.Name) {
-			search = internal.Ptr(cliCtx.String(flagSearch.Name))
+		if cliCtx.IsSet(cmd.FlagSearch.Name) {
+			search = internal.Ptr(cliCtx.String(cmd.FlagSearch.Name))
 		}
 
 		switch outputFormat {
@@ -98,7 +99,7 @@ func listBlueprintsTable(
 	}
 
 	columns := []string{"Name", "ID", "Description", "State", "Space", "Updated At"}
-	if ctx.Bool(flagShowLabels.Name) {
+	if ctx.Bool(cmd.FlagShowLabels.Name) {
 		columns = append(columns, "Labels")
 	}
 
@@ -112,7 +113,7 @@ func listBlueprintsTable(
 			b.Space.Name,
 			cmd.HumanizeUnixSeconds(b.UpdatedAt),
 		}
-		if ctx.Bool(flagShowLabels.Name) {
+		if ctx.Bool(cmd.FlagShowLabels.Name) {
 			row = append(row, strings.Join(b.Labels, ", "))
 		}
 
