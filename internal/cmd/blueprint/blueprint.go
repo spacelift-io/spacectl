@@ -34,6 +34,18 @@ func Command() *cli.Command {
 				),
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
+			{
+				Name:  "show",
+				Usage: "Shows detailed information about a specific blueprint",
+				Flags: []cli.Flag{
+					flagRequiredBlueprintID,
+					cmd.FlagOutputFormat,
+					cmd.FlagNoColor,
+				},
+				Action:    (&showCommand{}).show,
+				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
 		},
 	}
 }
