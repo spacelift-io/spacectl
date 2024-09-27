@@ -35,8 +35,6 @@ var FlagSearch = &cli.StringFlag{
 
 // FlagShowLabels is a flag used for indicating that labels should be printed when outputting data in the table format.
 var FlagShowLabels = &cli.BoolFlag{
-	Name:     "show-labels",
-	Usage:    "[Optional] Indicates that labels should be printed when outputting data in the table format",
-	Required: false,
-	Value:    false,
+	Name:  "show-labels",
+	Usage: "[Optional] Indicates that labels should be printed when outputting data in the table format",
 }

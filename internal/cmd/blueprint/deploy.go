@@ -72,7 +72,6 @@ func (c *deployCommand) deploy(cliCtx *cli.Context) error {
 	var mutation struct {
 		BlueprintCreateStack struct {
 			StackID string `graphql:"stackID"`
-			RunID   string `graphql:"runID"`
 		} `graphql:"blueprintCreateStack(id: $id, input: $input)"`
 	}
 
@@ -91,7 +90,7 @@ func (c *deployCommand) deploy(cliCtx *cli.Context) error {
 	}
 
 	url := authenticated.Client.URL("/stack/%s", mutation.BlueprintCreateStack.StackID)
-	fmt.Printf("Created stack can found: %q", url)
+	fmt.Printf("\nCreated stack: %q", url)
 
 	return nil
 }
@@ -105,9 +104,8 @@ func formatLabel(input blueprintInput) string {
 
 func promptForTextInput(input blueprintInput) (string, error) {
 	prompt := promptui.Prompt{
-		Label:     formatLabel(input),
-		Default:   input.Default,
-		IsConfirm: input.Default != "",
+		Label:   formatLabel(input),
+		Default: input.Default,
 	}
 	result, err := prompt.Run()
 	if err != nil {
@@ -119,7 +117,9 @@ func promptForTextInput(input blueprintInput) (string, error) {
 
 func promptForSecretInput(input blueprintInput) (string, error) {
 	prompt := promptui.Prompt{
-		Label: formatLabel(input),
+		Label:   formatLabel(input),
+		Default: input.Default,
+		Mask:    '*',
 	}
 	result, err := prompt.Run()
 	if err != nil {
@@ -131,7 +131,8 @@ func promptForSecretInput(input blueprintInput) (string, error) {
 
 func promptForIntegerInput(input blueprintInput) (string, error) {
 	prompt := promptui.Prompt{
-		Label: formatLabel(input),
+		Label:   formatLabel(input),
+		Default: input.Default,
 		Validate: func(s string) error {
 			_, err := strconv.Atoi(s)
 			if err != nil {
@@ -151,7 +152,8 @@ func promptForIntegerInput(input blueprintInput) (string, error) {
 
 func promptForFloatInput(input blueprintInput) (string, error) {
 	prompt := promptui.Prompt{
-		Label: formatLabel(input),
+		Label:   formatLabel(input),
+		Default: input.Default,
 		Validate: func(s string) error {
 			_, err := strconv.ParseFloat(s, 64)
 			if err != nil {

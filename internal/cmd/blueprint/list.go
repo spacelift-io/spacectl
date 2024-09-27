@@ -126,7 +126,6 @@ func listBlueprintsTable(
 // searchAllBlueprints returns a list of stacks based on the provided search input.
 // input.First limits the total number of returned stacks, if not provided all stacks are returned.
 func searchAllBlueprints(ctx context.Context, input structs.SearchInput) ([]blueprintNode, error) {
-	// Check BE for max here
 	const maxPageSize = 50
 
 	var limit int
