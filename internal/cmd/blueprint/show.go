@@ -1,6 +1,7 @@
 package blueprint
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -12,31 +13,31 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-type showQuery struct {
-	Blueprint *struct {
+type blueprintInput struct {
+	ID          string   `graphql:"id" json:"id,omitempty"`
+	Name        string   `graphql:"name" json:"name,omitempty"`
+	Default     string   `graphql:"default" json:"default,omitempty"`
+	Description string   `graphql:"description" json:"description,omitempty"`
+	Options     []string `graphql:"options" json:"options,omitempty"`
+	Type        string   `graphql:"type" json:"type,omitempty"`
+}
+
+type blueprint struct {
+	ID          string `graphql:"id" json:"id,omitempty"`
+	Deleted     bool   `graphql:"deleted" json:"deleted,omitempty"`
+	Name        string `graphql:"name" json:"name,omitempty"`
+	Description string `graphql:"description" json:"description,omitempty"`
+	CreatedAt   int    `graphql:"createdAt" json:"createdAt,omitempty"`
+	UpdatedAt   int    `graphql:"updatedAt" json:"updatedAt,omitempty"`
+	State       string `graphql:"state" json:"state,omitempty"`
+	Inputs      []blueprintInput
+	Space       struct {
 		ID          string `graphql:"id" json:"id,omitempty"`
-		Deleted     bool   `graphql:"deleted" json:"deleted,omitempty"`
 		Name        string `graphql:"name" json:"name,omitempty"`
-		Description string `graphql:"description" json:"description,omitempty"`
-		CreatedAt   int    `graphql:"createdAt" json:"createdAt,omitempty"`
-		UpdatedAt   int    `graphql:"updatedAt" json:"updatedAt,omitempty"`
-		State       string `graphql:"state" json:"state,omitempty"`
-		Inputs      []struct {
-			ID          string   `graphql:"id" json:"id,omitempty"`
-			Name        string   `graphql:"name" json:"name,omitempty"`
-			Default     string   `graphql:"default" json:"default,omitempty"`
-			Description string   `graphql:"description" json:"description,omitempty"`
-			Options     []string `graphql:"options" json:"options,omitempty"`
-			Type        string   `graphql:"type" json:"type,omitempty"`
-		}
-		Space struct {
-			ID          string `graphql:"id" json:"id,omitempty"`
-			Name        string `graphql:"name" json:"name,omitempty"`
-			AccessLevel string `graphql:"accessLevel" json:"accessLevel,omitempty"`
-		}
-		Labels      []string `graphql:"labels" json:"labels,omitempty"`
-		RawTemplate string   `graphql:"rawTemplate" json:"rawTemplate,omitempty"`
-	} `graphql:"blueprint(id: $blueprintId)" json:"blueprint,omitempty"`
+		AccessLevel string `graphql:"accessLevel" json:"accessLevel,omitempty"`
+	}
+	Labels      []string `graphql:"labels" json:"labels,omitempty"`
+	RawTemplate string   `graphql:"rawTemplate" json:"rawTemplate,omitempty"`
 }
 
 type showCommand struct{}
@@ -49,83 +50,79 @@ func (c *showCommand) show(cliCtx *cli.Context) error {
 		return err
 	}
 
-	var query showQuery
-	variables := map[string]interface{}{
-		"blueprintId": graphql.ID(blueprintID),
-	}
-
-	if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+	b, found, err := getBlueprintByID(cliCtx.Context, blueprintID)
+	if err != nil {
 		return errors.Wrapf(err, "failed to query for blueprint ID %q", blueprintID)
 	}
 
-	if query.Blueprint == nil {
+	if !found {
 		return fmt.Errorf("blueprint with ID %q not found", blueprintID)
 	}
 
 	switch outputFormat {
 	case cmd.OutputFormatTable:
-		return c.showBlueprintTable(query)
+		return c.showBlueprintTable(b)
 	case cmd.OutputFormatJSON:
-		return cmd.OutputJSON(query.Blueprint)
+		return cmd.OutputJSON(b)
 	}
 
 	return fmt.Errorf("unknown output format: %v", outputFormat)
 }
 
-func (c *showCommand) showBlueprintTable(query showQuery) error {
-	c.outputBlueprintNameSection(query)
+func (c *showCommand) showBlueprintTable(b blueprint) error {
+	c.outputBlueprintNameSection(b)
 
-	if err := c.outputInputs(query); err != nil {
+	if err := c.outputInputs(b); err != nil {
 		return err
 	}
 
-	if err := c.outputSpace(query); err != nil {
+	if err := c.outputSpace(b); err != nil {
 		return err
 	}
 
-	c.outputRawTemplate(query)
+	c.outputRawTemplate(b)
 
 	return nil
 }
 
-func (c *showCommand) outputBlueprintNameSection(query showQuery) {
-	pterm.DefaultSection.WithLevel(1).Print(query.Blueprint.Name)
+func (c *showCommand) outputBlueprintNameSection(b blueprint) {
+	pterm.DefaultSection.WithLevel(1).Print(b.Name)
 
-	if len(query.Blueprint.Labels) > 0 {
+	if len(b.Labels) > 0 {
 		pterm.DefaultSection.WithLevel(2).Println("Labels")
-		pterm.DefaultParagraph.Println(fmt.Sprintf("[%s]", strings.Join(query.Blueprint.Labels, "], [")))
+		pterm.DefaultParagraph.Println(fmt.Sprintf("[%s]", strings.Join(b.Labels, "], [")))
 	}
 
-	if query.Blueprint.Description != "" {
+	if b.Description != "" {
 		pterm.DefaultSection.WithLevel(2).Println("Description")
-		pterm.DefaultParagraph.Println(query.Blueprint.Description)
+		pterm.DefaultParagraph.Println(b.Description)
 	}
 
-	if query.Blueprint.CreatedAt != 0 {
+	if b.CreatedAt != 0 {
 		pterm.DefaultSection.WithLevel(2).Println("Created at")
-		pterm.DefaultParagraph.Println(cmd.HumanizeUnixSeconds(query.Blueprint.CreatedAt))
+		pterm.DefaultParagraph.Println(cmd.HumanizeUnixSeconds(b.CreatedAt))
 	}
 
-	if query.Blueprint.UpdatedAt != 0 {
+	if b.UpdatedAt != 0 {
 		pterm.DefaultSection.WithLevel(2).Println("Updated at")
-		pterm.DefaultParagraph.Println(cmd.HumanizeUnixSeconds(query.Blueprint.UpdatedAt))
+		pterm.DefaultParagraph.Println(cmd.HumanizeUnixSeconds(b.UpdatedAt))
 	}
 
-	if query.Blueprint.State != "" {
+	if b.State != "" {
 		pterm.DefaultSection.WithLevel(2).Println("State")
-		pterm.DefaultParagraph.Println(cmd.HumanizeBlueprintState(query.Blueprint.State))
+		pterm.DefaultParagraph.Println(cmd.HumanizeBlueprintState(b.State))
 	}
 }
 
-func (c *showCommand) outputInputs(query showQuery) error {
-	if len(query.Blueprint.Inputs) == 0 {
+func (c *showCommand) outputInputs(b blueprint) error {
+	if len(b.Inputs) == 0 {
 		return nil
 	}
 
 	pterm.DefaultSection.WithLevel(2).Println("Inputs")
 
 	tableData := [][]string{{"Name", "ID", "Description", "Default", "Options", "Type"}}
-	for _, input := range query.Blueprint.Inputs {
+	for _, input := range b.Inputs {
 
 		tableData = append(tableData, []string{
 			input.Name,
@@ -140,19 +137,39 @@ func (c *showCommand) outputInputs(query showQuery) error {
 	return cmd.OutputTable(tableData, true)
 }
 
-func (c *showCommand) outputSpace(query showQuery) error {
+func (c *showCommand) outputSpace(b blueprint) error {
 	pterm.DefaultSection.WithLevel(2).Println("Space")
 	tableData := [][]string{
-		{"Name", query.Blueprint.Space.Name},
-		{"ID", query.Blueprint.Space.ID},
-		{"Access Level", query.Blueprint.Space.AccessLevel},
+		{"Name", b.Space.Name},
+		{"ID", b.Space.ID},
+		{"Access Level", b.Space.AccessLevel},
 	}
 
 	return cmd.OutputTable(tableData, false)
 }
 
-func (c *showCommand) outputRawTemplate(query showQuery) {
+func (c *showCommand) outputRawTemplate(b blueprint) {
 	pterm.DefaultSection.WithLevel(2).Println("Template")
 
-	pterm.Println(query.Blueprint.RawTemplate)
+	pterm.Println(b.RawTemplate)
+}
+
+func getBlueprintByID(ctx context.Context, blueprintID string) (blueprint, bool, error) {
+	var query struct {
+		Blueprint *blueprint `graphql:"blueprint(id: $blueprintId)" json:"blueprint,omitempty"`
+	}
+
+	variables := map[string]interface{}{
+		"blueprintId": graphql.ID(blueprintID),
+	}
+
+	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+		return blueprint{}, false, errors.Wrapf(err, "failed to query for blueprint ID %q", blueprintID)
+	}
+
+	if query.Blueprint == nil {
+		return blueprint{}, false, nil
+	}
+
+	return *query.Blueprint, true, nil
 }

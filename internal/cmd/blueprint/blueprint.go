@@ -46,6 +46,17 @@ func Command() *cli.Command {
 				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
+			{
+				Name:  "deploy",
+				Usage: "Deploy a stack from the blueprint",
+				Flags: []cli.Flag{
+					flagRequiredBlueprintID,
+					cmd.FlagNoColor,
+				},
+				Action:    (&deployCommand{}).deploy,
+				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
 		},
 	}
 }
