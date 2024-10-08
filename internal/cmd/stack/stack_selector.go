@@ -3,6 +3,7 @@ package stack
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -15,6 +16,10 @@ import (
 
 var (
 	errNoStackFound = errors.New("no stack found")
+)
+
+const (
+	envPromptSkipKey = "SPACECTL_SKIP_STACK_PROMPT"
 )
 
 // getStackID will try to retrieve a stack ID from multiple sources.
@@ -66,11 +71,13 @@ func getStack(cliCtx *cli.Context) (*stack, error) {
 		return nil, err
 	}
 
+	skip := os.Getenv(envPromptSkipKey) == "true"
+
 	got, err := findAndSelectStack(cliCtx.Context, &stackSearchParams{
 		count:          50,
 		projectRoot:    &subdir,
 		repositoryName: name,
-	}, true)
+	}, !skip)
 	if err != nil {
 		if errors.Is(err, errNoStackFound) {
 			return nil, fmt.Errorf("%w: no --id flag was provided and stack could not be found by searching the current directory", err)
@@ -182,6 +189,9 @@ func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt b
 	if len(items) > 1 || forcePrompt {
 		if len(items) == p.count {
 			fmt.Printf("Search results exceeded maximum capacity (%d) some stacks might be missing\n", p.count)
+		}
+		if len(items) == 1 && forcePrompt {
+			fmt.Printf("Enable auto-selection by setting '%s=true'\n", envPromptSkipKey)
 		}
 
 		prompt := promptui.Select{
