@@ -19,7 +19,7 @@ var (
 )
 
 const (
-	envPropmtSkipKey = "SPACECTL_SKIP_STACK_PROMPT"
+	envPromptSkipKey = "SPACECTL_SKIP_STACK_PROMPT"
 )
 
 // getStackID will try to retrieve a stack ID from multiple sources.
@@ -71,7 +71,7 @@ func getStack(cliCtx *cli.Context) (*stack, error) {
 		return nil, err
 	}
 
-	skip := os.Getenv(envPropmtSkipKey) == "true"
+	skip := os.Getenv(envPromptSkipKey) == "true"
 
 	got, err := findAndSelectStack(cliCtx.Context, &stackSearchParams{
 		count:          50,
@@ -191,7 +191,7 @@ func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt b
 			fmt.Printf("Search results exceeded maximum capacity (%d) some stacks might be missing\n", p.count)
 		}
 		if len(items) == 1 && forcePrompt {
-			fmt.Printf("Enable auto-selection by setting '%s=true'\n", envPropmtSkipKey)
+			fmt.Printf("Enable auto-selection by setting '%s=true'\n", envPromptSkipKey)
 		}
 
 		prompt := promptui.Select{
