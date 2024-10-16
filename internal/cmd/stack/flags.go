@@ -120,13 +120,6 @@ var flagSearchCount = &cli.IntFlag{
 	Value: 30,
 }
 
-var flagShowLabels = &cli.BoolFlag{
-	Name:     "show-labels",
-	Usage:    "[Optional] Indicates that stack labels should be printed when outputting stack data in the table format",
-	Required: false,
-	Value:    false,
-}
-
 var flagOverrideEnvVarsTF = &cli.StringSliceFlag{
 	Name:  "tf-env-var-override",
 	Usage: "[Optional] Terraform environment variables injected into the run at runtime, they will be prefixed with TF_ by default, example: --tf-env-var-override 'foo=bar,bar=baz'",
@@ -156,14 +149,4 @@ var flagInteractive = &cli.BoolFlag{
 	Name:    "interactive",
 	Aliases: []string{"i"},
 	Usage:   "[Optional] Whether to run the command in interactive mode",
-}
-
-var flagLimit = &cli.UintFlag{
-	Name:  "limit",
-	Usage: "[Optional] Limit the number of items to return",
-}
-
-var flagSearch = &cli.StringFlag{
-	Name:  "search",
-	Usage: "[Optional] Performs a full-text search.",
 }

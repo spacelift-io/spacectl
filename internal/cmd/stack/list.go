@@ -22,25 +22,25 @@ func listStacks() cli.ActionFunc {
 		}
 
 		var limit *uint
-		if cliCtx.IsSet(flagLimit.Name) {
-			if cliCtx.Uint(flagLimit.Name) == 0 {
+		if cliCtx.IsSet(cmd.FlagLimit.Name) {
+			if cliCtx.Uint(cmd.FlagLimit.Name) == 0 {
 				return fmt.Errorf("limit must be greater than 0")
 			}
 
-			if cliCtx.Uint(flagLimit.Name) >= math.MaxInt32 {
+			if cliCtx.Uint(cmd.FlagLimit.Name) >= math.MaxInt32 {
 				return fmt.Errorf("limit must be less than %d", math.MaxInt32)
 			}
 
-			limit = internal.Ptr(cliCtx.Uint(flagLimit.Name))
+			limit = internal.Ptr(cliCtx.Uint(cmd.FlagLimit.Name))
 		}
 
 		var search *string
-		if cliCtx.IsSet(flagSearch.Name) {
-			if cliCtx.String(flagSearch.Name) == "" {
+		if cliCtx.IsSet(cmd.FlagSearch.Name) {
+			if cliCtx.String(cmd.FlagSearch.Name) == "" {
 				return fmt.Errorf("search must be non-empty")
 			}
 
-			search = internal.Ptr(cliCtx.String(flagSearch.Name))
+			search = internal.Ptr(cliCtx.String(cmd.FlagSearch.Name))
 		}
 
 		switch outputFormat {
@@ -110,7 +110,7 @@ func listStacksTable(
 	}
 
 	columns := []string{"Name", "ID", "Commit", "Author", "State", "Worker Pool", "Locked By"}
-	if ctx.Bool(flagShowLabels.Name) {
+	if ctx.Bool(cmd.FlagShowLabels.Name) {
 		columns = append(columns, "Labels")
 	}
 
@@ -125,7 +125,7 @@ func listStacksTable(
 			s.WorkerPool.Name,
 			s.LockedBy,
 		}
-		if ctx.Bool(flagShowLabels.Name) {
+		if ctx.Bool(cmd.FlagShowLabels.Name) {
 			row = append(row, strings.Join(s.Labels, ", "))
 		}
 

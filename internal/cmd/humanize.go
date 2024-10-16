@@ -1,5 +1,9 @@
 package cmd
 
+import (
+	"time"
+)
+
 // HumanizeVCSProvider converts the GraphQL VCSProvider enum to a human readable string.
 func HumanizeVCSProvider(provider string) string {
 	switch provider {
@@ -51,4 +55,19 @@ func HumanizeGitHash(hash string) string {
 	}
 
 	return hash
+}
+
+func HumanizeBlueprintState(state string) string {
+	switch state {
+	case "DRAFT":
+		return "Draft"
+	case "PUBLISHED":
+		return "Published"
+	}
+
+	return state
+}
+
+func HumanizeUnixSeconds(seconds int) string {
+	return time.Unix(int64(seconds), 0).Format(time.RFC3339)
 }

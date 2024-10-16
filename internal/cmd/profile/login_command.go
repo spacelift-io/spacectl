@@ -100,8 +100,7 @@ func getCredentialsType(ctx *cli.Context) (session.CredentialsType, error) {
 		return 0, err
 	}
 
-	//nolint: gosec
-	return session.CredentialsType(result + 1), nil
+	return session.CredentialsType(result + 1), nil //nolint: gosec
 }
 
 func readEndpoint(ctx *cli.Context, reader *bufio.Reader) (string, error) {

@@ -20,3 +20,21 @@ var FlagNoColor = &cli.BoolFlag{
 	Name:  "no-color",
 	Usage: "Disables coloring for the console output. Automatically enabled when the output is not a terminal.",
 }
+
+// FlagLimit is a flag used for limiting the number of items to return.
+var FlagLimit = &cli.UintFlag{
+	Name:  "limit",
+	Usage: "[Optional] Limit the number of items to return",
+}
+
+// FlagSearch is a flag used for performing a full-text search.
+var FlagSearch = &cli.StringFlag{
+	Name:  "search",
+	Usage: "[Optional] Performs a full-text search.",
+}
+
+// FlagShowLabels is a flag used for indicating that labels should be printed when outputting data in the table format.
+var FlagShowLabels = &cli.BoolFlag{
+	Name:  "show-labels",
+	Usage: "[Optional] Indicates that labels should be printed when outputting data in the table format",
+}

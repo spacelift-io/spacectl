@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
 	"github.com/spacelift-io/spacectl/internal/cmd/completion"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
@@ -41,6 +42,7 @@ func main() {
 			versioncmd.Command(version),
 			workerpools.Command(),
 			completion.Command(),
+			blueprint.Command(),
 		},
 	}
 
