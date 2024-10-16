@@ -9,8 +9,10 @@ func Test_cleanupRepositoryString(t *testing.T) {
 	}{
 		{"https://github.com/username/tftest.git", "username/tftest"},
 		{"git@github.com:username/spacelift-local.git", "username/spacelift-local"},
+		{"ssh://git@github.com/username/tftest.git", "username/tftest"},
 		{"https://gitlab.com/username/project.git", "username/project"},
 		{"git@gitlab.com:username/project.git", "username/project"},
+		{"ssh://git@gitlab.com/username/tftest.git", "username/tftest"},
 	}
 
 	for _, test := range tests {
