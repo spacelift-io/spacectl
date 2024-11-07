@@ -13,7 +13,12 @@ var (
 )
 
 func getAliasWithAPITokenProfile(cliCtx *cli.Context) error {
-	if err := getAlias(cliCtx); err == nil {
+	ok, err := setGlobalProfileAlias(cliCtx)
+	if err != nil {
+		return err
+	}
+
+	if ok {
 		return nil
 	}
 
