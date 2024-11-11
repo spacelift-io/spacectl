@@ -9,7 +9,10 @@ func logoutCommand() *cli.Command {
 		Name:      "logout",
 		Usage:     "Remove Spacelift credentials for an existing profile",
 		ArgsUsage: "<account-alias>",
-		Before:    getAlias,
+		Before: func(cliCtx *cli.Context) error {
+			_, err := setGlobalProfileAlias(cliCtx)
+			return err
+		},
 		Action: func(*cli.Context) error {
 			return manager.Delete(profileAlias)
 		},
