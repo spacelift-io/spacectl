@@ -21,6 +21,18 @@ func localPreview() cli.ActionFunc {
 			return err
 		}
 
+		if got := cliCtx.StringSlice(flagTarget.Name); len(got) > 0 {
+			var val string
+			for _, v := range got {
+				val = strings.Join([]string{val, "-target=" + v}, " ")
+			}
+
+			envVars = append(envVars, EnvironmentVariable{
+				Key:   "TF_CLI_ARGS_plan",
+				Value: graphql.String(strings.TrimSpace(val)),
+			})
+		}
+
 		stack, err := getStack(cliCtx)
 		if err != nil {
 			return err

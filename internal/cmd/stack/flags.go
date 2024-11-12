@@ -32,6 +32,11 @@ var flagNoFindRepositoryRoot = &cli.BoolFlag{
 	Value: false,
 }
 
+var flagTarget = &cli.StringSliceFlag{
+	Name:  "target",
+	Usage: "List of targets to use during local preview, read more here: https://spacelift.io/blog/terraform-target",
+}
+
 var flagProjectRootOnly = &cli.BoolFlag{
 	Name:  "project-root-only",
 	Usage: "Indicate if spacelift should only package files inside this stacks project_root",

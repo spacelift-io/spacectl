@@ -162,6 +162,7 @@ func Command() *cli.Command {
 					flagOverrideEnvVarsTF,
 					flagDisregardGitignore,
 					flagPrioritizeRun,
+					flagTarget,
 				},
 				Action:    localPreview(),
 				Before:    authenticated.Ensure,
