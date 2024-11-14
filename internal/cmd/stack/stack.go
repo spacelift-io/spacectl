@@ -349,7 +349,7 @@ func Command() *cli.Command {
 			{
 				Category: "Run management",
 				Name:     "task",
-				Usage:    "Perform a task in a workspace",
+				Usage:    "Perform a task in a stack",
 				Flags: []cli.Flag{
 					flagStackID,
 					flagNoInit,
