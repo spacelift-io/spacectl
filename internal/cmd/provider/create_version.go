@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
@@ -18,6 +19,7 @@ func createVersion() cli.ActionFunc {
 		dir := cliCtx.String(flagGoReleaserDir.Name)
 
 		providerType := cliCtx.String(flagProviderType.Name)
+		useRegisterPlatformV2 := cliCtx.Bool(flagUseRegisterPlatformV2.Name)
 
 		fmt.Println("Retrieving release data from ", dir)
 		versionData, err := internal.BuildGoReleaserVersionData(dir)
@@ -73,12 +75,12 @@ func createVersion() cli.ActionFunc {
 		}
 
 		fmt.Println("Uploading the checksums file")
-		if err := checksumsFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsUploadURL); err != nil {
+		if err := checksumsFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsUploadURL, checksumsFile.MetadataHeaders()); err != nil {
 			return errors.Wrap(err, "could not upload checksums file")
 		}
 
 		fmt.Println("Uploading the signatures file")
-		if err := signatureFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadURL); err != nil {
+		if err := signatureFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadURL, signatureFile.MetadataHeaders()); err != nil {
 			return errors.Wrap(err, "could not upload signature file")
 		}
 
@@ -90,8 +92,14 @@ func createVersion() cli.ActionFunc {
 				return errors.Wrapf(err, "invalid artifact filename: %s", archives[i].Name)
 			}
 
-			if err := registerPlatform(cliCtx.Context, dir, versionID, &archives[i]); err != nil {
-				return err
+			if useRegisterPlatformV2 {
+				if err := registerPlatformV2(cliCtx.Context, dir, versionID, &archives[i]); err != nil {
+					return err
+				}
+			} else {
+				if err := registerPlatform(cliCtx.Context, dir, versionID, &archives[i]); err != nil {
+					return err
+				}
 			}
 		}
 		fmt.Printf("Draft version %s created\n", versionID)
@@ -121,6 +129,7 @@ func createVersion() cli.ActionFunc {
 	}
 }
 
+// deprecated, use registerPlatformV2 instead.
 func registerPlatform(ctx context.Context, dir string, versionID string, artifact *internal.GoReleaserArtifact) error {
 	var mutation struct {
 		RegisterTerraformProviderVersionPlatform string `graphql:"terraformProviderVersionRegisterPlatform(version: $version, input: $input)"`
@@ -147,7 +156,53 @@ func registerPlatform(ctx context.Context, dir string, versionID string, artifac
 		return err
 	}
 
-	if err := artifact.Upload(ctx, dir, mutation.RegisterTerraformProviderVersionPlatform); err != nil {
+	if err := artifact.Upload(ctx, dir, mutation.RegisterTerraformProviderVersionPlatform, artifact.MetadataHeaders()); err != nil {
+		return errors.Wrapf(err, "could not upload artifact: %s", artifact.Name)
+	}
+
+	return nil
+}
+
+func registerPlatformV2(ctx context.Context, dir string, versionID string, artifact *internal.GoReleaserArtifact) error {
+	var mutation struct {
+		RegisterTerraformProviderVersionPlatform struct {
+			UploadUrl     string `json:"uploadUrl"`
+			UploadHeaders struct {
+				Entries []struct {
+					Key   string `json:"key"`
+					Value string `json:"value"`
+				} `json:"entries"`
+			} `json:"uploadHeaders"`
+		} `graphql:"terraformProviderVersionRegisterPlatformV2(version: $version, input: $input)"`
+	}
+
+	archiveChecksum, err := artifact.Checksum(dir)
+	if err != nil {
+		return errors.Wrap(err, "could not calculate checksum of artifact")
+	}
+
+	fmt.Printf("Uploading the artifact for %s/%s\n", *artifact.OS, *artifact.Arch)
+
+	variables := map[string]any{
+		"version": graphql.ID(versionID),
+		"input": TerraformProviderVersionPlatformInput{
+			Architecture:    *artifact.Arch,
+			OS:              *artifact.OS,
+			ArchiveChecksum: archiveChecksum,
+			BinaryChecksum:  artifact.Extra.Checksum.BinarySHA256(),
+		},
+	}
+
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+		return err
+	}
+
+	header := http.Header{}
+	for _, entry := range mutation.RegisterTerraformProviderVersionPlatform.UploadHeaders.Entries {
+		header.Set(entry.Key, entry.Value)
+	}
+
+	if err := artifact.Upload(ctx, dir, mutation.RegisterTerraformProviderVersionPlatform.UploadUrl, header); err != nil {
 		return errors.Wrapf(err, "could not upload artifact: %s", artifact.Name)
 	}
 
