@@ -46,8 +46,11 @@ type listEnvElementOutput struct {
 	Name  string  `json:"name"`
 	Type  string  `json:"type"`
 	Value *string `json:"value"`
+
 	// Context specifies the name of the context.
-	Context *string `json:"context"`
+	Context        *string `json:"context"`
+	IsAutoattached *bool   `json:"isAutoattached"`
+
 	// Runtime is not printed, it's just used to determine output formatting.
 	Runtime bool `json:"runtime"`
 	// WriteOnly is not printed, it's just used to determine output formatting.
@@ -64,7 +67,14 @@ type runtimeConfig struct {
 
 type listEnvQuery struct {
 	Stack struct {
-		RuntimeConfig []runtimeConfig `graphql:"runtimeConfig" json:"runtimeConfig"`
+		RuntimeConfig    []runtimeConfig `graphql:"runtimeConfig" json:"runtimeConfig"`
+		AttachedContexts []struct {
+			ContextID      string          `graphql:"contextId" json:"contextId,omitempty"`
+			Name           string          `graphql:"contextName" json:"name,omitempty"`
+			Priority       int             `graphql:"priority" json:"priority,omitempty"`
+			IsAutoattached bool            `graphql:"isAutoattached" json:"isAutoattached"`
+			Config         []configElement `graphql:"config" json:"config,omitempty"`
+		} `graphql:"attachedContexts"`
 	} `graphql:"stack(id: $stack)" json:"stack"`
 }
 
@@ -140,13 +150,34 @@ func (e *listEnvCommand) listEnv(cliCtx *cli.Context) error {
 	for _, config := range query.Stack.RuntimeConfig {
 		config := config
 		var contextName *string
+		var isAutoAttached *bool
 		if config.Context != nil {
 			contextName = &config.Context.ContextName
+
+			f := false
+			isAutoAttached = &f
 		}
-		if element, err := config.Element.toConfigElementOutput(contextName); err == nil {
+
+		if element, err := config.Element.toConfigElementOutput(contextName, isAutoAttached); err == nil {
 			elements = append(elements, element)
 		} else {
 			return err
+		}
+	}
+
+	for _, spcCtx := range query.Stack.AttachedContexts {
+		// If the context is not autoattached, we will get it with the whole config.
+		// If it's autoattached, we have to specifically list and attach it.
+		if !spcCtx.IsAutoattached {
+			continue
+		}
+
+		for _, config := range spcCtx.Config {
+			if element, err := config.toConfigElementOutput(&spcCtx.Name, &spcCtx.IsAutoattached); err == nil {
+				elements = append(elements, element)
+			} else {
+				return err
+			}
 		}
 	}
 
@@ -161,7 +192,7 @@ func (e *listEnvCommand) listEnv(cliCtx *cli.Context) error {
 }
 
 func (e *listEnvCommand) showOutputsTable(outputs []listEnvElementOutput) error {
-	tableData := [][]string{{"Name", "Type", "Value", "Context"}}
+	tableData := [][]string{{"Name", "Type", "Value", "Context", "IsAutoattached"}}
 	for _, output := range outputs {
 		var row []string
 
@@ -189,6 +220,12 @@ func (e *listEnvCommand) showOutputsTable(outputs []listEnvElementOutput) error 
 			row = append(row, "")
 		}
 
+		if output.IsAutoattached != nil {
+			row = append(row, fmt.Sprintf("%v", *output.IsAutoattached))
+		} else {
+			row = append(row, "")
+		}
+
 		tableData = append(tableData, row)
 	}
 	return cmd.OutputTable(tableData, true)
@@ -198,7 +235,7 @@ func (e *listEnvCommand) showOutputsJSON(outputs []listEnvElementOutput) error {
 	return cmd.OutputJSON(outputs)
 }
 
-func (e *configElement) toConfigElementOutput(contextName *string) (listEnvElementOutput, error) {
+func (e *configElement) toConfigElementOutput(contextName *string, isAutoAttached *bool) (listEnvElementOutput, error) {
 	var value = e.Value
 
 	if e.Type == fileTypeConfig && e.Value != nil {
@@ -214,12 +251,13 @@ func (e *configElement) toConfigElementOutput(contextName *string) (listEnvEleme
 	}
 
 	return listEnvElementOutput{
-		Name:      e.ID,
-		Type:      string(e.Type),
-		Value:     value,
-		Context:   contextName,
-		Runtime:   e.Runtime,
-		WriteOnly: e.WriteOnly,
+		Name:           e.ID,
+		Type:           string(e.Type),
+		Value:          value,
+		Context:        contextName,
+		IsAutoattached: isAutoAttached,
+		Runtime:        e.Runtime,
+		WriteOnly:      e.WriteOnly,
 	}, nil
 }
 
