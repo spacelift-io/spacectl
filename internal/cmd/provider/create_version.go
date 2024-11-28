@@ -75,12 +75,12 @@ func createVersion() cli.ActionFunc {
 		}
 
 		fmt.Println("Uploading the checksums file")
-		if err := checksumsFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsUploadURL, checksumsFile.MetadataHeaders()); err != nil {
+		if err := checksumsFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsUploadURL, checksumsFile.AWSMetadataHeaders()); err != nil {
 			return errors.Wrap(err, "could not upload checksums file")
 		}
 
 		fmt.Println("Uploading the signatures file")
-		if err := signatureFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadURL, signatureFile.MetadataHeaders()); err != nil {
+		if err := signatureFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadURL, signatureFile.AWSMetadataHeaders()); err != nil {
 			return errors.Wrap(err, "could not upload signature file")
 		}
 
@@ -156,7 +156,7 @@ func registerPlatform(ctx context.Context, dir string, versionID string, artifac
 		return err
 	}
 
-	if err := artifact.Upload(ctx, dir, mutation.RegisterTerraformProviderVersionPlatform, artifact.MetadataHeaders()); err != nil {
+	if err := artifact.Upload(ctx, dir, mutation.RegisterTerraformProviderVersionPlatform, artifact.AWSMetadataHeaders()); err != nil {
 		return errors.Wrapf(err, "could not upload artifact: %s", artifact.Name)
 	}
 

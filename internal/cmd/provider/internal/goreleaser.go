@@ -179,7 +179,9 @@ func (a *GoReleaserArtifact) Upload(ctx context.Context, dir string, url string,
 	return nil
 }
 
-func (a *GoReleaserArtifact) MetadataHeaders() http.Header {
+// AWSMetadataHeaders returns the headers required for uploading with an AWS presigned URL.
+// Deprecated: Use UploadHeaders from the gql TerraformProviderVersionRegisterPlatformV2 response instead.
+func (a *GoReleaserArtifact) AWSMetadataHeaders() http.Header {
 	headers := http.Header{}
 	if a.OS != nil {
 		headers.Set("x-amz-meta-binary-os", *a.OS)
