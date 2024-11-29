@@ -140,7 +140,7 @@ func (a *GoReleaserArtifact) Checksum(dir string) (string, error) {
 }
 
 // Upload uploads the artifact's content to the given URL using HTTP PUT method.
-func (a *GoReleaserArtifact) Upload(ctx context.Context, dir string, url string) error {
+func (a *GoReleaserArtifact) Upload(ctx context.Context, dir string, url string, header http.Header) error {
 	content, err := a.content(dir)
 	if err != nil {
 		return errors.Wrapf(err, "could not get artifact content for %s", a.Name)
@@ -157,16 +157,8 @@ func (a *GoReleaserArtifact) Upload(ctx context.Context, dir string, url string)
 		return errors.Wrapf(err, "could not create request for %s", a.Name)
 	}
 
-	if a.OS != nil {
-		request.Header.Set("x-amz-meta-binary-os", *a.OS)
-	}
-
-	if a.Arch != nil {
-		request.Header.Set("x-amz-meta-binary-architecture", *a.Arch)
-	}
-
-	if checksum := a.Extra.Checksum.BinarySHA256(); checksum != "" {
-		request.Header.Set("x-amz-meta-binary-checksum", checksum)
+	for k := range header {
+		request.Header.Set(k, header.Get(k))
 	}
 
 	response, err := http.DefaultClient.Do(request)
@@ -185,6 +177,24 @@ func (a *GoReleaserArtifact) Upload(ctx context.Context, dir string, url string)
 	}
 
 	return nil
+}
+
+// AWSMetadataHeaders returns the headers required for uploading with an AWS presigned URL.
+// Deprecated: Use UploadHeaders from the gql TerraformProviderVersionRegisterPlatformV2 response instead.
+func (a *GoReleaserArtifact) AWSMetadataHeaders() http.Header {
+	headers := http.Header{}
+	if a.OS != nil {
+		headers.Set("x-amz-meta-binary-os", *a.OS)
+	}
+
+	if a.Arch != nil {
+		headers.Set("x-amz-meta-binary-architecture", *a.Arch)
+	}
+
+	if checksum := a.Extra.Checksum.BinarySHA256(); checksum != "" {
+		headers.Set("x-amz-meta-binary-checksum", checksum)
+	}
+	return headers
 }
 
 // ValidateFilename validates that the artifact's name matches the expected

@@ -42,6 +42,11 @@ var flagProviderType = &cli.StringFlag{
 	Required: true,
 }
 
+var flagUseRegisterPlatformV2 = &cli.BoolFlag{
+	Name:  "use-register-platform-v2",
+	Usage: "Use register platform v2 mutation",
+}
+
 var flagProviderVersionProtocols = &cli.StringSliceFlag{
 	Name:  "protocols",
 	Usage: "Terraform plugin protocols supported by the provider",

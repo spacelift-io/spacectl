@@ -54,6 +54,7 @@ func Command() *cli.Command {
 					flagProviderVersionProtocols,
 					flagGoReleaserDir,
 					flagGPGKeyID,
+					flagUseRegisterPlatformV2,
 				},
 				Action:    createVersion(),
 				Before:    authenticated.Ensure,
