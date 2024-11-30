@@ -9,7 +9,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.12.1
 	github.com/cheggaaa/pb/v3 v3.1.5
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
-	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mholt/archiver/v3 v3.5.1
