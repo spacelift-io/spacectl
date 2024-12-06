@@ -8,6 +8,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
 	"github.com/spacelift-io/spacectl/internal/cmd/completion"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
+	"github.com/spacelift-io/spacectl/internal/cmd/policy"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider"
 	runexternaldependency "github.com/spacelift-io/spacectl/internal/cmd/run_external_dependency"
@@ -43,6 +44,7 @@ func main() {
 			workerpools.Command(),
 			completion.Command(),
 			blueprint.Command(),
+			policy.Command(),
 		},
 	}
 
