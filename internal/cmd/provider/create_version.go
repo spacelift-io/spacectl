@@ -20,7 +20,7 @@ func createVersion() cli.ActionFunc {
 		dir := cliCtx.String(flagGoReleaserDir.Name)
 
 		providerType := cliCtx.String(flagProviderType.Name)
-		useRegisterPlatformV2 := cliCtx.Bool(flagUseRegisterPlatformV2.Name)
+		var useRegisterPlatformV2 bool
 		if types, err := mutationTypes(cliCtx.Context); err == nil {
 			useRegisterPlatformV2 = types.hasTerraformProviderVersionRegisterPlatformV2Mutation()
 		} else {
