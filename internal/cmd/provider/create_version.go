@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
@@ -19,7 +20,12 @@ func createVersion() cli.ActionFunc {
 		dir := cliCtx.String(flagGoReleaserDir.Name)
 
 		providerType := cliCtx.String(flagProviderType.Name)
-		useRegisterPlatformV2 := cliCtx.Bool(flagUseRegisterPlatformV2.Name)
+		var useRegisterPlatformV2 bool
+		if types, err := mutationTypes(cliCtx.Context); err == nil {
+			useRegisterPlatformV2 = types.hasTerraformProviderVersionRegisterPlatformV2Mutation()
+		} else {
+			fmt.Println("Failed to check for presence of terraformProviderVersionRegisterPlatformV2Mutation ", err.Error())
+		}
 
 		fmt.Println("Retrieving release data from ", dir)
 		versionData, err := internal.BuildGoReleaserVersionData(dir)
@@ -161,6 +167,33 @@ func registerPlatform(ctx context.Context, dir string, versionID string, artifac
 	}
 
 	return nil
+}
+
+type mutationTypesQuery struct {
+	Schema struct {
+		MutationType struct {
+			Fields []mutationTypeField
+		}
+	} `graphql:"__schema"`
+}
+
+type mutationTypeField struct {
+	Name string
+}
+
+func (q mutationTypesQuery) hasTerraformProviderVersionRegisterPlatformV2Mutation() bool {
+	return slices.ContainsFunc(q.Schema.MutationType.Fields, func(field mutationTypeField) bool {
+		return field.Name == "terraformProviderVersionRegisterPlatformV2"
+	})
+}
+
+func mutationTypes(ctx context.Context) (mutationTypesQuery, error) {
+	query := mutationTypesQuery{}
+	err := authenticated.Client.Query(ctx, &query, nil)
+	if err != nil {
+		return mutationTypesQuery{}, err
+	}
+	return query, nil
 }
 
 func registerPlatformV2(ctx context.Context, dir string, versionID string, artifact *internal.GoReleaserArtifact) error {
