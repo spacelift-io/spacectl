@@ -3,16 +3,18 @@ package stack
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
+	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/draw"
 	"github.com/urfave/cli/v2"
-	"strings"
-	"time"
 )
 
 func watch(cliCtx *cli.Context) error {
@@ -34,6 +36,14 @@ func watch(cliCtx *cli.Context) error {
 
 type Stacks struct {
 	si structs.SearchInput
+}
+
+// Selected opens the selected worker pool in the browser.
+func (q *Stacks) Filtered(s string) error {
+	fullTextSearch := graphql.NewString(graphql.String(s))
+	q.si.FullTextSearch = fullTextSearch
+
+	return nil
 }
 
 // Selected opens the selected worker pool in the browser.
@@ -85,6 +95,10 @@ func (q *Stacks) Rows(ctx context.Context) (rows []table.Row, err error) {
 
 type StackWatch struct {
 	id string
+}
+
+func (w *StackWatch) Filtered(s string) error {
+	return nil
 }
 
 func (s *StackWatch) Columns() []table.Column {

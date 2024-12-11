@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
@@ -13,15 +14,23 @@ import (
 
 // Table is a table that can be drawn.
 type Table struct {
-	table table.Model
-	td    TableData
+	table     table.Model
+	textInput textinput.Model
+
+	td TableData
 
 	width     int
 	height    int
 	baseStyle lipgloss.Style
-
-	lastErr error
+	lastErr   error
 }
+
+type view string
+
+const (
+	viewTable view = "table"
+	viewInput view = "input"
+)
 
 // TableData is the data for a table.
 type TableData interface {
@@ -34,6 +43,8 @@ type TableData interface {
 	// Selected is called when a row is selected.
 	// The entire row is passed to the function.
 	Selected(table.Row) error
+
+	Filtered(string) error
 }
 
 // NewTable creates a new table.
@@ -67,14 +78,20 @@ func NewTable(ctx context.Context, d TableData) (*Table, error) {
 		BorderStyle(lipgloss.ThickBorder()).
 		BorderForeground(lipgloss.Color("240"))
 
+	ti := textinput.New()
+	ti.Placeholder = "Enter text"
+	ti.CharLimit = 156
+	ti.Width = t.Width()
+
 	width, height, err := term.GetSize(0)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Table{
-		table: t,
-		td:    d,
+		table:     t,
+		td:        d,
+		textInput: ti,
 
 		width:     width,
 		height:    height,
@@ -96,26 +113,45 @@ func (t *Table) DrawTable() error {
 // Init implements tea.Model.Init.
 // Should not be called directly.
 func (t Table) Init() tea.Cmd {
-	return tickCmd()
+	return tickCmd(time.Second * 5)
 }
 
 // Update implements tea.Model.Update.
 // Should not be called directly.
 func (t Table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
+	cmds := []tea.Cmd{}
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		t.width = msg.Width
 		t.height = msg.Height
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc", "ctrl+c", "q":
-			return t, tea.Quit
-		case "enter":
-			err := t.td.Selected(t.table.SelectedRow())
-			if err != nil {
-				return t, t.saveErrorAndExit(err)
+		case "ctrl+f":
+			t.textInput.Focus()
+			t.table.Blur()
+		case "esc", "ctrl+c":
+			if t.table.Focused() {
+				return t, tea.Quit
+			} else {
+				t.table.Focus()
+
+				t.textInput.Blur()
+				t.textInput.Reset()
 			}
+		case "enter":
+			if t.table.Focused() {
+				err := t.td.Selected(t.table.SelectedRow())
+				if err != nil {
+					return t, t.saveErrorAndExit(err)
+				}
+			}
+			if t.textInput.Focused() {
+				err := t.td.Filtered(t.textInput.Value())
+				if err != nil {
+					return t, t.saveErrorAndExit(err)
+				}
+			}
+			cmds = append(cmds, tickCmd(time.Microsecond))
 		}
 	case tickMsg:
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -127,11 +163,17 @@ func (t Table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		t.table.SetRows(rows)
-		return t, tickCmd()
+		return t, tickCmd(time.Second * 5)
 	}
 
+	var cmd tea.Cmd
+	t.textInput, cmd = t.textInput.Update(msg)
+	cmds = append(cmds, cmd)
+
 	t.table, cmd = t.table.Update(msg)
-	return t, cmd
+	cmds = append(cmds, cmd)
+
+	return t, tea.Batch(cmds...)
 }
 
 // View implements tea.Model.View.
@@ -141,10 +183,24 @@ func (t Table) View() string {
 		return fmt.Sprintln("Exited with an error:", t.lastErr)
 	}
 
+	tableView := t.baseStyle.Render(t.table.View()) + "\n"
+
+	filterText := "Filter stacks by name (CTRL+f to start)"
+	if t.textInput.Focused() {
+		filterText = "Filter stacks by name (CTRL+c to exit)"
+	}
+
+	filterView := fmt.Sprintf(
+		"%s\n%s\n",
+		filterText,
+		t.textInput.View(),
+	)
+
+	views := []string{tableView, filterView}
 	return lipgloss.Place(
 		t.width, t.height,
 		lipgloss.Center, lipgloss.Center,
-		t.baseStyle.Render(t.table.View())+"\n",
+		lipgloss.JoinVertical(lipgloss.Top, views...),
 	)
 }
 
