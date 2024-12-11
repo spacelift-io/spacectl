@@ -13,6 +13,12 @@ func Command() *cli.Command {
 		Usage: "Manage a Spacelift stack",
 		Subcommands: []*cli.Command{
 			{
+				Name:   "watch",
+				Usage:  "Starts an interactive watcher for a stack list",
+				Action: watch,
+				Before: authenticated.Ensure,
+			},
+			{
 				Category: "Run management",
 				Name:     "confirm",
 				Usage:    "Confirm an unconfirmed tracked run",
