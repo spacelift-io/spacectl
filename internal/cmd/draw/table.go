@@ -3,6 +3,7 @@ package draw
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -23,14 +24,10 @@ type Table struct {
 	height    int
 	baseStyle lipgloss.Style
 	lastErr   error
+
+	choices []table.Row
+	cursor  int
 }
-
-type view string
-
-const (
-	viewTable view = "table"
-	viewInput view = "input"
-)
 
 // TableData is the data for a table.
 type TableData interface {
@@ -42,7 +39,7 @@ type TableData interface {
 
 	// Selected is called when a row is selected.
 	// The entire row is passed to the function.
-	Selected(table.Row) error
+	Selected(table.Row) ([]table.Row, error)
 
 	Filtered(string) error
 }
@@ -88,7 +85,7 @@ func NewTable(ctx context.Context, d TableData) (*Table, error) {
 		return nil, err
 	}
 
-	return &Table{
+	screen := &Table{
 		table:     t,
 		td:        d,
 		textInput: ti,
@@ -98,7 +95,9 @@ func NewTable(ctx context.Context, d TableData) (*Table, error) {
 		baseStyle: bs,
 
 		lastErr: nil,
-	}, nil
+	}
+
+	return screen, nil
 }
 
 // DrawTable should be called to draw the table.
@@ -116,9 +115,53 @@ func (t Table) Init() tea.Cmd {
 	return tickCmd(time.Second * 5)
 }
 
+func (t Table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if t.choices != nil {
+		return t.choicesUpdate(msg)
+	}
+
+	return t.tableUpdate(msg)
+}
+
+func (t Table) choicesUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q", "esc":
+			t.choices = nil
+			t.cursor = 0
+
+			return t, nil
+		case "enter":
+			opts, err := t.td.Selected(t.choices[t.cursor])
+			if err != nil {
+				return t, t.saveErrorAndExit(err)
+			}
+
+			t.choices = opts
+			t.cursor = 0
+		case "down", "j":
+			t.cursor++
+			if t.cursor >= len(t.choices) {
+				t.cursor = 0
+			}
+
+		case "up", "k":
+			t.cursor--
+			if t.cursor < 0 {
+				t.cursor = len(t.choices) - 1
+			}
+		}
+	default:
+		// OK
+	}
+
+	return t, nil
+}
+
 // Update implements tea.Model.Update.
 // Should not be called directly.
-func (t Table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (t Table) tableUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{}
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -140,10 +183,13 @@ func (t Table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "enter":
 			if t.table.Focused() {
-				err := t.td.Selected(t.table.SelectedRow())
+				opts, err := t.td.Selected(t.table.SelectedRow())
 				if err != nil {
 					return t, t.saveErrorAndExit(err)
 				}
+
+				t.choices = opts
+				t.cursor = 0
 			}
 			if t.textInput.Focused() {
 				err := t.td.Filtered(t.textInput.Value())
@@ -151,6 +197,7 @@ func (t Table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return t, t.saveErrorAndExit(err)
 				}
 			}
+
 			cmds = append(cmds, tickCmd(time.Microsecond))
 		}
 	case tickMsg:
@@ -163,7 +210,7 @@ func (t Table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		t.table.SetRows(rows)
-		return t, tickCmd(time.Second * 5)
+		return t, tickCmd(time.Second * 3)
 	}
 
 	var cmd tea.Cmd
@@ -183,6 +230,21 @@ func (t Table) View() string {
 		return fmt.Sprintln("Exited with an error:", t.lastErr)
 	}
 
+	var views []string
+	if t.choices != nil {
+		views = t.choicesView()
+	} else {
+		views = t.tableView()
+	}
+
+	return lipgloss.Place(
+		t.width, t.height,
+		lipgloss.Center, lipgloss.Center,
+		lipgloss.JoinVertical(lipgloss.Top, views...),
+	)
+}
+
+func (t Table) tableView() []string {
 	tableView := t.baseStyle.Render(t.table.View()) + "\n"
 
 	filterText := "Filter stacks by name (CTRL+f to start)"
@@ -196,12 +258,26 @@ func (t Table) View() string {
 		t.textInput.View(),
 	)
 
-	views := []string{tableView, filterView}
-	return lipgloss.Place(
-		t.width, t.height,
-		lipgloss.Center, lipgloss.Center,
-		lipgloss.JoinVertical(lipgloss.Top, views...),
-	)
+	return []string{tableView, filterView}
+}
+
+func (t Table) choicesView() []string {
+	s := strings.Builder{}
+	s.WriteString("What how to proceed?\n\n")
+
+	for i := 0; i < len(t.choices); i++ {
+		if t.cursor == i {
+			s.WriteString("(•) ")
+		} else {
+			s.WriteString("( ) ")
+		}
+
+		s.WriteString(t.choices[i][0])
+		s.WriteString("\n")
+	}
+	s.WriteString("\n(press CTRL+C to go back)\n")
+
+	return []string{s.String()}
 }
 
 func (t *Table) saveErrorAndExit(err error) tea.Cmd {

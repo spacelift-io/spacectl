@@ -3,11 +3,12 @@ package stack
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"strings"
-	"time"
 
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/pkg/errors"
@@ -49,15 +50,44 @@ func (q *Stacks) Filtered(s string) error {
 }
 
 // Selected opens the selected worker pool in the browser.
-func (q *Stacks) Selected(row table.Row) error {
-	ctx := context.Background()
-	st := &StackWatch{row[0]}
-	t, err := draw.NewTable(ctx, st)
-	if err != nil {
-		return err
-	}
+func (q *Stacks) Selected(row table.Row) ([]table.Row, error) {
+	switch row[0] {
+	case "Inspect":
+		ctx := context.Background()
+		st := &StackWatch{row[1]}
+		t, err := draw.NewTable(ctx, st)
+		if err != nil {
+			return nil, err
+		}
 
-	return t.DrawTable()
+		return nil, t.DrawTable()
+	case "Trigger":
+		var mutation struct {
+			RunTrigger struct {
+				ID string `graphql:"id"`
+			} `graphql:"runTrigger(stack: $stack, commitSha: $sha, runType: $type)"`
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		variables := map[string]interface{}{
+			"stack": graphql.ID(row[1]),
+			"sha":   (*graphql.String)(nil),
+			"type":  structs.NewRunType("TRACKED"),
+		}
+
+		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	default:
+		return []table.Row{
+			[]string{"Inspect", row[0]},
+			[]string{"Trigger", row[0]},
+		}, nil
+	}
 }
 
 // Columns returns the columns of the worker pool table.
@@ -140,7 +170,7 @@ func (s *StackWatch) Rows(ctx context.Context) (rows []table.Row, err error) {
 	return rows, nil
 }
 
-func (s *StackWatch) Selected(row table.Row) error {
+func (s *StackWatch) Selected(row table.Row) ([]table.Row, error) {
 	ctx := context.Background()
 	if row[0] == "<-back" {
 		input := structs.SearchInput{
@@ -153,10 +183,10 @@ func (s *StackWatch) Selected(row table.Row) error {
 		st := &Stacks{input}
 		t, err := draw.NewTable(ctx, st)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		return t.DrawTable()
+		return nil, t.DrawTable()
 	}
 
 	//return browser.OpenURL(authenticated.Client.URL("/stack/%s/run/%s", row[7], row[0]))
@@ -179,7 +209,7 @@ func (s *StackWatch) Selected(row table.Row) error {
 
 	_, err := p.Run()
 
-	return err
+	return nil, err
 }
 
 func listRuns(ctx context.Context, stackID string, maxResults int) ([][]string, error) {

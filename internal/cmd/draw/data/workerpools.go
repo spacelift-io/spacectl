@@ -19,8 +19,8 @@ type WorkerPool struct {
 }
 
 // Selected opens the selected worker pool in the browser.
-func (q *WorkerPool) Selected(row table.Row) error {
-	return browser.OpenURL(authenticated.Client.URL("/stack/%s/run/%s", row[1], row[2]))
+func (q *WorkerPool) Selected(row table.Row) ([]table.Row, error) {
+	return nil, browser.OpenURL(authenticated.Client.URL("/stack/%s/run/%s", row[1], row[2]))
 }
 
 func (q *WorkerPool) Filtered(string) error {
