@@ -3,11 +3,13 @@ package stack
 import (
 	"context"
 	"fmt"
+	"github.com/charmbracelet/bubbles/viewport"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/table"
-	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
@@ -157,7 +159,27 @@ func (s *StackWatch) Selected(row table.Row) error {
 		return t.DrawTable()
 	}
 
-	return browser.OpenURL(authenticated.Client.URL("/stack/%s/run/%s", row[7], row[0]))
+	//return browser.OpenURL(authenticated.Client.URL("/stack/%s/run/%s", row[7], row[0]))
+	//_, err := runLogsWithAction(context.Background(), row[7], row[0], nil)
+	lines := make(chan string)
+	go func() {
+		getRunStates(ctx, row[7], row[0], lines, nil)
+		close(lines)
+	}()
+
+	var logs strings.Builder
+	for line := range lines {
+		logs.WriteString(line)
+	}
+	p := tea.NewProgram(
+		model{content: logs.String()},
+		tea.WithAltScreen(),       // use the full size of the terminal in its "alternate screen buffer"
+		tea.WithMouseCellMotion(), // turn on mouse support so we can track the mouse wheel
+	)
+
+	_, err := p.Run()
+
+	return err
 }
 
 func listRuns(ctx context.Context, stackID string, maxResults int) ([][]string, error) {
@@ -229,4 +251,164 @@ func listRuns(ctx context.Context, stackID string, maxResults int) ([][]string, 
 	}
 
 	return tableData, nil
+}
+
+// RUN LOGS
+var (
+	titleStyle = func() lipgloss.Style {
+		b := lipgloss.RoundedBorder()
+		b.Right = "├"
+		return lipgloss.NewStyle().BorderStyle(b).Padding(0, 1)
+	}()
+
+	infoStyle = func() lipgloss.Style {
+		b := lipgloss.RoundedBorder()
+		b.Left = "┤"
+		return titleStyle.BorderStyle(b)
+	}()
+)
+
+type model struct {
+	content  string
+	ready    bool
+	viewport viewport.Model
+}
+
+func (m model) Init() tea.Cmd {
+	return nil
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var (
+		cmd  tea.Cmd
+		cmds []tea.Cmd
+	)
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if k := msg.String(); k == "ctrl+c" || k == "q" || k == "esc" {
+			return m, tea.Quit
+		}
+
+	case tea.WindowSizeMsg:
+		headerHeight := lipgloss.Height(m.headerView())
+		footerHeight := lipgloss.Height(m.footerView())
+		verticalMarginHeight := headerHeight + footerHeight
+
+		if !m.ready {
+			// Since this program is using the full size of the viewport we
+			// need to wait until we've received the window dimensions before
+			// we can initialize the viewport. The initial dimensions come in
+			// quickly, though asynchronously, which is why we wait for them
+			// here.
+			m.viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
+			m.viewport.YPosition = headerHeight
+			m.viewport.SetContent(m.content)
+			m.ready = true
+		} else {
+			m.viewport.Width = msg.Width
+			m.viewport.Height = msg.Height - verticalMarginHeight
+		}
+	}
+
+	// Handle keyboard and mouse events in the viewport
+	m.viewport, cmd = m.viewport.Update(msg)
+	cmds = append(cmds, cmd)
+
+	return m, tea.Batch(cmds...)
+}
+
+func (m model) View() string {
+	if !m.ready {
+		return "\n  Initializing..."
+	}
+	return fmt.Sprintf("%s\n%s\n%s", m.headerView(), m.viewport.View(), m.footerView())
+}
+
+func (m model) headerView() string {
+	title := titleStyle.Render("Run Logs \n(ctrl+c or q or esc to exit)")
+	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(title)))
+	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
+}
+
+func (m model) footerView() string {
+	info := infoStyle.Render(fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100))
+	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(info)))
+	return lipgloss.JoinHorizontal(lipgloss.Center, line, info)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// get rung states logs
+func getRunStates(ctx context.Context, stack, run string, sink chan<- string, acFn actionOnRunState) (*structs.RunStateTransition, error) {
+	var query struct {
+		Stack *struct {
+			Run *struct {
+				History []structs.RunStateTransition `graphql:"history"`
+			} `graphql:"run(id: $run)"`
+		} `graphql:"stack(id: $stack)"`
+	}
+
+	variables := map[string]interface{}{
+		"stack": graphql.ID(stack),
+		"run":   graphql.ID(run),
+	}
+
+	reportedStates := make(map[structs.RunState]struct{})
+
+	var backoff = time.Duration(0)
+
+	for {
+		if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+			return nil, err
+		}
+
+		if query.Stack == nil {
+			return nil, fmt.Errorf("stack %q not found", stack)
+		}
+
+		if query.Stack.Run == nil {
+			return nil, fmt.Errorf("run %q in stack %q not found", run, stack)
+		}
+
+		history := query.Stack.Run.History
+
+		for index := range history {
+			// Unlike the GUI, we go earliest first.
+			transition := history[len(history)-index-1]
+
+			if _, ok := reportedStates[transition.State]; ok {
+				continue
+			}
+			backoff = 0
+			reportedStates[transition.State] = struct{}{}
+
+			if transition.HasLogs {
+				if err := runStateLogs(ctx, stack, run, transition.State, transition.StateVersion, sink, transition.Terminal); err != nil {
+					return nil, err
+				}
+			}
+
+			if acFn != nil {
+				if err := acFn(transition.State, stack, run); err != nil {
+					return nil, fmt.Errorf("failed to execute action on run state: %w", err)
+				}
+			}
+
+			if transition.Terminal {
+				return &transition, nil
+			}
+		}
+
+		time.Sleep(backoff * time.Second)
+
+		if backoff < 5 {
+			backoff++
+		}
+	}
 }
