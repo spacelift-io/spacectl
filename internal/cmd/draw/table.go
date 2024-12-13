@@ -197,8 +197,7 @@ func (t Table) tableUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return t, t.saveErrorAndExit(err)
 				}
 			}
-
-			cmds = append(cmds, tickCmd(time.Microsecond))
+			cmds = append(cmds, tickCmd(time.Second*3))
 		}
 	case tickMsg:
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)

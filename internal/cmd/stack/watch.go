@@ -98,8 +98,6 @@ func (q *Stacks) Columns() []table.Column {
 		{Title: "Commit", Width: 15},
 		{Title: "Author", Width: 15},
 		{Title: "State", Width: 15},
-		{Title: "Worker Pool", Width: 15},
-		{Title: "Locked By", Width: 15},
 	}
 }
 
@@ -117,8 +115,6 @@ func (q *Stacks) Rows(ctx context.Context) (rows []table.Row, err error) {
 			cmd.HumanizeGitHash(stack.TrackedCommit.Hash),
 			stack.TrackedCommit.AuthorName,
 			stack.State,
-			stack.WorkerPool.ID,
-			stack.LockedBy,
 		})
 	}
 
