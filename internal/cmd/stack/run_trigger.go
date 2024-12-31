@@ -27,12 +27,12 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 
 		variables := map[string]interface{}{
 			"stack": graphql.ID(stackID),
-			"sha":   (*graphql.String)(nil),
+			"sha":   (*string)(nil),
 			"type":  structs.NewRunType(spaceliftType),
 		}
 
 		if cliCtx.IsSet(flagCommitSHA.Name) {
-			variables["sha"] = graphql.NewString(graphql.String(cliCtx.String(flagCommitSHA.Name)))
+			variables["sha"] = internal.Ptr(cliCtx.String(flagCommitSHA.Name))
 		}
 
 		ctx := context.Background()

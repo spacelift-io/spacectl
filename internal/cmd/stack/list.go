@@ -7,7 +7,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/hasura/go-graphql-client"
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd"
@@ -59,19 +58,14 @@ func listStacksJSON(
 	search *string,
 	limit *uint,
 ) error {
-	var first *graphql.Int
+	var first *int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) // nolint: gosec
-	}
-
-	var fullTextSearch *graphql.String
-	if search != nil {
-		fullTextSearch = graphql.NewString(graphql.String(*search))
+		first = internal.Ptr(int(*limit))
 	}
 
 	stacks, err := searchAllStacks(ctx.Context, structs.SearchInput{
 		First:          first,
-		FullTextSearch: fullTextSearch,
+		FullTextSearch: search,
 	})
 	if err != nil {
 		return err
@@ -85,19 +79,14 @@ func listStacksTable(
 	search *string,
 	limit *uint,
 ) error {
-	var first *graphql.Int
+	var first *int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) // nolint: gosec
-	}
-
-	var fullTextSearch *graphql.String
-	if search != nil {
-		fullTextSearch = graphql.NewString(graphql.String(*search))
+		first = internal.Ptr(int(*limit))
 	}
 
 	input := structs.SearchInput{
 		First:          first,
-		FullTextSearch: fullTextSearch,
+		FullTextSearch: search,
 		OrderBy: &structs.QueryOrder{
 			Field:     "starred",
 			Direction: "DESC",
@@ -148,18 +137,13 @@ func searchAllStacks(ctx context.Context, input structs.SearchInput) ([]stack, e
 
 	out := []stack{}
 	pageInput := structs.SearchInput{
-		First:          graphql.NewInt(maxPageSize),
+		First:          internal.Ptr(maxPageSize),
 		FullTextSearch: input.FullTextSearch,
 	}
 	for {
 		if !fetchAll {
 			// Fetch exactly the number of items requested
-			pageInput.First = graphql.NewInt(
-				// nolint: gosec
-				graphql.Int(
-					slices.Min([]int{maxPageSize, limit - len(out)}),
-				),
-			)
+			pageInput.First = internal.Ptr(slices.Min([]int{maxPageSize, limit - len(out)}))
 		}
 
 		result, err := searchStacks(ctx, pageInput)
@@ -170,7 +154,7 @@ func searchAllStacks(ctx context.Context, input structs.SearchInput) ([]stack, e
 		out = append(out, result.Stacks...)
 
 		if result.PageInfo.HasNextPage && (fetchAll || limit > len(out)) {
-			pageInput.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+			pageInput.After = internal.Ptr(result.PageInfo.EndCursor)
 		} else {
 			break
 		}

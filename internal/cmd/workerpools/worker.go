@@ -121,7 +121,7 @@ func (c *drainWorkerCommand) drainWorker(cliCtx *cli.Context) error {
 	variables := map[string]interface{}{
 		"worker":     graphql.ID(workerID),
 		"workerPool": graphql.ID(workerPoolID),
-		"drain":      graphql.Boolean(true),
+		"drain":      true,
 	}
 
 	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
@@ -210,7 +210,7 @@ func (c *undrainWorkerCommand) undrainWorker(cliCtx *cli.Context) error {
 	variables := map[string]interface{}{
 		"worker":     graphql.ID(workerID),
 		"workerPool": graphql.ID(workerPoolID),
-		"drain":      graphql.Boolean(false),
+		"drain":      false,
 	}
 
 	err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables)

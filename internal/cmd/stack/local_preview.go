@@ -30,7 +30,7 @@ func localPreview() cli.ActionFunc {
 
 			envVars = append(envVars, EnvironmentVariable{
 				Key:   "TF_CLI_ARGS_plan",
-				Value: graphql.String(strings.TrimSpace(val)),
+				Value: strings.TrimSpace(val),
 			})
 		}
 
@@ -171,8 +171,8 @@ func localPreview() cli.ActionFunc {
 
 // EnvironmentVariable represents a key-value pair of environment variables
 type EnvironmentVariable struct {
-	Key   graphql.String `json:"key"`
-	Value graphql.String `json:"value"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 func parseEnvVar(env string, envVars []EnvironmentVariable, mutateKey func(string) string) ([]EnvironmentVariable, error) {
@@ -186,8 +186,8 @@ func parseEnvVar(env string, envVars []EnvironmentVariable, mutateKey func(strin
 	}
 
 	return append(envVars, EnvironmentVariable{
-		Key:   graphql.String(parts[0]),
-		Value: graphql.String(parts[1]),
+		Key:   parts[0],
+		Value: parts[1],
 	}), nil
 }
 

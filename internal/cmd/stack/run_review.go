@@ -63,7 +63,7 @@ func addRunReview(ctx context.Context, stackID, runID, note string, decision enu
 		"stack":    graphql.ID(stackID),
 		"run":      runIDGQL,
 		"decision": decision,
-		"note":     graphql.String(note),
+		"note":     note,
 	}
 
 	return authenticated.Client.Mutate(ctx, &mutation, variables)

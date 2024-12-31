@@ -122,7 +122,7 @@ func createVersion() cli.ActionFunc {
 
 		variables = map[string]any{
 			"version":     graphql.ID(versionID),
-			"description": graphql.String(*versionData.Changelog),
+			"description": *versionData.Changelog,
 		}
 
 		fmt.Println("Uploading the changelog")

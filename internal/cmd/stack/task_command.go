@@ -26,8 +26,8 @@ func taskCommand(cliCtx *cli.Context) error {
 
 	variables := map[string]interface{}{
 		"stack":   graphql.ID(stackID),
-		"command": graphql.String(strings.Join(cliCtx.Args().Slice(), " ")),
-		"noinit":  graphql.NewBoolean(graphql.Boolean(cliCtx.Bool(flagNoInit.Name))),
+		"command": strings.Join(cliCtx.Args().Slice(), " "),
+		"noinit":  internal.Ptr(cliCtx.Bool(flagNoInit.Name)),
 	}
 
 	ctx := context.Background()

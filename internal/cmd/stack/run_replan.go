@@ -41,9 +41,9 @@ func runReplan(cliCtx *cli.Context) error {
 		} `graphql:"runTargetedReplan(stack: $stack, run: $run, targets: $targets)"`
 	}
 
-	targets := make([]graphql.String, len(resources))
+	targets := make([]string, len(resources))
 	for i, resource := range resources {
-		targets[i] = graphql.String(resource)
+		targets[i] = resource
 	}
 
 	variables := map[string]interface{}{

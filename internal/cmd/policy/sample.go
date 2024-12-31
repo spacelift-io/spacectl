@@ -38,7 +38,7 @@ func (c *sampleCommand) getSamplesPolicyByID(ctx context.Context, policyID, key 
 
 	variables := map[string]interface{}{
 		"policyId": graphql.ID(policyID),
-		"key":      graphql.String(key),
+		"key":      key,
 	}
 
 	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {

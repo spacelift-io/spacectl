@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hasura/go-graphql-client"
 	"github.com/pkg/errors"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -37,8 +36,8 @@ func (c *simulateCommand) simulate(cliCtx *cli.Context) error {
 	}
 
 	variables := map[string]interface{}{
-		"body":  graphql.String(b.Body),
-		"input": graphql.String(parsedInput),
+		"body":  b.Body,
+		"input": parsedInput,
 		"type":  b.Type,
 	}
 

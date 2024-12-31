@@ -163,19 +163,19 @@ func runStateLogs(ctx context.Context, stack, run string, state structs.RunState
 					Messages []struct {
 						Body string `graphql:"message"`
 					} `graphql:"messages"`
-					NextToken *graphql.String `graphql:"nextToken"`
+					NextToken *string `graphql:"nextToken"`
 				} `graphql:"logs(state: $state, token: $token, stateVersion: $stateVersion)"`
 			} `graphql:"run(id: $run)"`
 		} `graphql:"stack(id: $stack)"`
 	}
 
-	var token *graphql.String
+	var token *string
 	variables := map[string]interface{}{
 		"stack":        graphql.ID(stack),
 		"run":          graphql.ID(run),
 		"state":        state,
 		"token":        token,
-		"stateVersion": graphql.Int(version), // nolint: gosec
+		"stateVersion": version,
 	}
 
 	var backOff time.Duration

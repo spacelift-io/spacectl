@@ -39,7 +39,7 @@ func lock(cliCtx *cli.Context) error {
 	var mutation stackLockMutation
 	variables := map[string]interface{}{
 		"stack": graphql.ID(stackID),
-		"note":  graphql.String(note),
+		"note":  note,
 	}
 
 	return authenticated.Client.Mutate(cliCtx.Context, &mutation, variables)

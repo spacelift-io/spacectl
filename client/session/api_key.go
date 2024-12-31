@@ -57,7 +57,7 @@ func (g *apiKey) exchange(ctx context.Context) error {
 
 	variables := map[string]interface{}{
 		"id":     graphql.ID(g.keyID),
-		"secret": graphql.String(g.keySecret),
+		"secret": g.keySecret,
 	}
 
 	if err := g.mutate(ctx, &mutation, variables); err != nil {

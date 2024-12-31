@@ -51,7 +51,7 @@ func setRunPriority(cliCtx *cli.Context, stackID, runID string, prioritize bool)
 	variables := map[string]interface{}{
 		"stackId":    graphql.ID(stackID),
 		"runId":      graphql.ID(runID),
-		"prioritize": graphql.Boolean(prioritize),
+		"prioritize": prioritize,
 	}
 
 	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {

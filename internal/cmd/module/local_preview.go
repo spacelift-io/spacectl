@@ -86,9 +86,9 @@ func localPreview() cli.ActionFunc {
 			VersionProposeLocalWorkspace []runQuery `graphql:"versionProposeLocalWorkspace(module: $module, workspace: $workspace, testIds: $testIds)"`
 		}
 
-		tests := []graphql.String{}
+		tests := []string{}
 		for _, test := range cliCtx.StringSlice(flagTests.Name) {
-			tests = append(tests, graphql.String(test))
+			tests = append(tests, test)
 		}
 		triggerVariables := map[string]interface{}{
 			"module":    graphql.ID(moduleID),

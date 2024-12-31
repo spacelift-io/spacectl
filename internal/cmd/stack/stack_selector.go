@@ -10,6 +10,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/spacelift-io/spacectl/client/structs"
+	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
 )
@@ -138,9 +139,9 @@ func stackGetByRunID(ctx context.Context, runID string) (*stack, error) {
 func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt bool) (*stack, error) {
 	conditions := []structs.QueryPredicate{
 		{
-			Field: graphql.String("repository"),
+			Field: "repository",
 			Constraint: structs.QueryFieldConstraint{
-				StringMatches: &[]graphql.String{graphql.String(p.repositoryName)},
+				StringMatches: &[]string{p.repositoryName},
 			},
 		},
 	}
@@ -150,7 +151,7 @@ func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt b
 		conditions = append(conditions, structs.QueryPredicate{
 			Field: "projectRoot",
 			Constraint: structs.QueryFieldConstraint{
-				StringMatches: &[]graphql.String{graphql.String(root), graphql.String(root + "/")},
+				StringMatches: &[]string{root, root + "/"},
 			},
 		})
 	}
@@ -159,13 +160,13 @@ func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt b
 		conditions = append(conditions, structs.QueryPredicate{
 			Field: "branch",
 			Constraint: structs.QueryFieldConstraint{
-				StringMatches: &[]graphql.String{graphql.String(*p.branch)},
+				StringMatches: &[]string{*p.branch},
 			},
 		})
 	}
 
 	input := structs.SearchInput{
-		First:      graphql.NewInt(graphql.Int(p.count)), // nolint: gosec
+		First:      internal.Ptr(p.count),
 		Predicates: &conditions,
 	}
 
