@@ -15,6 +15,7 @@ func WithHeader(key, value string) RequestOption {
 	}
 }
 
+// WithGraphqlOptions sets [graphql.Option] options.
 func WithGraphqlOptions(options ...graphql.Option) RequestOption {
 	return func(o *requestOptions) {
 		o.graphqlOptions = append(o.graphqlOptions, options...)
