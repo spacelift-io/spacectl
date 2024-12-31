@@ -1,6 +1,6 @@
 package structs
 
-import "github.com/shurcooL/graphql"
+import "github.com/hasura/go-graphql-client"
 
 // SearchInput is the main object provided to any search query.
 type SearchInput struct {

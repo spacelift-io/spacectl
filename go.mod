@@ -10,6 +10,7 @@ require (
 	github.com/cheggaaa/pb/v3 v3.1.5
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/hasura/go-graphql-client v0.13.1
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mholt/archiver/v3 v3.5.1
@@ -18,7 +19,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pterm/pterm v0.12.79
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
-	github.com/shurcooL/graphql v0.0.0-20230722043721-ed46e5a46466
 	github.com/urfave/cli/v2 v2.27.3
 	golang.org/x/oauth2 v0.22.0
 	golang.org/x/sync v0.10.0
@@ -40,6 +40,7 @@ require (
 	github.com/charmbracelet/x/windows v0.1.0 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
+	github.com/coder/websocket v1.8.12 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
@@ -48,6 +49,7 @@ require (
 	github.com/golang/gddo v0.0.0-20190419222130-af0f2af80721 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/klauspost/compress v1.9.2 // indirect
 	github.com/klauspost/pgzip v1.2.1 // indirect
@@ -76,5 +78,3 @@ require (
 )
 
 replace github.com/mholt/archiver/v3 => github.com/spacelift-io/archiver/v3 v3.3.1-0.20221117135619-d7d90ab08987
-
-replace github.com/shurcooL/graphql => github.com/spacelift-io/graphql v1.2.0

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
@@ -175,7 +175,7 @@ func runStateLogs(ctx context.Context, stack, run string, state structs.RunState
 		"run":          graphql.ID(run),
 		"state":        state,
 		"token":        token,
-		"stateVersion": graphql.Int(version), //nolint: gosec
+		"stateVersion": graphql.Int(version), // nolint: gosec
 	}
 
 	var backOff time.Duration

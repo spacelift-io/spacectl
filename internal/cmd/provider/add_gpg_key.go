@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	"github.com/shurcooL/graphql"
+	"github.com/hasura/go-graphql-client"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 	"github.com/urfave/cli/v2"

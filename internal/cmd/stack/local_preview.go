@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/mholt/archiver/v3"
-	"github.com/shurcooL/graphql"
+	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
@@ -125,9 +126,9 @@ func localPreview() cli.ActionFunc {
 			"environmentVarsOverrides": envVars,
 		}
 
-		var requestOpts []graphql.RequestOption
+		var requestOpts []client.RequestOption
 		if cliCtx.IsSet(flagRunMetadata.Name) {
-			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
+			requestOpts = append(requestOpts, client.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
 		}
 
 		if err = authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {

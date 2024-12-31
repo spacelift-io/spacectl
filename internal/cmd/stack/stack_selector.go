@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
@@ -165,7 +165,7 @@ func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt b
 	}
 
 	input := structs.SearchInput{
-		First:      graphql.NewInt(graphql.Int(p.count)), //nolint: gosec
+		First:      graphql.NewInt(graphql.Int(p.count)), // nolint: gosec
 		Predicates: &conditions,
 	}
 

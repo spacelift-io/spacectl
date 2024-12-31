@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/shurcooL/graphql"
+	"github.com/hasura/go-graphql-client"
 )
 
 // FromAPIKey builds a Spacelift session from a combination of endpoint, API key

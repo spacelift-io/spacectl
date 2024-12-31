@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/manifoldco/promptui"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
 )

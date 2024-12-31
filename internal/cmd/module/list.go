@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -92,7 +92,7 @@ func getSearchModules(cliCtx *cli.Context, cursor string, limit int) (searchModu
 
 	if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{
 		"input": structs.SearchInput{
-			First: graphql.NewInt(graphql.Int(int32(limit))), //nolint: gosec
+			First: graphql.NewInt(graphql.Int(int32(limit))), // nolint: gosec
 			After: after,
 			OrderBy: &structs.QueryOrder{
 				Field:     "starred",

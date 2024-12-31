@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd"
@@ -46,7 +46,7 @@ func (c *listCommand) list(cliCtx *cli.Context) error {
 func (c *listCommand) listTable(ctx *cli.Context, search *string, limit *uint) error {
 	var first *graphql.Int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+		first = graphql.NewInt(graphql.Int(*limit)) // nolint: gosec
 	}
 
 	var fullTextSearch *graphql.String
@@ -94,7 +94,7 @@ func (c *listCommand) listTable(ctx *cli.Context, search *string, limit *uint) e
 func (c *listCommand) listJSON(ctx *cli.Context, search *string, limit *uint) error {
 	var first *graphql.Int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+		first = graphql.NewInt(graphql.Int(*limit)) // nolint: gosec
 	}
 
 	var fullTextSearch *graphql.String
@@ -131,7 +131,7 @@ func (c *listCommand) searchAllPolicies(ctx context.Context, input structs.Searc
 		if !fetchAll {
 			// Fetch exactly the number of items requested
 			pageInput.First = graphql.NewInt(
-				//nolint: gosec
+				// nolint: gosec
 				graphql.Int(
 					slices.Min([]int{maxPageSize, limit - len(out)}),
 				),
