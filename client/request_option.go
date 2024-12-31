@@ -1,17 +1,26 @@
 package client
 
 import (
+	"net/http"
+
 	"github.com/hasura/go-graphql-client"
 )
 
-// RequestOption allows you to modify the request before sending it to the
-// server.
 type RequestOption func(*requestOptions)
 
 // WithHeader sets a header on the request.
 func WithHeader(key, value string) RequestOption {
 	return func(o *requestOptions) {
-		o.addHeader(key, value)
+		o.modifyRequest = append(o.modifyRequest, func(request *http.Request) {
+			request.Header.Set(key, value)
+		})
+	}
+}
+
+// WithModifyRequest allows you to modify the request before sending it to the server.
+func WithModifyRequest(f func(request *http.Request)) RequestOption {
+	return func(o *requestOptions) {
+		o.modifyRequest = append(o.modifyRequest, f)
 	}
 }
 
@@ -31,13 +40,6 @@ func parseOptions(options ...RequestOption) requestOptions {
 }
 
 type requestOptions struct {
-	headers        map[string]string
+	modifyRequest  []func(*http.Request)
 	graphqlOptions []graphql.Option
-}
-
-func (o *requestOptions) addHeader(key, value string) {
-	if o.headers == nil {
-		o.headers = map[string]string{}
-	}
-	o.headers[key] = value
 }

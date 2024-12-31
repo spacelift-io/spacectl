@@ -75,11 +75,10 @@ func (c *client) apiClient(ctx context.Context, opts requestOptions) (*graphql.C
 		return nil, fmt.Errorf("graphql client creation failed at http client creation: %w", err)
 	}
 
-	opts.addHeader("Spacelift-Client-Type", "spacectl")
-
 	return graphql.NewClient(c.session.Endpoint(), httpC).WithRequestModifier(func(request *http.Request) {
-		for key, value := range opts.headers {
-			request.Header.Set(key, value)
+		request.Header.Set("Spacelift-Client-Type", "spacectl")
+		for _, modifyRequest := range opts.modifyRequest {
+			modifyRequest(request)
 		}
 	}), nil
 }
