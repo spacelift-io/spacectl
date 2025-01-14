@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	audittrail "github.com/spacelift-io/spacectl/internal/cmd/audit_trail"
 	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
 	"github.com/spacelift-io/spacectl/internal/cmd/completion"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
@@ -45,6 +46,7 @@ func main() {
 			completion.Command(),
 			blueprint.Command(),
 			policy.Command(),
+			audittrail.Command(),
 		},
 	}
 
