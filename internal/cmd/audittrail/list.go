@@ -29,10 +29,6 @@ func listAuditTrails() cli.ActionFunc {
 
 		var limit *uint
 		if cliCtx.IsSet(cmd.FlagLimit.Name) {
-			if cliCtx.Uint(cmd.FlagLimit.Name) == 0 {
-				return fmt.Errorf("limit must be greater than 0")
-			}
-
 			if cliCtx.Uint(cmd.FlagLimit.Name) >= math.MaxInt32 {
 				return fmt.Errorf("limit must be less than %d", math.MaxInt32)
 			}
