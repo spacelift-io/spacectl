@@ -86,13 +86,12 @@ func listAuditTrailEntriesTable(
 		return err
 	}
 
-	columns := []string{"Action", "ID", "Type", "Affected Resource", "Related Resource", "Created By", "Created At"}
+	columns := []string{"Action", "Type", "Affected Resource", "Related Resource", "Created By", "Created At"}
 
 	tableData := [][]string{columns}
 	for _, b := range entries {
 		row := []string{
 			b.Action,
-			b.ID,
 			b.EventType,
 			formatAuditTrailResource(&b.AffectedResource),
 			formatAuditTrailResource(b.RelatedResource),
