@@ -68,6 +68,91 @@ func HumanizeBlueprintState(state string) string {
 	return state
 }
 
+func HumanizeAuditTrailResourceType(resourceType string) string {
+	switch resourceType {
+	case "ACCOUNT":
+		return "Account"
+	case "API_KEY":
+		return "API Key"
+	case "AWS_INTEGRATION":
+		return "AWS Integration"
+	case "AZURE_DEVOPS_REPO_INTEGRATION":
+		return "Azure DevOps Repo Integration"
+	case "AZURE_INTEGRATION":
+		return "Azure Integration"
+	case "BITBUCKET_CLOUD_INTEGRATION":
+		return "Bitbucket Cloud Integration"
+	case "BITBUCKET_DATACENTER_INTEGRATION":
+		return "Bitbucket Datacenter Integration"
+	case "BLUEPRINT":
+		return "Blueprint"
+	case "CONTEXT":
+		return "Context"
+	case "DRIFT_DETECTION_INTEGRATION":
+		return "Drift Detection Integration"
+	case "GITHUB_APP_INSTALLATION":
+		return "GitHub App Installation"
+	case "GITHUB_ENTERPRISE_INTEGRATION":
+		return "GitHub Enterprise Integration"
+	case "GITLAB_INTEGRATION":
+		return "GitLab Integration"
+	case "GPG_KEY":
+		return "GPG Key"
+	case "LOGIN":
+		return "Login"
+	case "MODULE":
+		return "Module"
+	case "NAMED_WEBHOOKS_INTEGRATION":
+		return "Named Webhooks Integration"
+	case "NOTIFICATION":
+		return "Notification"
+	case "POLICY":
+		return "Policy"
+	case "RUN":
+		return "Run"
+	case "SCHEDULED_DELETE":
+		return "Scheduled Delete"
+	case "SCHEDULED_RUN":
+		return "Scheduled Run"
+	case "SCHEDULED_TASK":
+		return "Scheduled Task"
+	case "SECURITY_KEY":
+		return "Security Key"
+	case "SESSION":
+		return "Session"
+	case "SPACE":
+		return "Space"
+	case "STACK":
+		return "Stack"
+	case "TASK":
+		return "Task"
+	case "TERRAFORM_PROVIDER":
+		return "Terraform Provider"
+	case "TERRAFORM_PROVIDER_VERSION":
+		return "Terraform Provider Version"
+	case "UNKNOWN":
+		return "Unknown"
+	case "USER":
+		return "User"
+	case "USER_GROUP":
+		return "User Group"
+	case "USER_GROUP_INTEGRATION":
+		return "User Group Integration"
+	case "VERSION":
+		return "Version"
+	case "WEBHOOK":
+		return "Webhook"
+	case "WORKER":
+		return "Worker"
+	case "WORKER_POOL":
+		return "Worker Pool"
+	case "GENERIC_FORM":
+		return "Generic Form"
+	default:
+		return resourceType
+	}
+}
+
 func HumanizeUnixSeconds(seconds int) string {
 	return time.Unix(int64(seconds), 0).Format(time.RFC3339)
 }
