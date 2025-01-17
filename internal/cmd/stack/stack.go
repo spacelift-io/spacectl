@@ -406,6 +406,17 @@ func Command() *cli.Command {
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
+				Category: "Stack management",
+				Name:     "sync-commit",
+				Usage:    "Syncs the tracked stack commit",
+				Flags: []cli.Flag{
+					flagStackID,
+				},
+				Action:    syncCommit,
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
 				Name:  "resources",
 				Usage: "Manage and view resources for stacks",
 				Subcommands: []*cli.Command{
