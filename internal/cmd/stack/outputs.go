@@ -12,9 +12,10 @@ import (
 )
 
 type output struct {
-	ID        string `graphql:"id" json:"id,omitempty"`
-	Sensitive bool   `graphql:"sensitive" json:"sensitive,omitempty"`
-	Value     string `graphql:"value" json:"value,omitempty"`
+	ID          string `graphql:"id" json:"id,omitempty"`
+	Sensitive   bool   `graphql:"sensitive" json:"sensitive,omitempty"`
+	Description string `graphql:"description" json:"description,omitempty"`
+	Value       string `graphql:"value" json:"value,omitempty"`
 }
 
 type showOutputsQuery struct {
@@ -74,12 +75,13 @@ func (c *showOutputsStackCommand) showOutputs(cliCtx *cli.Context) error {
 }
 
 func (c *showOutputsStackCommand) showOutputsTable(outputs []output) error {
-	tableData := [][]string{{"Name", "Sensitive", "Value"}}
+	tableData := [][]string{{"Name", "Sensitive", "Value", "Description"}}
 	for _, output := range outputs {
 		tableData = append(tableData, []string{
 			output.ID,
 			strconv.FormatBool(output.Sensitive),
 			output.Value,
+			output.Description,
 		})
 
 	}
