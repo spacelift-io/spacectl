@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
-	"os/user"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -37,6 +36,12 @@ type attachContextMutation struct {
 	ContextAttach struct {
 		ID string `graphql:"id"`
 	} `graphql:"contextAttach(id: $contextID, stack: $stackID, priority: 0)"`
+}
+
+type detachContextMutation struct {
+	ContextAttach struct {
+		ID string `graphql:"id"`
+	} `graphql:"contextDetach(id: $contextStackAttachmentID)"`
 }
 
 type addContextConfigMutext struct {
@@ -162,11 +167,11 @@ func attachAwsSession(cliCtx *cli.Context) error {
 	}
 
 	defer func() {
+		var err error
 		fmt.Printf("Deleting temporary context '%v'\n", createMutation.ContextCreate.Name)
-		err := authenticated.Client.Mutate(cliCtx.Context, &deleteContextMutation{}, map[string]interface{}{
+		if err = authenticated.Client.Mutate(cliCtx.Context, &deleteContextMutation{}, map[string]interface{}{
 			"id": createMutation.ContextCreate.ID,
-		})
-		if err != nil {
+		}); err != nil {
 			fmt.Printf("Could not delete temporary context '%v'\n", createMutation.ContextCreate.Name)
 		}
 	}()
@@ -204,13 +209,24 @@ func attachAwsSession(cliCtx *cli.Context) error {
 
 	// Attach temporary credentials to the stack
 	fmt.Printf("Attaching temporary context to '%v' stack '%v'\n", contextName, stack.Name)
-	err = authenticated.Client.Mutate(ctx, &attachContextMutation{}, map[string]interface{}{
+
+	var attachMutation attachContextMutation
+	err = authenticated.Client.Mutate(ctx, &attachMutation, map[string]interface{}{
 		"contextID": createMutation.ContextCreate.ID,
 		"stackID":   stack.ID,
 	})
 	if err != nil {
 		return errors.Wrap(err, "could not attach temporary credentials to stack")
 	}
+	defer func() {
+		fmt.Printf("Detaching temporary context '%v'\n", createMutation.ContextCreate.Name)
+		if err := authenticated.Client.Mutate(cliCtx.Context, &detachContextMutation{}, map[string]interface{}{
+			"contextStackAttachmentID": attachMutation.ContextAttach.ID,
+		},
+		); err != nil {
+			fmt.Printf("Could not detach temporary context '%v'\n", createMutation.ContextCreate.Name)
+		}
+	}()
 
 	fmt.Printf("Temporary credentials attached to '%v'\n", stack.Name)
 
