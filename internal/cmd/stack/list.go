@@ -162,7 +162,7 @@ func searchAllStacks(ctx context.Context, input structs.SearchInput) ([]stack, e
 			)
 		}
 
-		result, err := searchStacks(ctx, pageInput)
+		result, err := searchStacks[stack](ctx, pageInput)
 		if err != nil {
 			return nil, err
 		}
@@ -177,6 +177,24 @@ func searchAllStacks(ctx context.Context, input structs.SearchInput) ([]stack, e
 	}
 
 	return out, nil
+}
+
+type hasIDAndName interface {
+	GetID() string
+	GetName() string
+}
+
+type stackID struct {
+	ID   string `graphql:"id" json:"id,omitempty"`
+	Name string `graphql:"name" json:"name,omitempty"`
+}
+
+func (s stackID) GetID() string {
+	return s.ID
+}
+
+func (s stackID) GetName() string {
+	return s.Name
 }
 
 type stack struct {
@@ -236,4 +254,12 @@ type stack struct {
 		ID   string `graphql:"id" json:"id,omitempty"`
 		Name string `graphql:"name" json:"name,omitempty"`
 	} `graphql:"workerPool" json:"workerPool,omitempty"`
+}
+
+func (s stack) GetID() string {
+	return s.ID
+}
+
+func (s stack) GetName() string {
+	return s.Name
 }

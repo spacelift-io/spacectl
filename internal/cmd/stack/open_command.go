@@ -60,7 +60,7 @@ func openCommandInBrowser(cliCtx *cli.Context) error {
 }
 
 func findAndOpenStackInBrowser(ctx context.Context, p *stackSearchParams) error {
-	got, err := findAndSelectStack(ctx, p, false)
+	got, err := findAndSelectStack[stack](ctx, p, false)
 	if errors.Is(err, errNoStackFound) {
 		return errors.New("No stacks using the provided search parameters, maybe it's in a different subdir?")
 	}
@@ -163,16 +163,16 @@ type stackSearchParams struct {
 	branch      *string
 }
 
-type searchStacksResult struct {
-	Stacks   []stack
+type searchStacksResult[T hasIDAndName] struct {
+	Stacks   []T
 	PageInfo structs.PageInfo
 }
 
-func searchStacks(ctx context.Context, input structs.SearchInput) (searchStacksResult, error) {
+func searchStacks[T hasIDAndName](ctx context.Context, input structs.SearchInput) (searchStacksResult[T], error) {
 	var query struct {
 		SearchStacksOutput struct {
 			Edges []struct {
-				Node stack `graphql:"node"`
+				Node T `graphql:"node"`
 			} `graphql:"edges"`
 			PageInfo structs.PageInfo `graphql:"pageInfo"`
 		} `graphql:"searchStacks(input: $input)"`
@@ -184,15 +184,15 @@ func searchStacks(ctx context.Context, input structs.SearchInput) (searchStacksR
 		map[string]interface{}{"input": input},
 		graphql.WithHeader("Spacelift-GraphQL-Query", "StacksPage"),
 	); err != nil {
-		return searchStacksResult{}, errors.Wrap(err, "failed search for stacks")
+		return searchStacksResult[T]{}, errors.Wrap(err, "failed search for stacks")
 	}
 
-	stacks := make([]stack, 0)
+	stacks := make([]T, 0)
 	for _, q := range query.SearchStacksOutput.Edges {
 		stacks = append(stacks, q.Node)
 	}
 
-	return searchStacksResult{
+	return searchStacksResult[T]{
 		Stacks:   stacks,
 		PageInfo: query.SearchStacksOutput.PageInfo,
 	}, nil

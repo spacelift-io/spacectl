@@ -33,7 +33,7 @@ func localPreview() cli.ActionFunc {
 			})
 		}
 
-		stack, err := getStack(cliCtx)
+		stack, err := getStack[stack](cliCtx)
 		if err != nil {
 			return err
 		}

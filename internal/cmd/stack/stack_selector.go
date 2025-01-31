@@ -28,7 +28,7 @@ const (
 // 2. Check the --run flag, if set, try to get the stack associated with the run.
 // 2. Check the current directory to determine repository and subdirectory and search for a stack.
 func getStackID(cliCtx *cli.Context) (string, error) {
-	stack, err := getStack(cliCtx)
+	stack, err := getStack[stackID](cliCtx)
 	if err != nil {
 		return "", err
 	}
@@ -36,10 +36,10 @@ func getStackID(cliCtx *cli.Context) (string, error) {
 	return stack.ID, nil
 }
 
-func getStack(cliCtx *cli.Context) (*stack, error) {
+func getStack[T hasIDAndName](cliCtx *cli.Context) (*T, error) {
 	if cliCtx.IsSet(flagStackID.Name) {
 		stackID := cliCtx.String(flagStackID.Name)
-		stack, err := stackGetByID(cliCtx.Context, stackID)
+		stack, err := stackGetByID[T](cliCtx.Context, stackID)
 		if errors.Is(err, errNoStackFound) {
 			return nil, fmt.Errorf("stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackID)
 		}
@@ -50,7 +50,7 @@ func getStack(cliCtx *cli.Context) (*stack, error) {
 		return stack, nil
 	} else if cliCtx.IsSet(flagRun.Name) {
 		runID := cliCtx.String(flagRun.Name)
-		stack, err := stackGetByRunID(cliCtx.Context, runID)
+		stack, err := stackGetByRunID[T](cliCtx.Context, runID)
 		if errors.Is(err, errNoStackFound) {
 			return nil, fmt.Errorf("run with id %q was not found. Please check that the run exists and that you have access to it. To list available stacks run: spacectl stack run list", runID)
 		}
@@ -73,7 +73,7 @@ func getStack(cliCtx *cli.Context) (*stack, error) {
 
 	skip := os.Getenv(envPromptSkipKey) == "true"
 
-	got, err := findAndSelectStack(cliCtx.Context, &stackSearchParams{
+	got, err := findAndSelectStack[T](cliCtx.Context, &stackSearchParams{
 		count:          50,
 		projectRoot:    &subdir,
 		repositoryName: name,
@@ -89,11 +89,9 @@ func getStack(cliCtx *cli.Context) (*stack, error) {
 	return got, nil
 }
 
-func stackGetByID(ctx context.Context, stackID string) (*stack, error) {
+func stackGetByID[T hasIDAndName](ctx context.Context, stackID string) (*T, error) {
 	var query struct {
-		Stack struct {
-			stack
-		} `graphql:"stack(id: $id)"`
+		Stack T `graphql:"stack(id: $id)"`
 	}
 
 	variables := map[string]interface{}{
@@ -105,18 +103,16 @@ func stackGetByID(ctx context.Context, stackID string) (*stack, error) {
 		return nil, fmt.Errorf("failed to query GraphQL API when checking if a stack exists: %w", err)
 	}
 
-	if query.Stack.ID != stackID {
+	if query.Stack.GetID() != stackID {
 		return nil, errNoStackFound
 	}
 
-	return &query.Stack.stack, nil
+	return &query.Stack, nil
 }
 
-func stackGetByRunID(ctx context.Context, runID string) (*stack, error) {
+func stackGetByRunID[T hasIDAndName](ctx context.Context, runID string) (*T, error) {
 	var query struct {
-		RunStack struct {
-			stack
-		} `graphql:"runStack(runId: $runId)"`
+		RunStack T `graphql:"runStack(runId: $runId)"`
 	}
 
 	variables := map[string]interface{}{
@@ -132,10 +128,10 @@ func stackGetByRunID(ctx context.Context, runID string) (*stack, error) {
 		return nil, fmt.Errorf("failed to query GraphQL API when getting stack by run id: %w", err)
 	}
 
-	return &query.RunStack.stack, nil
+	return &query.RunStack, nil
 }
 
-func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt bool) (*stack, error) {
+func findAndSelectStack[T hasIDAndName](ctx context.Context, p *stackSearchParams, forcePrompt bool) (*T, error) {
 	conditions := []structs.QueryPredicate{
 		{
 			Field: graphql.String("repository"),
@@ -169,16 +165,16 @@ func findAndSelectStack(ctx context.Context, p *stackSearchParams, forcePrompt b
 		Predicates: &conditions,
 	}
 
-	result, err := searchStacks(ctx, input)
+	result, err := searchStacks[T](ctx, input)
 	if err != nil {
 		return nil, err
 	}
 
 	items := []string{}
-	found := map[string]stack{}
+	found := map[string]T{}
 	for _, s := range result.Stacks {
-		items = append(items, s.Name)
-		found[s.Name] = s
+		items = append(items, s.GetName())
+		found[s.GetName()] = s
 	}
 
 	if len(found) == 0 {
