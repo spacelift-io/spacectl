@@ -87,7 +87,7 @@ func localPreview() cli.ActionFunc {
 			ignoreFiles = append(ignoreFiles, ".gitignore")
 		}
 
-		matchFn, err := internal.GetIgnoreMatcherFn(ctx, nil, ignoreFiles)
+		matchFn, err := internal.GetIgnoreMatcherFn(ctx, packagePath, ignoreFiles)
 		if err != nil {
 			return fmt.Errorf("couldn't analyze .gitignore and .terraformignore files")
 		}
