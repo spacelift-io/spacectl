@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 	"github.com/urfave/cli/v2"
@@ -41,8 +40,8 @@ func addGPGKey() cli.ActionFunc {
 		}
 
 		variables := map[string]any{
-			"name":       graphql.String(keyName),
-			"asciiArmor": graphql.String(asciiArmor),
+			"name":       keyName,
+			"asciiArmor": asciiArmor,
 		}
 
 		if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {

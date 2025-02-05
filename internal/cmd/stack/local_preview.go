@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/mholt/archiver/v3"
-	"github.com/shurcooL/graphql"
+	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
@@ -29,7 +30,7 @@ func localPreview() cli.ActionFunc {
 
 			envVars = append(envVars, EnvironmentVariable{
 				Key:   "TF_CLI_ARGS_plan",
-				Value: graphql.String(strings.TrimSpace(val)),
+				Value: strings.TrimSpace(val),
 			})
 		}
 
@@ -125,9 +126,9 @@ func localPreview() cli.ActionFunc {
 			"environmentVarsOverrides": envVars,
 		}
 
-		var requestOpts []graphql.RequestOption
+		var requestOpts []client.RequestOption
 		if cliCtx.IsSet(flagRunMetadata.Name) {
-			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
+			requestOpts = append(requestOpts, client.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
 		}
 
 		if err = authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {
@@ -170,8 +171,8 @@ func localPreview() cli.ActionFunc {
 
 // EnvironmentVariable represents a key-value pair of environment variables
 type EnvironmentVariable struct {
-	Key   graphql.String `json:"key"`
-	Value graphql.String `json:"value"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 func parseEnvVar(env string, envVars []EnvironmentVariable, mutateKey func(string) string) ([]EnvironmentVariable, error) {
@@ -185,8 +186,8 @@ func parseEnvVar(env string, envVars []EnvironmentVariable, mutateKey func(strin
 	}
 
 	return append(envVars, EnvironmentVariable{
-		Key:   graphql.String(parts[0]),
-		Value: graphql.String(parts[1]),
+		Key:   parts[0],
+		Value: parts[1],
 	}), nil
 }
 

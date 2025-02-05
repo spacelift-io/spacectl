@@ -3,8 +3,8 @@ package policy
 import (
 	"context"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
@@ -38,7 +38,7 @@ func (c *sampleCommand) getSamplesPolicyByID(ctx context.Context, policyID, key 
 
 	variables := map[string]interface{}{
 		"policyId": graphql.ID(policyID),
-		"key":      graphql.String(key),
+		"key":      key,
 	}
 
 	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {

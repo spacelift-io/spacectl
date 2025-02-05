@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
@@ -37,8 +36,8 @@ func (c *simulateCommand) simulate(cliCtx *cli.Context) error {
 	}
 
 	variables := map[string]interface{}{
-		"body":  graphql.String(b.Body),
-		"input": graphql.String(parsedInput),
+		"body":  b.Body,
+		"input": parsedInput,
 		"type":  b.Type,
 	}
 

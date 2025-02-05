@@ -3,8 +3,8 @@ package stack
 import (
 	"fmt"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"

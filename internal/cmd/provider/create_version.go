@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"slices"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 	"github.com/urfave/cli/v2"
@@ -122,7 +122,7 @@ func createVersion() cli.ActionFunc {
 
 		variables = map[string]any{
 			"version":     graphql.ID(versionID),
-			"description": graphql.String(*versionData.Changelog),
+			"description": *versionData.Changelog,
 		}
 
 		fmt.Println("Uploading the changelog")

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/shurcooL/graphql"
+	"github.com/hasura/go-graphql-client"
 	"github.com/spacelift-io/spacectl/client/enums"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
@@ -63,7 +63,7 @@ func addRunReview(ctx context.Context, stackID, runID, note string, decision enu
 		"stack":    graphql.ID(stackID),
 		"run":      runIDGQL,
 		"decision": decision,
-		"note":     graphql.String(note),
+		"note":     note,
 	}
 
 	return authenticated.Client.Mutate(ctx, &mutation, variables)

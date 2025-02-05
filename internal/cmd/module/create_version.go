@@ -3,7 +3,8 @@ package module
 import (
 	"fmt"
 
-	"github.com/shurcooL/graphql"
+	"github.com/hasura/go-graphql-client"
+	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
 )
@@ -20,13 +21,13 @@ func createVersion(cliCtx *cli.Context) error {
 		} `graphql:"versionCreate(module: $module, commitSha: $commitSha, version: $version)"`
 	}
 
-	var version *graphql.String
+	var version *string
 	if forcedVersion != "" {
-		version = graphql.NewString(graphql.String(forcedVersion))
+		version = internal.Ptr(forcedVersion)
 	}
-	var commitSha *graphql.String
+	var commitSha *string
 	if forcedCommitSHA != "" {
-		commitSha = graphql.NewString(graphql.String(forcedCommitSHA))
+		commitSha = internal.Ptr(forcedCommitSHA)
 	}
 
 	variables := map[string]interface{}{

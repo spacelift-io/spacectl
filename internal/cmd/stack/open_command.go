@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
+	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
@@ -182,7 +182,7 @@ func searchStacks[T hasIDAndName](ctx context.Context, input structs.SearchInput
 		ctx,
 		&query,
 		map[string]interface{}{"input": input},
-		graphql.WithHeader("Spacelift-GraphQL-Query", "StacksPage"),
+		client.WithHeader("Spacelift-GraphQL-Query", "StacksPage"),
 	); err != nil {
 		return searchStacksResult[T]{}, errors.Wrap(err, "failed search for stacks")
 	}

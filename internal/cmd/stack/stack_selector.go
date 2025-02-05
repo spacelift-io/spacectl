@@ -6,10 +6,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
+	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
 )
@@ -134,9 +135,9 @@ func stackGetByRunID[T hasIDAndName](ctx context.Context, runID string) (*T, err
 func findAndSelectStack[T hasIDAndName](ctx context.Context, p *stackSearchParams, forcePrompt bool) (*T, error) {
 	conditions := []structs.QueryPredicate{
 		{
-			Field: graphql.String("repository"),
+			Field: "repository",
 			Constraint: structs.QueryFieldConstraint{
-				StringMatches: &[]graphql.String{graphql.String(p.repositoryName)},
+				StringMatches: &[]string{p.repositoryName},
 			},
 		},
 	}
@@ -146,7 +147,7 @@ func findAndSelectStack[T hasIDAndName](ctx context.Context, p *stackSearchParam
 		conditions = append(conditions, structs.QueryPredicate{
 			Field: "projectRoot",
 			Constraint: structs.QueryFieldConstraint{
-				StringMatches: &[]graphql.String{graphql.String(root), graphql.String(root + "/")},
+				StringMatches: &[]string{root, root + "/"},
 			},
 		})
 	}
@@ -155,13 +156,13 @@ func findAndSelectStack[T hasIDAndName](ctx context.Context, p *stackSearchParam
 		conditions = append(conditions, structs.QueryPredicate{
 			Field: "branch",
 			Constraint: structs.QueryFieldConstraint{
-				StringMatches: &[]graphql.String{graphql.String(*p.branch)},
+				StringMatches: &[]string{*p.branch},
 			},
 		})
 	}
 
 	input := structs.SearchInput{
-		First:      graphql.NewInt(graphql.Int(p.count)), //nolint: gosec
+		First:      internal.Ptr(p.count),
 		Predicates: &conditions,
 	}
 

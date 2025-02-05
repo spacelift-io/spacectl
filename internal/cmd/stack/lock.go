@@ -3,7 +3,7 @@ package stack
 import (
 	"fmt"
 
-	"github.com/shurcooL/graphql"
+	"github.com/hasura/go-graphql-client"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
 )
@@ -39,7 +39,7 @@ func lock(cliCtx *cli.Context) error {
 	var mutation stackLockMutation
 	variables := map[string]interface{}{
 		"stack": graphql.ID(stackID),
-		"note":  graphql.String(note),
+		"note":  note,
 	}
 
 	return authenticated.Client.Mutate(cliCtx.Context, &mutation, variables)

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd"
@@ -44,19 +43,14 @@ func (c *listCommand) list(cliCtx *cli.Context) error {
 }
 
 func (c *listCommand) listTable(ctx *cli.Context, search *string, limit *uint) error {
-	var first *graphql.Int
+	var first *int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
-	}
-
-	var fullTextSearch *graphql.String
-	if search != nil {
-		fullTextSearch = graphql.NewString(graphql.String(*search))
+		first = internal.Ptr(int(*limit))
 	}
 
 	input := structs.SearchInput{
 		First:          first,
-		FullTextSearch: fullTextSearch,
+		FullTextSearch: search,
 		OrderBy: &structs.QueryOrder{
 			Field:     "name",
 			Direction: "DESC",
@@ -92,19 +86,14 @@ func (c *listCommand) listTable(ctx *cli.Context, search *string, limit *uint) e
 }
 
 func (c *listCommand) listJSON(ctx *cli.Context, search *string, limit *uint) error {
-	var first *graphql.Int
+	var first *int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
-	}
-
-	var fullTextSearch *graphql.String
-	if search != nil {
-		fullTextSearch = graphql.NewString(graphql.String(*search))
+		first = internal.Ptr(int(*limit))
 	}
 
 	policies, err := c.searchAllPolicies(ctx.Context, structs.SearchInput{
 		First:          first,
-		FullTextSearch: fullTextSearch,
+		FullTextSearch: search,
 	})
 	if err != nil {
 		return err
@@ -124,18 +113,13 @@ func (c *listCommand) searchAllPolicies(ctx context.Context, input structs.Searc
 
 	out := []policyNode{}
 	pageInput := structs.SearchInput{
-		First:          graphql.NewInt(maxPageSize),
+		First:          internal.Ptr(maxPageSize),
 		FullTextSearch: input.FullTextSearch,
 	}
 	for {
 		if !fetchAll {
 			// Fetch exactly the number of items requested
-			pageInput.First = graphql.NewInt(
-				//nolint: gosec
-				graphql.Int(
-					slices.Min([]int{maxPageSize, limit - len(out)}),
-				),
-			)
+			pageInput.First = internal.Ptr(slices.Min([]int{maxPageSize, limit - len(out)}))
 		}
 
 		result, err := searchPolicies(ctx, pageInput)
@@ -146,7 +130,7 @@ func (c *listCommand) searchAllPolicies(ctx context.Context, input structs.Searc
 		out = append(out, result.Policies...)
 
 		if result.PageInfo.HasNextPage && (fetchAll || limit > len(out)) {
-			pageInput.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+			pageInput.After = internal.Ptr(result.PageInfo.EndCursor)
 		} else {
 			break
 		}

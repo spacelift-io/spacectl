@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/hasura/go-graphql-client"
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
@@ -26,10 +26,10 @@ const (
 // ConfigInput represents the input required to create or update a config
 // element.
 type ConfigInput struct {
-	ID        graphql.ID      `json:"id"`
-	Type      ConfigType      `json:"type"`
-	Value     graphql.String  `json:"value"`
-	WriteOnly graphql.Boolean `json:"writeOnly"`
+	ID        graphql.ID `json:"id"`
+	Type      ConfigType `json:"type"`
+	Value     string     `json:"value"`
+	WriteOnly bool       `json:"writeOnly"`
 }
 
 type configElement struct {
@@ -106,8 +106,8 @@ func setVar(cliCtx *cli.Context) error {
 		"config": ConfigInput{
 			ID:        graphql.ID(envName),
 			Type:      envVarTypeConfig,
-			Value:     graphql.String(envValue),
-			WriteOnly: graphql.Boolean(cliCtx.Bool(flagEnvironmentWriteOnly.Name)),
+			Value:     envValue,
+			WriteOnly: cliCtx.Bool(flagEnvironmentWriteOnly.Name),
 		},
 	}
 
@@ -320,8 +320,8 @@ func mountFile(cliCtx *cli.Context) error {
 		"config": ConfigInput{
 			ID:        graphql.ID(envName),
 			Type:      fileTypeConfig,
-			Value:     graphql.String(base64.StdEncoding.EncodeToString(fileContent)),
-			WriteOnly: graphql.Boolean(cliCtx.Bool(flagEnvironmentWriteOnly.Name)),
+			Value:     base64.StdEncoding.EncodeToString(fileContent),
+			WriteOnly: cliCtx.Bool(flagEnvironmentWriteOnly.Name),
 		},
 	}
 

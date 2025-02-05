@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/shurcooL/graphql"
+	"github.com/hasura/go-graphql-client"
+	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -26,19 +27,19 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 
 		variables := map[string]interface{}{
 			"stack": graphql.ID(stackID),
-			"sha":   (*graphql.String)(nil),
+			"sha":   (*string)(nil),
 			"type":  structs.NewRunType(spaceliftType),
 		}
 
 		if cliCtx.IsSet(flagCommitSHA.Name) {
-			variables["sha"] = graphql.NewString(graphql.String(cliCtx.String(flagCommitSHA.Name)))
+			variables["sha"] = internal.Ptr(cliCtx.String(flagCommitSHA.Name))
 		}
 
 		ctx := context.Background()
 
-		var requestOpts []graphql.RequestOption
+		var requestOpts []client.RequestOption
 		if cliCtx.IsSet(flagRunMetadata.Name) {
-			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
+			requestOpts = append(requestOpts, client.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
 		}
 
 		if err := authenticated.Client.Mutate(ctx, &mutation, variables, requestOpts...); err != nil {

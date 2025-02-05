@@ -8,8 +8,8 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
+	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
@@ -99,10 +99,10 @@ func (q *WorkerPool) getPrivatePoolRuns(ctx context.Context) ([]runsEdge, error)
 func (q *WorkerPool) baseSearchParams() map[string]interface{} {
 	return map[string]interface{}{
 		"input": structs.SearchInput{
-			First: graphql.NewInt(graphql.Int(100)),
+			First: internal.Ptr(100),
 			OrderBy: &structs.QueryOrder{
-				Field:     graphql.String("position"),
-				Direction: graphql.String("ASC"),
+				Field:     "position",
+				Direction: "ASC",
 			},
 		},
 	}

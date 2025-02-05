@@ -5,8 +5,8 @@ import (
 	"slices"
 
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
+	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
@@ -95,15 +95,15 @@ func getSearchModuleVersions(cliCtx *cli.Context, cursor string, limit int) (sea
 		} `graphql:"module(id: $id)"`
 	}
 
-	var after *graphql.String
+	var after *string
 	if cursor != "" {
-		after = graphql.NewString(graphql.String(cursor))
+		after = internal.Ptr(cursor)
 	}
 
 	if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{
 		"id": cliCtx.String(flagModuleID.Name),
 		"input": structs.SearchInput{
-			First: graphql.NewInt(graphql.Int(int32(limit))), //nolint: gosec
+			First: internal.Ptr(limit),
 			After: after,
 			OrderBy: &structs.QueryOrder{
 				Field:     "createdAt",
@@ -114,7 +114,7 @@ func getSearchModuleVersions(cliCtx *cli.Context, cursor string, limit int) (sea
 					Field:   "state",
 					Exclude: true,
 					Constraint: structs.QueryFieldConstraint{
-						EnumEquals: &[]graphql.String{
+						EnumEquals: &[]string{
 							"FAILED",
 						},
 					},

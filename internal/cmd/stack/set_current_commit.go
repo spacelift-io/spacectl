@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/shurcooL/graphql"
+	"github.com/hasura/go-graphql-client"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
 )
@@ -26,7 +26,7 @@ func setCurrentCommit(cliCtx *cli.Context) error {
 	}
 
 	variables := map[string]interface{}{
-		"sha":   graphql.String(cliCtx.String(flagRequiredCommitSHA.Name)),
+		"sha":   cliCtx.String(flagRequiredCommitSHA.Name),
 		"stack": graphql.ID(stackID),
 	}
 

@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/shurcooL/graphql"
+	"github.com/hasura/go-graphql-client"
 	"github.com/spacelift-io/spacectl/client/session"
 	"golang.org/x/oauth2"
 )
@@ -22,13 +22,15 @@ func New(wraps *http.Client, session session.Session) Client {
 	return &client{wraps: wraps, session: session}
 }
 
-func (c *client) Mutate(ctx context.Context, mutation interface{}, variables map[string]interface{}, opts ...graphql.RequestOption) error {
-	apiClient, err := c.apiClient(ctx)
+func (c *client) Mutate(ctx context.Context, mutation interface{}, variables map[string]interface{}, opts ...RequestOption) error {
+	options := parseOptions(opts...)
+
+	apiClient, err := c.apiClient(ctx, options)
 	if err != nil {
 		return nil
 	}
 
-	err = apiClient.Mutate(ctx, mutation, variables, opts...)
+	err = apiClient.Mutate(ctx, mutation, variables, options.graphqlOptions...)
 
 	if err != nil && err.Error() == "unauthorized" {
 		return fmt.Errorf("unauthorized: you can re-login using `spacectl profile login`")
@@ -37,13 +39,15 @@ func (c *client) Mutate(ctx context.Context, mutation interface{}, variables map
 	return err
 }
 
-func (c *client) Query(ctx context.Context, query interface{}, variables map[string]interface{}, opts ...graphql.RequestOption) error {
-	apiClient, err := c.apiClient(ctx)
+func (c *client) Query(ctx context.Context, query interface{}, variables map[string]interface{}, opts ...RequestOption) error {
+	options := parseOptions(opts...)
+
+	apiClient, err := c.apiClient(ctx, options)
 	if err != nil {
 		return nil
 	}
 
-	err = apiClient.Query(ctx, query, variables, opts...)
+	err = apiClient.Query(ctx, query, variables, options.graphqlOptions...)
 
 	if err != nil && err.Error() == "unauthorized" {
 		return fmt.Errorf("unauthorized: you can re-login using `spacectl profile login`")
@@ -65,17 +69,18 @@ func (c *client) URL(format string, a ...interface{}) string {
 	return endpointURL.String()
 }
 
-func (c *client) apiClient(ctx context.Context) (*graphql.Client, error) {
+func (c *client) apiClient(ctx context.Context, opts requestOptions) (*graphql.Client, error) {
 	httpC, err := c.httpClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("graphql client creation failed at http client creation: %w", err)
 	}
 
-	requestOptions := []graphql.RequestOption{
-		graphql.WithHeader("Spacelift-Client-Type", "spacectl"),
-	}
-
-	return graphql.NewClient(c.session.Endpoint(), httpC, requestOptions...), nil
+	return graphql.NewClient(c.session.Endpoint(), httpC).WithRequestModifier(func(request *http.Request) {
+		request.Header.Set("Spacelift-Client-Type", "spacectl")
+		for _, modifyRequest := range opts.modifyRequest {
+			modifyRequest(request)
+		}
+	}), nil
 }
 
 func (c *client) Do(req *http.Request) (*http.Response, error) {
