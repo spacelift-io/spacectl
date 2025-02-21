@@ -86,7 +86,7 @@ var flagAutoConfirm = &cli.BoolFlag{
 
 var flagRuntimeConfig = &cli.StringFlag{
 	Name:     "runtime-config",
-	Usage:    "[Optional] Path to the runtime config file",
+	Usage:    "[Optional] Path to the runtime config file (https://docs.spacelift.io/concepts/configuration/runtime-configuration/runtime-yaml-reference#stack_defaults)",
 	Required: false,
 }
 
