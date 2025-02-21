@@ -89,6 +89,12 @@ var flagAutoConfirm = &cli.BoolFlag{
 	Required: false,
 }
 
+var flagRuntimeConfig = &cli.StringFlag{
+	Name:     "runtime-config",
+	Usage:    "[Optional] Path to the runtime config file (https://docs.spacelift.io/concepts/configuration/runtime-configuration/runtime-yaml-reference#stack_defaults)",
+	Required: false,
+}
+
 var flagNoTail = &cli.BoolFlag{
 	Name:  "no-tail",
 	Usage: "Indicate whether not to tail the run",

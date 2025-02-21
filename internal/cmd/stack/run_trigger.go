@@ -3,6 +3,7 @@ package stack
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
@@ -18,16 +19,37 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 			return err
 		}
 
+		var runtimeConfigInput *RuntimeConfigInput
+		if cliCtx.IsSet(flagRuntimeConfig.Name) {
+			runtimeConfigFilePath := cliCtx.String(flagRuntimeConfig.Name)
+
+			if _, err = os.Stat(runtimeConfigFilePath); err != nil {
+				return fmt.Errorf("runtime config file does not exist: %v", err)
+			}
+
+			data, err := os.ReadFile(runtimeConfigFilePath)
+			if err != nil {
+				return fmt.Errorf("failed to read runtime config file: %v", err)
+			}
+
+			yaml := string(data)
+
+			runtimeConfigInput = &RuntimeConfigInput{
+				Yaml: &yaml,
+			}
+		}
+
 		var mutation struct {
 			RunTrigger struct {
 				ID string `graphql:"id"`
-			} `graphql:"runTrigger(stack: $stack, commitSha: $sha, runType: $type)"`
+			} `graphql:"runTrigger(stack: $stack, commitSha: $sha, runType: $type, runtimeConfig: $runtimeConfig)"`
 		}
 
 		variables := map[string]interface{}{
-			"stack": graphql.ID(stackID),
-			"sha":   (*graphql.String)(nil),
-			"type":  structs.NewRunType(spaceliftType),
+			"stack":         graphql.ID(stackID),
+			"sha":           (*graphql.String)(nil),
+			"type":          structs.NewRunType(spaceliftType),
+			"runtimeConfig": runtimeConfigInput,
 		}
 
 		if cliCtx.IsSet(flagCommitSHA.Name) {
