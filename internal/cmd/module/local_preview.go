@@ -35,8 +35,9 @@ func localPreview() cli.ActionFunc {
 
 		var uploadMutation struct {
 			UploadLocalWorkspace struct {
-				ID        string `graphql:"id"`
-				UploadURL string `graphql:"uploadUrl"`
+				ID            string            `graphql:"id"`
+				UploadURL     string            `graphql:"uploadUrl"`
+				UploadHeaders map[string]string `graphql:"uploadHeaders"`
 			} `graphql:"uploadLocalWorkspace(stack: $stack)"`
 		}
 
@@ -77,7 +78,7 @@ func localPreview() cli.ActionFunc {
 
 		fmt.Println("Uploading local workspace...")
 
-		if err := internal.UploadArchive(ctx, uploadMutation.UploadLocalWorkspace.UploadURL, fp); err != nil {
+		if err := internal.UploadArchive(ctx, uploadMutation.UploadLocalWorkspace.UploadURL, fp, uploadMutation.UploadLocalWorkspace.UploadHeaders); err != nil {
 			return fmt.Errorf("couldn't upload archive: %w", err)
 		}
 
