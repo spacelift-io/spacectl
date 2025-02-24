@@ -117,7 +117,7 @@ func UploadArchive(ctx context.Context, uploadURL, path string, uploadHeaders ma
 		return fmt.Errorf("couldn't upload workspace: %w", err)
 	}
 	defer response.Body.Close()
-	if code := response.StatusCode; code != http.StatusOK {
+	if code := response.StatusCode; code != http.StatusOK && code != http.StatusCreated {
 		return fmt.Errorf("unexpected response code when uploading workspace: %d", code)
 	}
 
