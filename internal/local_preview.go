@@ -85,7 +85,7 @@ func GetIgnoreMatcherFn(ctx context.Context, projectRoot *string, ignoreFiles []
 }
 
 // UploadArchive uploads a tarball to the target endpoint and displays a fancy progress bar.
-func UploadArchive(ctx context.Context, uploadURL, path string) (err error) {
+func UploadArchive(ctx context.Context, uploadURL, path string, uploadHeaders map[string]string) (err error) {
 	stat, err := os.Stat(path)
 	if err != nil {
 		return fmt.Errorf("couldn't stat archive file: %w", err)
@@ -108,12 +108,16 @@ func UploadArchive(ctx context.Context, uploadURL, path string) (err error) {
 	req.ContentLength = stat.Size()
 	req = req.WithContext(ctx)
 
+	for k, v := range uploadHeaders {
+		req.Header.Set(k, v)
+	}
+
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("couldn't upload workspace: %w", err)
 	}
 	defer response.Body.Close()
-	if code := response.StatusCode; code != http.StatusOK {
+	if code := response.StatusCode; code != http.StatusOK && code != http.StatusCreated {
 		return fmt.Errorf("unexpected response code when uploading workspace: %d", code)
 	}
 

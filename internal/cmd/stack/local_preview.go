@@ -9,6 +9,7 @@ import (
 
 	"github.com/mholt/archiver/v3"
 	"github.com/shurcooL/graphql"
+	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
@@ -67,8 +68,9 @@ func localPreview() cli.ActionFunc {
 
 		var uploadMutation struct {
 			UploadLocalWorkspace struct {
-				ID        string `graphql:"id"`
-				UploadURL string `graphql:"uploadUrl"`
+				ID            string            `graphql:"id"`
+				UploadURL     string            `graphql:"uploadUrl"`
+				UploadHeaders structs.StringMap `graphql:"uploadHeaders"`
 			} `graphql:"uploadLocalWorkspace(stack: $stack)"`
 		}
 
@@ -109,7 +111,7 @@ func localPreview() cli.ActionFunc {
 
 		fmt.Println("Uploading local workspace...")
 
-		if err := internal.UploadArchive(ctx, uploadMutation.UploadLocalWorkspace.UploadURL, fp); err != nil {
+		if err := internal.UploadArchive(ctx, uploadMutation.UploadLocalWorkspace.UploadURL, fp, uploadMutation.UploadLocalWorkspace.UploadHeaders.StdMap()); err != nil {
 			return fmt.Errorf("couldn't upload archive: %w", err)
 		}
 
