@@ -8,11 +8,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 	"github.com/urfave/cli/v2"
-
-	"github.com/spacelift-io/spacectl/client/structs"
 )
 
 func createVersion() cli.ActionFunc {
