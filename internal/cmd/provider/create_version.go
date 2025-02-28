@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 	"github.com/urfave/cli/v2"
@@ -57,9 +58,12 @@ func createVersion() cli.ActionFunc {
 
 		var createMutation struct {
 			CreateTerraformProviderVersion struct {
-				SHA256SumsUploadURL    string `graphql:"sha256SumsUploadURL"`
-				SHA256SumsSigUploadURL string `graphql:"sha256SumsSigUploadURL"`
-				Version                struct {
+				SHA256SumsUploadURL     string            `graphql:"sha256SumsUploadURL"`
+				SHA256SumsUploadHeaders structs.StringMap `graphql:"sha256SumsUploadHeaders"`
+
+				SHA256SumsSigUploadURL     string            `graphql:"sha256SumsSigUploadURL"`
+				SHA256SumsSigUploadHeaders structs.StringMap `graphql:"sha256SumsSigUploadHeaders"`
+				Version                    struct {
 					ID string `graphql:"id"`
 				} `graphql:"version"`
 			} `graphql:"terraformProviderVersionCreate(provider: $provider, input: $input)"`
@@ -81,12 +85,12 @@ func createVersion() cli.ActionFunc {
 		}
 
 		fmt.Println("Uploading the checksums file")
-		if err := checksumsFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsUploadURL, checksumsFile.AWSMetadataHeaders()); err != nil {
+		if err := checksumsFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsUploadURL, createMutation.CreateTerraformProviderVersion.SHA256SumsUploadHeaders.HTTPHeaders()); err != nil {
 			return errors.Wrap(err, "could not upload checksums file")
 		}
 
 		fmt.Println("Uploading the signatures file")
-		if err := signatureFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadURL, signatureFile.AWSMetadataHeaders()); err != nil {
+		if err := signatureFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadURL, createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadHeaders.HTTPHeaders()); err != nil {
 			return errors.Wrap(err, "could not upload signature file")
 		}
 
