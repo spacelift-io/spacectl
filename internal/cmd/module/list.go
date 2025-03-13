@@ -1,19 +1,17 @@
 package module
 
 import (
+	"context"
 	"fmt"
 	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/client/structs"
+	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
-)
-
-const (
-	maxSearchModulesPageSize = 50
 )
 
 func listModules() cli.ActionFunc {
@@ -23,90 +21,73 @@ func listModules() cli.ActionFunc {
 			return err
 		}
 
+		var limit *uint
+		if cliCtx.IsSet(cmd.FlagLimit.Name) {
+			limit = internal.Ptr(cliCtx.Uint(cmd.FlagLimit.Name))
+		}
+
+		var search *string
+		if cliCtx.IsSet(cmd.FlagSearch.Name) {
+			search = internal.Ptr(cliCtx.String(cmd.FlagSearch.Name))
+		}
+
 		switch outputFormat {
 		case cmd.OutputFormatTable:
-			m, err := getModules(cliCtx, 20)
-			if err != nil {
-				return err
-			}
-			return listModulesTable(m)
+			return listModulesTable(cliCtx, search, limit)
 		case cmd.OutputFormatJSON:
-			m, err := getModules(cliCtx, 0)
-			if err != nil {
-				return err
-			}
-			return cmd.OutputJSON(m)
+			return listModulesJSON(cliCtx, search, limit)
 		}
 
 		return fmt.Errorf("unknown output format: %v", outputFormat)
 	}
 }
 
-func getModules(cliCtx *cli.Context, limit int) ([]module, error) {
-	if limit < 0 {
-		return nil, errors.New("limit must be greater or equal to 0")
+func listModulesJSON(ctx *cli.Context, search *string, limit *uint) error {
+	var first *graphql.Int
+	if limit != nil {
+		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
 	}
 
-	var cursor string
-	var modules []module
-
-	for {
-		pageSize := 50
-		if limit != 0 {
-			pageSize = slices.Min([]int{maxSearchModulesPageSize, limit - len(modules)})
-		}
-
-		result, err := getSearchModules(cliCtx, cursor, pageSize)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, edge := range result.Edges {
-			modules = append(modules, edge.Node)
-		}
-
-		if result.PageInfo.HasNextPage && (limit == 0 || limit > len(modules)) {
-			cursor = result.PageInfo.EndCursor
-			continue
-		}
-
-		break
+	var fullTextSearch *graphql.String
+	if search != nil {
+		fullTextSearch = graphql.NewString(graphql.String(*search))
 	}
 
-	return modules, nil
+	modules, err := searchModules(ctx.Context, structs.SearchInput{
+		First:          first,
+		FullTextSearch: fullTextSearch,
+	})
+	if err != nil {
+		return err
+	}
+
+	return cmd.OutputJSON(modules)
 }
 
-func getSearchModules(cliCtx *cli.Context, cursor string, limit int) (searchModules, error) {
-	if limit <= 0 || limit > maxSearchModulesPageSize {
-		return searchModules{}, errors.New("limit must be between 1 and 50")
+func listModulesTable(ctx *cli.Context, search *string, limit *uint) error {
+	var first *graphql.Int
+	if limit != nil {
+		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
 	}
 
-	var query struct {
-		SearchModules searchModules `graphql:"searchModules(input: $input)"`
+	var fullTextSearch *graphql.String
+	if search != nil {
+		fullTextSearch = graphql.NewString(graphql.String(*search))
 	}
 
-	var after *graphql.String
-	if cursor != "" {
-		after = graphql.NewString(graphql.String(cursor))
-	}
-
-	if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{
-		"input": structs.SearchInput{
-			First: graphql.NewInt(graphql.Int(int32(limit))), //nolint: gosec
-			After: after,
-			OrderBy: &structs.QueryOrder{
-				Field:     "starred",
-				Direction: "DESC",
-			},
+	input := structs.SearchInput{
+		First:          first,
+		FullTextSearch: fullTextSearch,
+		OrderBy: &structs.QueryOrder{
+			Field:     "name",
+			Direction: "DESC",
 		},
-	}); err != nil {
-		return searchModules{}, errors.Wrap(err, "failed to query list of modules")
 	}
 
-	return query.SearchModules, nil
-}
-
-func listModulesTable(modules []module) error {
+	modules, err := searchAllModules(ctx.Context, input)
+	if err != nil {
+		return err
+	}
 	columns := []string{"Name", "ID", "Current Version", "Number", "State", "Yanked"}
 
 	tableData := [][]string{columns}
@@ -126,13 +107,51 @@ func listModulesTable(modules []module) error {
 	return cmd.OutputTable(tableData, true)
 }
 
-type searchModules struct {
-	PageInfo structs.PageInfo    `graphql:"pageInfo"`
-	Edges    []searchModulesEdge `graphql:"edges"`
+func searchAllModules(ctx context.Context, input structs.SearchInput) ([]module, error) {
+	const maxPageSize = 50
+
+	var limit int
+	if input.First != nil {
+		limit = int(*input.First)
+	}
+	fetchAll := limit == 0
+
+	out := []module{}
+	pageInput := structs.SearchInput{
+		First:          graphql.NewInt(maxPageSize),
+		FullTextSearch: input.FullTextSearch,
+	}
+	for {
+		if !fetchAll {
+			// Fetch exactly the number of items requested
+			pageInput.First = graphql.NewInt(
+				//nolint: gosec
+				graphql.Int(
+					slices.Min([]int{maxPageSize, limit - len(out)}),
+				),
+			)
+		}
+
+		result, err := searchModules(ctx, pageInput)
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, result.Modules...)
+
+		if result.PageInfo.HasNextPage && (fetchAll || limit > len(out)) {
+			pageInput.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+		} else {
+			break
+		}
+	}
+
+	return out, nil
 }
 
-type searchModulesEdge struct {
-	Node module `graphql:"node"`
+type searchModulesResult struct {
+	Modules  []module
+	PageInfo structs.PageInfo
 }
 
 type module struct {
@@ -168,4 +187,33 @@ type module struct {
 		Name string `graphql:"name" json:"name,omitempty"`
 	} `graphql:"workerPool" json:"workerPool,omitempty"`
 	Starred bool `json:"starred" graphql:"starred"`
+}
+
+func searchModules(ctx context.Context, input structs.SearchInput) (searchModulesResult, error) {
+	var query struct {
+		SearchModulesOutput struct {
+			Edges []struct {
+				Node module `graphql:"node"`
+			} `graphql:"edges"`
+			PageInfo structs.PageInfo `graphql:"pageInfo"`
+		} `graphql:"searchModules(input: $input)"`
+	}
+
+	if err := authenticated.Client.Query(
+		ctx,
+		&query,
+		map[string]interface{}{"input": input},
+	); err != nil {
+		return searchModulesResult{}, errors.Wrap(err, "failed search for modules")
+	}
+
+	nodes := make([]module, 0)
+	for _, q := range query.SearchModulesOutput.Edges {
+		nodes = append(nodes, q.Node)
+	}
+
+	return searchModulesResult{
+		Modules:  nodes,
+		PageInfo: query.SearchModulesOutput.PageInfo,
+	}, nil
 }
