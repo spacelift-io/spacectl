@@ -33,10 +33,6 @@ func listModules() cli.ActionFunc {
 
 		switch outputFormat {
 		case cmd.OutputFormatTable:
-			if limit == nil {
-				limit = internal.Ptr(uint(20))
-			}
-
 			return listModulesTable(cliCtx, search, limit)
 		case cmd.OutputFormatJSON:
 			return listModulesJSON(cliCtx, search, limit)
@@ -69,9 +65,13 @@ func listModulesJSON(ctx *cli.Context, search *string, limit *uint) error {
 }
 
 func listModulesTable(ctx *cli.Context, search *string, limit *uint) error {
+	const defaultLimit = 20
+
 	var first *graphql.Int
 	if limit != nil {
 		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+	} else {
+		first = graphql.NewInt(graphql.Int(defaultLimit))
 	}
 
 	var fullTextSearch *graphql.String
@@ -108,7 +108,15 @@ func listModulesTable(ctx *cli.Context, search *string, limit *uint) error {
 		tableData = append(tableData, row)
 	}
 
-	return cmd.OutputTable(tableData, true)
+	if err := cmd.OutputTable(tableData, true); err != nil {
+		return err
+	}
+
+	if limit == nil {
+		fmt.Printf("Showing first %d modules. Use --limit to show more or less.\n", defaultLimit)
+	}
+
+	return nil
 }
 
 func searchAllModules(ctx context.Context, input structs.SearchInput) ([]module, error) {
