@@ -57,7 +57,7 @@ func listModulesJSON(ctx *cli.Context, search *string, limit *uint) error {
 		fullTextSearch = graphql.NewString(graphql.String(*search))
 	}
 
-	modules, err := searchModules(ctx.Context, structs.SearchInput{
+	modules, err := searchAllModules(ctx.Context, structs.SearchInput{
 		First:          first,
 		FullTextSearch: fullTextSearch,
 	})
