@@ -33,6 +33,10 @@ func listModules() cli.ActionFunc {
 
 		switch outputFormat {
 		case cmd.OutputFormatTable:
+			if limit == nil {
+				limit = internal.Ptr(uint(20))
+			}
+
 			return listModulesTable(cliCtx, search, limit)
 		case cmd.OutputFormatJSON:
 			return listModulesJSON(cliCtx, search, limit)
