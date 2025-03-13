@@ -59,6 +59,8 @@ func Command() *cli.Command {
 				Usage:    "List all modules available and their current version",
 				Flags: []cli.Flag{
 					cmd.FlagOutputFormat,
+					cmd.FlagLimit,
+					cmd.FlagSearch,
 				},
 				Action:    listModules(),
 				Before:    authenticated.Ensure,
