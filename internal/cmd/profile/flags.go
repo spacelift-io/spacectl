@@ -2,6 +2,7 @@ package profile
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spacelift-io/spacectl/client/session"
@@ -42,7 +43,7 @@ var methodToCredentialsType = map[string]session.CredentialsType{
 
 var flagMethod = &cli.StringFlag{
 	Name:     "method",
-	Usage:    "[Optional] the method to use for logging in to Spacelift",
+	Usage:    fmt.Sprintf("[Optional] the method to use for logging in to Spacelift: %s", strings.Join([]string{methodBrowser, methodAPI, methodGithub}, ", ")),
 	Required: false,
 	EnvVars:  []string{"SPACECTL_LOGIN_METHOD"},
 	Action: func(ctx *cli.Context, v string) error {
