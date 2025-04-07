@@ -419,6 +419,18 @@ func Command() *cli.Command {
 				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
+				Category: "Stack management",
+				Name:     "delete",
+				Usage:    "Delete a stack",
+				Flags: []cli.Flag{
+					flagStackID,
+					flagDestroyResources,
+				},
+				Action:    deleteStack(),
+				Before:    authenticated.Ensure,
+				ArgsUsage: cmd.EmptyArgsUsage,
+			},
+			{
 				Name:  "resources",
 				Usage: "Manage and view resources for stacks",
 				Subcommands: []*cli.Command{
