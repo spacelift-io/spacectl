@@ -3,6 +3,7 @@ module github.com/spacelift-io/spacectl
 go 1.22
 
 require (
+	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/ProtonMail/gopenpgp/v2 v2.7.5
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/bubbletea v0.26.6
@@ -19,6 +20,7 @@ require (
 	github.com/pterm/pterm v0.12.79
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/shurcooL/graphql v0.0.0-20230722043721-ed46e5a46466
+	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.3
 	golang.org/x/oauth2 v0.22.0
 	golang.org/x/sync v0.10.0
@@ -42,6 +44,7 @@ require (
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/fatih/color v1.15.0 // indirect
@@ -61,6 +64,7 @@ require (
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/ulikunitz/xz v0.5.6 // indirect

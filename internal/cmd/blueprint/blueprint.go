@@ -10,53 +10,80 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-// Command encapsulates the blueprintNode command subtree.
-func Command() *cli.Command {
-	return &cli.Command{
+// Command returns the blueprint command subtree.
+func Command() cmd.Command {
+	return cmd.Command{
 		Name:  "blueprint",
 		Usage: "Manage a Spacelift blueprints",
-		Subcommands: []*cli.Command{
+		Versions: []cmd.VersionedCommand{
+			{
+				EarliestVersion: cmd.SupportedVersionAll,
+				Command:         &cli.Command{},
+			},
+		},
+		Subcommands: []cmd.Command{
 			{
 				Name:  "list",
 				Usage: "List the blueprints you have access to",
-				Flags: []cli.Flag{
-					cmd.FlagShowLabels,
-					cmd.FlagOutputFormat,
-					cmd.FlagNoColor,
-					cmd.FlagLimit,
-					cmd.FlagSearch,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								cmd.FlagShowLabels,
+								cmd.FlagOutputFormat,
+								cmd.FlagNoColor,
+								cmd.FlagLimit,
+								cmd.FlagSearch,
+							},
+							Action: listBlueprints(),
+							Before: cmd.PerformAllBefore(
+								cmd.HandleNoColor,
+								authenticated.Ensure,
+								validateLimit,
+								validateSearch,
+							),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action: listBlueprints(),
-				Before: cmd.PerformAllBefore(
-					cmd.HandleNoColor,
-					authenticated.Ensure,
-					validateLimit,
-					validateSearch,
-				),
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Name:  "show",
 				Usage: "Shows detailed information about a specific blueprint",
-				Flags: []cli.Flag{
-					flagRequiredBlueprintID,
-					cmd.FlagOutputFormat,
-					cmd.FlagNoColor,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagRequiredBlueprintID,
+								cmd.FlagOutputFormat,
+								cmd.FlagNoColor,
+							},
+							Action:    (&showCommand{}).show,
+							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    (&showCommand{}).show,
-				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Name:  "deploy",
 				Usage: "Deploy a stack from the blueprint",
-				Flags: []cli.Flag{
-					flagRequiredBlueprintID,
-					cmd.FlagNoColor,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagRequiredBlueprintID,
+								cmd.FlagNoColor,
+							},
+							Action:    (&deployCommand{}).deploy,
+							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    (&deployCommand{}).deploy,
-				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 		},
 	}

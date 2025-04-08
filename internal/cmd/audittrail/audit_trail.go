@@ -7,26 +7,40 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func Command() *cli.Command {
-	return &cli.Command{
+// Command returns the audit-trail command subtree.
+func Command() cmd.Command {
+	return cmd.Command{
 		Name:  "audit-trail",
 		Usage: "Manage a Spacelift audit trail entries",
-		Subcommands: []*cli.Command{
+		Versions: []cmd.VersionedCommand{
+			{
+				EarliestVersion: cmd.SupportedVersionAll,
+				Command:         &cli.Command{},
+			},
+		},
+		Subcommands: []cmd.Command{
 			{
 				Name:  "list",
 				Usage: "List the audit trail entries you have access to",
-				Flags: []cli.Flag{
-					cmd.FlagOutputFormat,
-					cmd.FlagNoColor,
-					cmd.FlagLimit,
-					cmd.FlagSearch,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								cmd.FlagOutputFormat,
+								cmd.FlagNoColor,
+								cmd.FlagLimit,
+								cmd.FlagSearch,
+							},
+							Action: listAuditTrails(),
+							Before: cmd.PerformAllBefore(
+								cmd.HandleNoColor,
+								authenticated.Ensure,
+							),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action: listAuditTrails(),
-				Before: cmd.PerformAllBefore(
-					cmd.HandleNoColor,
-					authenticated.Ensure,
-				),
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 		},
 	}

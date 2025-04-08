@@ -269,17 +269,6 @@ By default the login process is interactive, however, if that does not fit your 
 
 You can switch between account profiles by using `spacectl profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacectl profile logout ${MY_ALIAS}` command.
 
-## Releasing
+## Contributing
 
-To release a new version of spacectl, tag the repo and then push that tag. For example:
-
-```shell
-git checkout main
-git pull
-git tag -a v0.24.2 -m"Releasing v0.24.2"
-git push origin v0.24.2
-```
-
-After the tag is pushed, the [release](.github/workflows/release.yml) workflow will trigger and will automatically publish a new GitHub release.
-
-Once the [release](.github/workflows/release.yml) workflow is done, go to the [winget-pkgs](https://github.com/microsoft/winget-pkgs) repository and submit a pull request for the release version.
+For information about how to contribute to the development of spacectl, please see our [CONTRIBUTING.md](./CONTRIBUTING.md) file.

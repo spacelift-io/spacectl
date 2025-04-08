@@ -8,22 +8,35 @@ import (
 )
 
 // Command encapsulates the run external dependency command subtree.
-func Command() *cli.Command {
-	return &cli.Command{
+func Command() cmd.Command {
+	return cmd.Command{
 		Name:  "run-external-dependency",
 		Usage: "Manage Spacelift Run external dependencies",
-		Subcommands: []*cli.Command{
+		Versions: []cmd.VersionedCommand{
+			{
+				EarliestVersion: cmd.SupportedVersionAll,
+				Command:         &cli.Command{},
+			},
+		},
+		Subcommands: []cmd.Command{
 			{
 				Category: "Run external dependency management",
 				Name:     "mark-completed",
 				Usage:    "Mark Run external dependency as completed",
-				Flags: []cli.Flag{
-					flagRunExternalDependencyID,
-					flagStatus,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagRunExternalDependencyID,
+								flagStatus,
+							},
+							Action:    markRunExternalDependencyAsCompleted,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    markRunExternalDependencyAsCompleted,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 		},
 	}

@@ -7,238 +7,383 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-// Command encapsulates the stack command subtree.
-func Command() *cli.Command {
-	return &cli.Command{
+// Command returns the stack command subtree.
+func Command() cmd.Command {
+	return cmd.Command{
 		Name:  "stack",
 		Usage: "Manage a Spacelift stack",
-		Subcommands: []*cli.Command{
+		Versions: []cmd.VersionedCommand{
+			{
+				EarliestVersion: cmd.SupportedVersionAll,
+				Command:         &cli.Command{},
+			},
+		},
+		Subcommands: []cmd.Command{
 			{
 				Category: "Run management",
 				Name:     "confirm",
 				Usage:    "Confirm an unconfirmed tracked run",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRequiredRun,
-					flagRunMetadata,
-					flagTail,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRequiredRun,
+								flagRunMetadata,
+								flagTail,
+							},
+							Action:    runConfirm(),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runConfirm(),
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
 				Name:     "discard",
 				Usage:    "Discard an unconfirmed tracked run",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRequiredRun,
-					flagTail,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRequiredRun,
+								flagTail,
+							},
+							Action:    runDiscard(),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runDiscard(),
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
 				Name:     "cancel",
 				Usage:    "Cancel a run that hasn't started yet",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRequiredRun,
-					flagTail,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRequiredRun,
+								flagTail,
+							},
+							Action:    runCancel(),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runCancel(),
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
 				Name:     "approve",
 				Usage:    "Approves a run or task. If no run is specified, the approval will be added to the current stack blocker.",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRun,
-					flagRunReviewNote,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRun,
+								flagRunReviewNote,
+							},
+							Action:    runApprove,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runApprove,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
 				Name:     "reject",
 				Usage:    "Rejects a run or task. If no run is specified, the rejection will be added to the current stack blocker.",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRun,
-					flagRunReviewNote,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRun,
+								flagRunReviewNote,
+							},
+							Action:    runReject,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runReject,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
 				Name:     "deploy",
 				Usage:    "Start a deployment (tracked run)",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagCommitSHA,
-					flagRunMetadata,
-					flagTail,
-					flagAutoConfirm,
-					flagRuntimeConfig,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagCommitSHA,
+								flagRunMetadata,
+								flagTail,
+								flagAutoConfirm,
+								flagRuntimeConfig,
+							},
+							Action:    runTrigger("TRACKED", "deployment"),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runTrigger("TRACKED", "deployment"),
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
 				Name:     "retry",
 				Usage:    "Retry a failed run",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRequiredRun,
-					flagTail,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRequiredRun,
+								flagTail,
+							},
+							Action:    runRetry,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runRetry,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
 				Name:     "replan",
 				Usage:    "Replan an unconfirmed tracked run",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRequiredRun,
-					flagTail,
-					flagResources,
-					flagInteractive,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRequiredRun,
+								flagTail,
+								flagResources,
+								flagInteractive,
+							},
+							Action:    runReplan,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runReplan,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
 				Name:     "changes",
 				Usage:    "Show a list of changes for a given run",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRequiredRun,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRequiredRun,
+							},
+							Action:    runChanges,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runChanges,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Name:  "list",
 				Usage: "List the stacks you have access to",
-				Flags: []cli.Flag{
-					cmd.FlagShowLabels,
-					cmd.FlagOutputFormat,
-					cmd.FlagNoColor,
-					cmd.FlagLimit,
-					cmd.FlagSearch,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								cmd.FlagShowLabels,
+								cmd.FlagOutputFormat,
+								cmd.FlagNoColor,
+								cmd.FlagLimit,
+								cmd.FlagSearch,
+							},
+							Action:    listStacks(),
+							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    listStacks(),
-				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run local preview",
 				Name:     "local-preview",
 				Usage:    "Start a preview (proposed run) based on the current project. Respects .gitignore and .terraformignore.",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagNoFindRepositoryRoot,
-					flagProjectRootOnly,
-					flagRunMetadata,
-					flagNoTail,
-					flagNoUpload,
-					flagOverrideEnvVars,
-					flagOverrideEnvVarsTF,
-					flagDisregardGitignore,
-					flagPrioritizeRun,
-					flagTarget,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagNoFindRepositoryRoot,
+								flagProjectRootOnly,
+								flagRunMetadata,
+								flagNoTail,
+								flagNoUpload,
+								flagOverrideEnvVars,
+								flagOverrideEnvVarsTF,
+								flagDisregardGitignore,
+								flagPrioritizeRun,
+								flagTarget,
+							},
+							Action:    localPreview(false),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
+					{
+						EarliestVersion: cmd.SupportedVersion("2.5.0"),
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagNoFindRepositoryRoot,
+								flagProjectRootOnly,
+								flagRunMetadata,
+								flagNoTail,
+								flagNoUpload,
+								flagOverrideEnvVars,
+								flagOverrideEnvVarsTF,
+								flagDisregardGitignore,
+								flagPrioritizeRun,
+								flagTarget,
+							},
+							Action:    localPreview(true),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    localPreview(),
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
 				Name:     "logs",
 				Usage:    "Show logs for a particular run",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRun,
-					flagRunLatest,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRun,
+								flagRunLatest,
+							},
+							Action:    runLogs,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runLogs,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
 				Name:     "preview",
 				Usage:    "Start a preview (proposed run)",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagCommitSHA,
-					flagRunMetadata,
-					flagTail,
-					flagRuntimeConfig,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagCommitSHA,
+								flagRunMetadata,
+								flagTail,
+								flagRuntimeConfig,
+							},
+							Action:    runTrigger("PROPOSED", "preview"),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runTrigger("PROPOSED", "preview"),
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
 				Name:     "prioritize",
 				Usage:    "Prioritize a run",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRequiredRun,
-					flagTail,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRequiredRun,
+								flagTail,
+							},
+							Action:    runPrioritize,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runPrioritize,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Run management",
 				Name:     "deprioritize",
 				Usage:    "Deprioritize a run",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRequiredRun,
-					flagTail,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRequiredRun,
+								flagTail,
+							},
+							Action:    runDeprioritize,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    runDeprioritize,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Name:  "run",
 				Usage: "Manage a stack's runs",
-				Subcommands: []*cli.Command{
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command:         &cli.Command{},
+					},
+				},
+				Subcommands: []cmd.Command{
 					{
 						Name:  "list",
 						Usage: "Lists the runs for a specified stack",
-						Flags: []cli.Flag{
-							flagStackID,
-							flagMaxResults,
-							cmd.FlagOutputFormat,
+						Versions: []cmd.VersionedCommand{
+							{
+								EarliestVersion: cmd.SupportedVersionAll,
+								Command: &cli.Command{
+									Flags: []cli.Flag{
+										flagStackID,
+										flagMaxResults,
+										cmd.FlagOutputFormat,
+									},
+									Action:    runList,
+									Before:    authenticated.Ensure,
+									ArgsUsage: cmd.EmptyArgsUsage,
+								},
+							},
 						},
-						Action:    runList,
-						Before:    authenticated.Ensure,
-						ArgsUsage: cmd.EmptyArgsUsage,
 					},
 				},
 			},
@@ -246,236 +391,380 @@ func Command() *cli.Command {
 				Category: "Stack management",
 				Name:     "set-current-commit",
 				Usage:    "Set current commit on the stack",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRun,
-					flagRequiredCommitSHA,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRun,
+								flagRequiredCommitSHA,
+							},
+							Action:    setCurrentCommit,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    setCurrentCommit,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Name:  "environment",
 				Usage: "Manage a stack's environment",
-				Subcommands: []*cli.Command{
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command:         &cli.Command{},
+					},
+				},
+				Subcommands: []cmd.Command{
 					{
 						Name:  "setvar",
 						Usage: "Sets an environment variable.",
-						Flags: []cli.Flag{
-							flagStackID,
-							flagRun,
-							flagEnvironmentWriteOnly,
+						Versions: []cmd.VersionedCommand{
+							{
+								EarliestVersion: cmd.SupportedVersionAll,
+								Command: &cli.Command{
+									Flags: []cli.Flag{
+										flagStackID,
+										flagRun,
+										flagEnvironmentWriteOnly,
+									},
+									Action:    setVar,
+									Before:    authenticated.Ensure,
+									ArgsUsage: "NAME VALUE",
+								},
+							},
 						},
-						Action:    setVar,
-						Before:    authenticated.Ensure,
-						ArgsUsage: "NAME VALUE",
 					},
 					{
 						Name:  "list",
 						Usage: "Lists all the environment variables and mounted files for a stack.",
-						Flags: []cli.Flag{
-							flagStackID,
-							flagRun,
-							cmd.FlagOutputFormat,
+						Versions: []cmd.VersionedCommand{
+							{
+								EarliestVersion: cmd.SupportedVersionAll,
+								Command: &cli.Command{
+									Flags: []cli.Flag{
+										flagStackID,
+										flagRun,
+										cmd.FlagOutputFormat,
+									},
+									Action: (&listEnvCommand{}).listEnv,
+									Before: authenticated.Ensure,
+								},
+							},
 						},
-						Action: (&listEnvCommand{}).listEnv,
-						Before: authenticated.Ensure,
 					},
 					{
 						Name:  "mount",
 						Usage: "Mount a file from existing file or STDIN.",
-						Flags: []cli.Flag{
-							flagStackID,
-							flagRun,
-							flagEnvironmentWriteOnly,
+						Versions: []cmd.VersionedCommand{
+							{
+								EarliestVersion: cmd.SupportedVersionAll,
+								Command: &cli.Command{
+									Flags: []cli.Flag{
+										flagStackID,
+										flagRun,
+										flagEnvironmentWriteOnly,
+									},
+									Action:    mountFile,
+									Before:    authenticated.Ensure,
+									ArgsUsage: "RELATIVE_PATH_TO_MOUNT [FILE_PATH]",
+								},
+							},
 						},
-						Action:    mountFile,
-						Before:    authenticated.Ensure,
-						ArgsUsage: "RELATIVE_PATH_TO_MOUNT [FILE_PATH]",
 					},
 					{
 						Name:  "delete",
 						Usage: "Deletes an environment variable or mounted file.",
-						Flags: []cli.Flag{
-							flagStackID,
-							flagRun,
+						Versions: []cmd.VersionedCommand{
+							{
+								EarliestVersion: cmd.SupportedVersionAll,
+								Command: &cli.Command{
+									Flags: []cli.Flag{
+										flagStackID,
+										flagRun,
+									},
+									Action:    deleteEnvironment,
+									Before:    authenticated.Ensure,
+									ArgsUsage: "NAME",
+								},
+							},
 						},
-						Action:    deleteEnvironment,
-						Before:    authenticated.Ensure,
-						ArgsUsage: "NAME",
 					},
 				},
 			},
 			{
 				Name:  "outputs",
 				Usage: "Shows current outputs for a specific stack. Does not show the value of sensitive outputs.",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRun,
-					flagOutputID,
-					cmd.FlagOutputFormat,
-					cmd.FlagNoColor,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRun,
+								flagOutputID,
+								cmd.FlagOutputFormat,
+								cmd.FlagNoColor,
+							},
+							Action:    (&showOutputsStackCommand{}).showOutputs,
+							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    (&showOutputsStackCommand{}).showOutputs,
-				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Name:  "show",
 				Usage: "Shows detailed information about a specific stack",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRun,
-					cmd.FlagOutputFormat,
-					cmd.FlagNoColor,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRun,
+								cmd.FlagOutputFormat,
+								cmd.FlagNoColor,
+							},
+							Action:    (&showStackCommand{}).showStack,
+							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    (&showStackCommand{}).showStack,
-				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Stack management",
 				Name:     "open",
 				Usage:    "Open a stack in your browser",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagRun,
-					flagIgnoreSubdir,
-					flagCurrentBranch,
-					flagSearchCount,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRun,
+								flagIgnoreSubdir,
+								flagCurrentBranch,
+								flagSearchCount,
+							},
+							Action:    openCommandInBrowser,
+							Before:    authenticated.Ensure,
+							ArgsUsage: "COMMAND",
+						},
+					},
 				},
-				Action:    openCommandInBrowser,
-				Before:    authenticated.Ensure,
-				ArgsUsage: "COMMAND",
 			},
 			{
 				Category: "Run management",
 				Name:     "task",
 				Usage:    "Perform a task in a stack",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagNoInit,
-					flagRunMetadata,
-					flagTail,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagNoInit,
+								flagRunMetadata,
+								flagTail,
+							},
+							Action:    taskCommand,
+							Before:    authenticated.Ensure,
+							ArgsUsage: "COMMAND",
+						},
+					},
 				},
-				Action:    taskCommand,
-				Before:    authenticated.Ensure,
-				ArgsUsage: "COMMAND",
 			},
 			{
 				Category: "Stack management",
 				Name:     "lock",
 				Usage:    "Locks a stack for exclusive use.",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagStackLockNote,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagStackLockNote,
+							},
+							Action:    lock,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    lock,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Stack management",
 				Name:     "unlock",
 				Usage:    "Unlocks a stack.",
-				Flags: []cli.Flag{
-					flagStackID,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+							},
+							Action:    unlock,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    unlock,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Stack management",
 				Name:     "enable",
 				Usage:    "Enable new runs against the stack",
-				Flags: []cli.Flag{
-					flagStackID,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+							},
+							Action:    enable,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    enable,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Stack management",
 				Name:     "disable",
 				Usage:    "Disable new runs against the stack",
-				Flags: []cli.Flag{
-					flagStackID,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+							},
+							Action:    disable,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    disable,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Stack management",
 				Name:     "sync-commit",
 				Usage:    "Syncs the tracked stack commit",
-				Flags: []cli.Flag{
-					flagStackID,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+							},
+							Action:    syncCommit,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    syncCommit,
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Stack management",
 				Name:     "delete",
 				Usage:    "Delete a stack",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagDestroyResources,
-					flagSkipConfirmation,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagDestroyResources,
+								flagSkipConfirmation,
+							},
+							Action:    deleteStack(),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    deleteStack(),
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Name:  "resources",
 				Usage: "Manage and view resources for stacks",
-				Subcommands: []*cli.Command{
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command:         &cli.Command{},
+					},
+				},
+				Subcommands: []cmd.Command{
 					{
 						Name:  "list",
 						Usage: "Sets an environment variable.",
-						Flags: []cli.Flag{
-							flagStackID,
-							flagRun,
+						Versions: []cmd.VersionedCommand{
+							{
+								EarliestVersion: cmd.SupportedVersionAll,
+								Command: &cli.Command{
+									Flags: []cli.Flag{
+										flagStackID,
+										flagRun,
+									},
+									Action:    resourcesList,
+									Before:    authenticated.Ensure,
+									ArgsUsage: cmd.EmptyArgsUsage,
+								},
+							},
 						},
-						Action:    resourcesList,
-						Before:    authenticated.Ensure,
-						ArgsUsage: cmd.EmptyArgsUsage,
 					},
 				},
 			},
 			{
 				Name:  "dependencies",
 				Usage: "View stack dependencies",
-				Subcommands: []*cli.Command{
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command:         &cli.Command{},
+					},
+				},
+				Subcommands: []cmd.Command{
 					{
 						Name:  "on",
 						Usage: "Get stacks which the provided that depends on",
-						Flags: []cli.Flag{
-							flagStackID,
-							flagRun,
-							cmd.FlagOutputFormat,
+						Versions: []cmd.VersionedCommand{
+							{
+								EarliestVersion: cmd.SupportedVersionAll,
+								Command: &cli.Command{
+									Flags: []cli.Flag{
+										flagStackID,
+										flagRun,
+										cmd.FlagOutputFormat,
+									},
+									Action:    dependenciesOn,
+									Before:    authenticated.Ensure,
+									ArgsUsage: cmd.EmptyArgsUsage,
+								},
+							},
 						},
-						Action:    dependenciesOn,
-						Before:    authenticated.Ensure,
-						ArgsUsage: cmd.EmptyArgsUsage,
 					},
 					{
 						Name:  "off",
 						Usage: "Get stacks that depend on the provided stack",
-						Flags: []cli.Flag{
-							flagStackID,
-							flagRun,
-							cmd.FlagOutputFormat,
+						Versions: []cmd.VersionedCommand{
+							{
+								EarliestVersion: cmd.SupportedVersionAll,
+								Command: &cli.Command{
+									Flags: []cli.Flag{
+										flagStackID,
+										flagRun,
+										cmd.FlagOutputFormat,
+									},
+									Action:    dependenciesOff,
+									Before:    authenticated.Ensure,
+									ArgsUsage: cmd.EmptyArgsUsage,
+								},
+							},
 						},
-						Action:    dependenciesOff,
-						Before:    authenticated.Ensure,
-						ArgsUsage: cmd.EmptyArgsUsage,
 					},
 				},
 			},

@@ -22,7 +22,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func localPreview() cli.ActionFunc {
+func localPreview(useHeaders bool) cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
 		moduleID := cliCtx.String(flagModuleID.Name)
 		ctx := context.Background()
@@ -35,23 +35,57 @@ func localPreview() cli.ActionFunc {
 
 		fmt.Println("Packing local workspace...")
 
-		var uploadMutation struct {
-			UploadLocalWorkspace struct {
-				ID            string            `graphql:"id"`
-				UploadURL     string            `graphql:"uploadUrl"`
-				UploadHeaders structs.StringMap `graphql:"uploadHeaders"`
-			} `graphql:"uploadLocalWorkspace(stack: $stack)"`
+		// Define struct types based on useHeaders flag
+
+		// Define concrete types
+		type basicResponse struct {
+			ID        string `graphql:"id"`
+			UploadURL string `graphql:"uploadUrl"`
 		}
+
+		type headersResponse struct {
+			ID            string            `graphql:"id"`
+			UploadURL     string            `graphql:"uploadUrl"`
+			UploadHeaders structs.StringMap `graphql:"uploadHeaders"`
+		}
+
+		var workspaceID string
+		var uploadURL string
+		var headers map[string]string
 
 		uploadVariables := map[string]interface{}{
 			"stack": graphql.ID(moduleID),
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &uploadMutation, uploadVariables); err != nil {
-			return err
+		if useHeaders {
+			// Use the headers response struct
+			var headersMutation struct {
+				UploadLocalWorkspace headersResponse `graphql:"uploadLocalWorkspace(stack: $stack)"`
+			}
+
+			if err := authenticated.Client.Mutate(ctx, &headersMutation, uploadVariables); err != nil {
+				return err
+			}
+
+			workspaceID = headersMutation.UploadLocalWorkspace.ID
+			uploadURL = headersMutation.UploadLocalWorkspace.UploadURL
+			headers = headersMutation.UploadLocalWorkspace.UploadHeaders.StdMap()
+		} else {
+			// Use the basic response struct
+			var basicMutation struct {
+				UploadLocalWorkspace basicResponse `graphql:"uploadLocalWorkspace(stack: $stack)"`
+			}
+
+			if err := authenticated.Client.Mutate(ctx, &basicMutation, uploadVariables); err != nil {
+				return err
+			}
+
+			workspaceID = basicMutation.UploadLocalWorkspace.ID
+			uploadURL = basicMutation.UploadLocalWorkspace.UploadURL
+			headers = nil
 		}
 
-		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", uploadMutation.UploadLocalWorkspace.ID))
+		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", workspaceID))
 
 		ignoreFiles := []string{".terraformignore"}
 		if !cliCtx.IsSet(flagDisregardGitignore.Name) {
@@ -80,7 +114,7 @@ func localPreview() cli.ActionFunc {
 
 		fmt.Println("Uploading local workspace...")
 
-		if err := internal.UploadArchive(ctx, uploadMutation.UploadLocalWorkspace.UploadURL, fp, uploadMutation.UploadLocalWorkspace.UploadHeaders.StdMap()); err != nil {
+		if err := internal.UploadArchive(ctx, uploadURL, fp, headers); err != nil {
 			return fmt.Errorf("couldn't upload archive: %w", err)
 		}
 
@@ -94,7 +128,7 @@ func localPreview() cli.ActionFunc {
 		}
 		triggerVariables := map[string]interface{}{
 			"module":    graphql.ID(moduleID),
-			"workspace": graphql.ID(uploadMutation.UploadLocalWorkspace.ID),
+			"workspace": graphql.ID(workspaceID),
 			"testIds":   tests,
 		}
 

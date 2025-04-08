@@ -7,73 +7,114 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-// Command encapsulates the policyNode command subtree.
-func Command() *cli.Command {
-	return &cli.Command{
+// Command returns the versioned policy command subtree.
+func Command() cmd.Command {
+	return cmd.Command{
 		Name:  "policy",
 		Usage: "Manage Spacelift policies",
-		Subcommands: []*cli.Command{
+		Versions: []cmd.VersionedCommand{
+			{
+				EarliestVersion: cmd.SupportedVersionAll,
+				Command:         &cli.Command{},
+			},
+		},
+		Subcommands: []cmd.Command{
 			{
 				Name:  "list",
 				Usage: "List the policies you have access to",
-				Flags: []cli.Flag{
-					cmd.FlagOutputFormat,
-					cmd.FlagLimit,
-					cmd.FlagSearch,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								cmd.FlagOutputFormat,
+								cmd.FlagLimit,
+								cmd.FlagSearch,
+							},
+							Action: (&listCommand{}).list,
+							Before: cmd.PerformAllBefore(
+								cmd.HandleNoColor,
+								authenticated.Ensure,
+							),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action: (&listCommand{}).list,
-				Before: cmd.PerformAllBefore(
-					cmd.HandleNoColor,
-					authenticated.Ensure,
-				),
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Name:  "show",
 				Usage: "Shows detailed information about a specific policy",
-				Flags: []cli.Flag{
-					cmd.FlagOutputFormat,
-					flagRequiredPolicyID,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								cmd.FlagOutputFormat,
+								flagRequiredPolicyID,
+							},
+							Action:    (&showCommand{}).show,
+							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    (&showCommand{}).show,
-				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Name:  "samples",
 				Usage: "List all policy samples",
-				Flags: []cli.Flag{
-					cmd.FlagOutputFormat,
-					cmd.FlagNoColor,
-					flagRequiredPolicyID,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								cmd.FlagOutputFormat,
+								cmd.FlagNoColor,
+								flagRequiredPolicyID,
+							},
+							Action:    (&samplesCommand{}).list,
+							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    (&samplesCommand{}).list,
-				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Name:  "sample",
 				Usage: "Inspect one policy sample",
-				Flags: []cli.Flag{
-					cmd.FlagNoColor,
-					flagRequiredPolicyID,
-					flagRequiredSampleKey,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								cmd.FlagNoColor,
+								flagRequiredPolicyID,
+								flagRequiredSampleKey,
+							},
+							Action:    (&sampleCommand{}).show,
+							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    (&sampleCommand{}).show,
-				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Name:  "simulate",
 				Usage: "Simulate a policy using a sample",
-				Flags: []cli.Flag{
-					cmd.FlagNoColor,
-					flagRequiredPolicyID,
-					flagSimulationInput,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								cmd.FlagNoColor,
+								flagRequiredPolicyID,
+								flagSimulationInput,
+							},
+							Action:    (&simulateCommand{}).simulate,
+							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    (&simulateCommand{}).simulate,
-				Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 		},
 	}
