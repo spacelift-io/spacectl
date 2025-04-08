@@ -1,11 +1,13 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 type (
@@ -23,21 +25,21 @@ type (
 	}
 )
 
-func enable(cliCtx *cli.Context) error {
-	return enableDisable[stackEnableMutation](cliCtx)
+func enable(ctx context.Context, cmd *cli.Command) error {
+	return enableDisable[stackEnableMutation](ctx, cmd)
 }
 
-func disable(cliCtx *cli.Context) error {
-	return enableDisable[stackDisableMutation](cliCtx)
+func disable(ctx context.Context, cmd *cli.Command) error {
+	return enableDisable[stackDisableMutation](ctx, cmd)
 }
 
-func enableDisable[T any](cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func enableDisable[T any](ctx context.Context, cmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
-	if nArgs := cliCtx.NArg(); nArgs != 0 {
+	if nArgs := cmd.NArg(); nArgs != 0 {
 		return fmt.Errorf("expected zero arguments but got %d", nArgs)
 	}
 
@@ -46,5 +48,5 @@ func enableDisable[T any](cliCtx *cli.Context) error {
 		"stack": graphql.ID(stackID),
 	}
 
-	return authenticated.Client.Mutate(cliCtx.Context, &mutation, variables)
+	return authenticated.Client.Mutate(ctx, &mutation, variables)
 }

@@ -2,15 +2,17 @@ package profile
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 func usageViewCSVCommand() *cli.Command {
@@ -30,10 +32,10 @@ func usageViewCSVCommand() *cli.Command {
 	}
 }
 
-func usageViewCsv(ctx *cli.Context) error {
+func usageViewCsv(ctx context.Context, cmd *cli.Command) error {
 	// prep http query
-	params := buildQueryParams(ctx)
-	req, err := http.NewRequestWithContext(ctx.Context, http.MethodGet, "/usageanalytics/csv", nil)
+	params := buildQueryParams(cmd)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "/usageanalytics/csv", nil)
 	if err != nil {
 		return fmt.Errorf("failed to create an HTTP request: %w", err)
 	}
@@ -56,8 +58,8 @@ func usageViewCsv(ctx *cli.Context) error {
 
 	// process a response
 	var filePath string
-	if ctx.IsSet(flagUsageViewCSVFile.Name) {
-		filePath = ctx.String(flagUsageViewCSVFile.Name)
+	if cmd.IsSet(flagUsageViewCSVFile.Name) {
+		filePath = cmd.String(flagUsageViewCSVFile.Name)
 		fd, err := os.OpenFile(filepath.Clean(filePath), os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
 		if err != nil {
 			return fmt.Errorf("failed to open a file descriptor: %w", err)
@@ -80,15 +82,15 @@ func usageViewCsv(ctx *cli.Context) error {
 	return nil
 }
 
-func buildQueryParams(ctx *cli.Context) map[string]string {
+func buildQueryParams(cmd *cli.Command) map[string]string {
 	params := make(map[string]string)
 
-	params["since"] = ctx.String(flagUsageViewCSVSince.Name)
-	params["until"] = ctx.String(flagUsageViewCSVUntil.Name)
-	params["aspect"] = ctx.String(flagUsageViewCSVAspect.Name)
+	params["since"] = cmd.String(flagUsageViewCSVSince.Name)
+	params["until"] = cmd.String(flagUsageViewCSVUntil.Name)
+	params["aspect"] = cmd.String(flagUsageViewCSVAspect.Name)
 
-	if ctx.String(flagUsageViewCSVAspect.Name) == "run-minutes" {
-		params["groupBy"] = ctx.String(flagUsageViewCSVGroupBy.Name)
+	if cmd.String(flagUsageViewCSVAspect.Name) == "run-minutes" {
+		params["groupBy"] = cmd.String(flagUsageViewCSVGroupBy.Name)
 	}
 
 	return params

@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 func runCancel() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		stackID, err := getStackID(cliCtx)
+	return func(ctx context.Context, cmd *cli.Command) error {
+		stackID, err := getStackID(ctx, cmd)
 		if err != nil {
 			return err
 		}
@@ -24,10 +25,8 @@ func runCancel() cli.ActionFunc {
 
 		variables := map[string]interface{}{
 			"stack": graphql.ID(stackID),
-			"run":   graphql.ID(cliCtx.String(flagRequiredRun.Name)),
+			"run":   graphql.ID(cmd.String(flagRequiredRun.Name)),
 		}
-
-		ctx := context.Background()
 
 		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 			return err
@@ -41,7 +40,7 @@ func runCancel() cli.ActionFunc {
 			mutation.RunDiscard.ID,
 		))
 
-		if !cliCtx.Bool(flagTail.Name) {
+		if !cmd.Bool(flagTail.Name) {
 			return nil
 		}
 

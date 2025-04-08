@@ -1,12 +1,14 @@
 package profile
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
-	"github.com/urfave/cli/v2"
 )
 
 func exportTokenCommand() *cli.Command {
@@ -15,18 +17,18 @@ func exportTokenCommand() *cli.Command {
 		Usage: "Prints the current token to stdout. In order not to leak, " +
 			"we suggest piping it to your OS pastebin",
 		ArgsUsage: cmd.EmptyArgsUsage,
-		Action: func(ctx *cli.Context) error {
+		Action: func(ctx context.Context, cmd *cli.Command) error {
 			currentProfile := manager.Current()
 			if currentProfile == nil {
 				return errors.New("no account is currently selected")
 			}
 
-			session, err := currentProfile.Credentials.Session(ctx.Context, http.DefaultClient)
+			session, err := currentProfile.Credentials.Session(ctx, http.DefaultClient)
 			if err != nil {
 				return fmt.Errorf("could not get session: %w", err)
 			}
 
-			token, err := session.BearerToken(ctx.Context)
+			token, err := session.BearerToken(ctx)
 			if err != nil {
 				return fmt.Errorf("could not get bearer token: %w", err)
 			}

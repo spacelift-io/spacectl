@@ -1,15 +1,17 @@
 package whoami
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/client/session"
-	"github.com/spacelift-io/spacectl/internal/cmd"
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 // Command returns the logged-in user's information.
@@ -17,7 +19,7 @@ func Command() *cli.Command {
 	return &cli.Command{
 		Name:  "whoami",
 		Usage: "Print out logged-in user's information",
-		Action: func(cliCtx *cli.Context) error {
+		Action: func(ctx context.Context, cmd *cli.Command) error {
 			manager, err := session.UserProfileManager()
 			if err != nil {
 				return fmt.Errorf("could not access profile manager: %w", err)
@@ -33,7 +35,7 @@ func Command() *cli.Command {
 					Name string `graphql:"name" json:"name"`
 				}
 			}
-			if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{}); err != nil {
+			if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
 				return errors.Wrap(err, "failed to query user information")
 			}
 			if query.Viewer == nil {
@@ -53,6 +55,6 @@ func Command() *cli.Command {
 			})
 		},
 		Before:    authenticated.Ensure,
-		ArgsUsage: cmd.EmptyArgsUsage,
+		ArgsUsage: internalCmd.EmptyArgsUsage,
 	}
 }

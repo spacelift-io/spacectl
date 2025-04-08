@@ -1,35 +1,37 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
-	"github.com/urfave/cli/v2"
 )
 
 func addGPGKey() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		keyGenerate := cliCtx.Bool(flagKeyGenerate.Name)
-		keyImport := cliCtx.Bool(flagKeyImport.Name)
+	return func(ctx context.Context, cmd *cli.Command) error {
+		keyGenerate := cmd.Bool(flagKeyGenerate.Name)
+		keyImport := cmd.Bool(flagKeyImport.Name)
 
 		if keyGenerate == keyImport {
 			return fmt.Errorf("either --%s or --%s must be specified", flagKeyGenerate.Name, flagKeyImport.Name)
 		}
 
-		keyName := cliCtx.String(flagKeyName.Name)
-		keyPath := cliCtx.String(flagKeyPath.Name)
+		keyName := cmd.String(flagKeyName.Name)
+		keyPath := cmd.String(flagKeyPath.Name)
 
 		var asciiArmor string
 		var err error
 
 		if keyGenerate {
-			asciiArmor, err = generateGPGKey(cliCtx, keyName, keyPath)
+			asciiArmor, err = generateGPGKey(cmd, keyName, keyPath)
 		} else {
-			asciiArmor, err = importGPGKey(cliCtx, keyPath)
+			asciiArmor, err = importGPGKey(cmd, keyPath)
 		}
 
 		if err != nil {
@@ -45,7 +47,7 @@ func addGPGKey() cli.ActionFunc {
 			"asciiArmor": graphql.String(asciiArmor),
 		}
 
-		if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 			return err
 		}
 
@@ -55,8 +57,8 @@ func addGPGKey() cli.ActionFunc {
 	}
 }
 
-func generateGPGKey(cliCtx *cli.Context, keyName, keyPath string) (string, error) {
-	email := cliCtx.String(flagKeyEmail.Name)
+func generateGPGKey(cmd *cli.Command, keyName, keyPath string) (string, error) {
+	email := cmd.String(flagKeyEmail.Name)
 	if email == "" {
 		return "", fmt.Errorf("--%s must be specified", flagKeyEmail.Name)
 	}
@@ -80,7 +82,7 @@ func generateGPGKey(cliCtx *cli.Context, keyName, keyPath string) (string, error
 	return key.GetArmoredPublicKey()
 }
 
-func importGPGKey(_ *cli.Context, keyPath string) (string, error) {
+func importGPGKey(_ *cli.Command, keyPath string) (string, error) {
 	// #nosec G304
 	bytes, err := os.ReadFile(keyPath)
 	if err != nil {

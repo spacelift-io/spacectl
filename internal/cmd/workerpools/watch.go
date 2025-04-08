@@ -1,24 +1,26 @@
 package workerpools
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/manifoldco/promptui"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/draw"
 	"github.com/spacelift-io/spacectl/internal/cmd/draw/data"
-	"github.com/urfave/cli/v2"
 )
 
-func watch(cliCtx *cli.Context) error {
-	got, err := findAndSelectWorkerPool(cliCtx)
+func watch(ctx context.Context, cmd *cli.Command) error {
+	got, err := findAndSelectWorkerPool(ctx)
 	if err != nil {
 		return err
 	}
 
 	wp := &data.WorkerPool{WokerPoolID: got}
-	t, err := draw.NewTable(cliCtx.Context, wp)
+	t, err := draw.NewTable(ctx, wp)
 	if err != nil {
 		return err
 	}
@@ -30,9 +32,9 @@ func watch(cliCtx *cli.Context) error {
 //
 // Returns the ID of the selected worker pool.
 // If public worker pool is selected and empty string is returned.
-func findAndSelectWorkerPool(cliCtx *cli.Context) (string, error) {
+func findAndSelectWorkerPool(ctx context.Context) (string, error) {
 	var query listPoolsQuery
-	if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{}); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
 		return "", err
 	}
 

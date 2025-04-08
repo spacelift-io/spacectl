@@ -1,16 +1,18 @@
 package provider
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
-	"github.com/urfave/cli/v2"
 )
 
 func revokeGPGKey() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		keyID := cliCtx.String(flagKeyID.Name)
+	return func(ctx context.Context, cmd *cli.Command) error {
+		keyID := cmd.String(flagKeyID.Name)
 
 		var mutation struct {
 			RevokeGPGKey internal.GPGKey `graphql:"gpgKeyRevoke(id: $id)"`
@@ -18,7 +20,7 @@ func revokeGPGKey() cli.ActionFunc {
 
 		variables := map[string]any{"id": keyID}
 
-		if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 			return err
 		}
 

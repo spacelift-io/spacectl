@@ -8,9 +8,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
-	"github.com/spacelift-io/spacectl/internal/cmd"
+	"github.com/urfave/cli/v3"
+
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 type PolicyType string
@@ -33,15 +34,15 @@ type policy struct {
 
 type showCommand struct{}
 
-func (c *showCommand) show(cliCtx *cli.Context) error {
-	policyID := cliCtx.String(flagRequiredPolicyID.Name)
+func (c *showCommand) show(ctx context.Context, cmd *cli.Command) error {
+	policyID := cmd.String(flagRequiredPolicyID.Name)
 
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	outputFormat, err := internalCmd.GetOutputFormat(cmd)
 	if err != nil {
 		return err
 	}
 
-	b, found, err := getPolicyByID(cliCtx.Context, policyID)
+	b, found, err := getPolicyByID(ctx, policyID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to query for policy ID %q", policyID)
 	}
@@ -51,10 +52,10 @@ func (c *showCommand) show(cliCtx *cli.Context) error {
 	}
 
 	switch outputFormat {
-	case cmd.OutputFormatTable:
+	case internalCmd.OutputFormatTable:
 		return c.showPolicyTable(b)
-	case cmd.OutputFormatJSON:
-		return cmd.OutputJSON(b)
+	case internalCmd.OutputFormatJSON:
+		return internalCmd.OutputJSON(b)
 	}
 
 	return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -92,7 +93,7 @@ func (c *showCommand) showPolicyTable(input policy) error {
 		{"Labels", strings.Join(input.Labels, ", ")},
 	}
 
-	if err := cmd.OutputTable(tableData, false); err != nil {
+	if err := internalCmd.OutputTable(tableData, false); err != nil {
 		return err
 	}
 

@@ -8,11 +8,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
-	"github.com/spacelift-io/spacectl/internal/cmd"
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 var defaultOrder = structs.QueryOrder{
@@ -21,35 +22,37 @@ var defaultOrder = structs.QueryOrder{
 }
 
 func listAuditTrails() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	return func(ctx context.Context, cmd *cli.Command) error {
+		outputFormat, err := internalCmd.GetOutputFormat(cmd)
 		if err != nil {
 			return err
 		}
 
 		var limit *uint
-		if cliCtx.IsSet(cmd.FlagLimit.Name) {
-			if cliCtx.Uint(cmd.FlagLimit.Name) >= math.MaxInt32 {
+		if cmd.IsSet(internalCmd.FlagLimit.Name) {
+			if cmd.Uint(internalCmd.FlagLimit.Name) >= math.MaxInt32 {
 				return fmt.Errorf("limit must be less than %d", math.MaxInt32)
 			}
 
-			limit = internal.Ptr(cliCtx.Uint(cmd.FlagLimit.Name))
+			limit = internal.Ptr(uint(cmd.Uint(internalCmd.FlagLimit.Name)))
 		}
 
 		var search *string
-		if cliCtx.IsSet(cmd.FlagSearch.Name) {
-			if cliCtx.String(cmd.FlagSearch.Name) == "" {
+		if cmd.IsSet(internalCmd.FlagSearch.Name) {
+			if cmd.String(internalCmd.FlagSearch.Name) == "" {
 				return fmt.Errorf("search must be non-empty")
 			}
 
-			search = internal.Ptr(cliCtx.String(cmd.FlagSearch.Name))
+			search = internal.Ptr(cmd.String(internalCmd.FlagSearch.Name))
 		}
 
 		switch outputFormat {
-		case cmd.OutputFormatTable:
-			return listAuditTrailEntriesTable(cliCtx, search, limit)
-		case cmd.OutputFormatJSON:
-			return listAuditTrailEntriesJSON(cliCtx, search, limit)
+		case internalCmd.OutputFormatTable:
+			err := listAuditTrailEntriesTable(ctx, search, limit)
+			return err
+		case internalCmd.OutputFormatJSON:
+			err := listAuditTrailEntriesJSON(ctx, search, limit)
+			return err
 		}
 
 		return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -57,7 +60,7 @@ func listAuditTrails() cli.ActionFunc {
 }
 
 func listAuditTrailEntriesTable(
-	ctx *cli.Context,
+	ctx context.Context,
 	search *string,
 	limit *uint,
 ) error {
@@ -77,7 +80,7 @@ func listAuditTrailEntriesTable(
 		OrderBy:        &defaultOrder,
 	}
 
-	entries, err := searchAllAuditTrailEntries(ctx.Context, input)
+	entries, err := searchAllAuditTrailEntries(ctx, input)
 	if err != nil {
 		return err
 	}
@@ -92,17 +95,17 @@ func listAuditTrailEntriesTable(
 			formatAuditTrailResource(&b.AffectedResource),
 			formatAuditTrailResource(b.RelatedResource),
 			b.Actor.Username,
-			cmd.HumanizeUnixSeconds(b.CreatedAt),
+			internalCmd.HumanizeUnixSeconds(b.CreatedAt),
 		}
 
 		tableData = append(tableData, row)
 	}
 
-	return cmd.OutputTable(tableData, true)
+	return internalCmd.OutputTable(tableData, true)
 }
 
 func listAuditTrailEntriesJSON(
-	ctx *cli.Context,
+	ctx context.Context,
 	search *string,
 	limit *uint,
 ) error {
@@ -117,7 +120,7 @@ func listAuditTrailEntriesJSON(
 		fullTextSearch = graphql.NewString(graphql.String(*search))
 	}
 
-	auditTrailEntries, err := searchAllAuditTrailEntries(ctx.Context, structs.SearchInput{
+	auditTrailEntries, err := searchAllAuditTrailEntries(ctx, structs.SearchInput{
 		First:          first,
 		FullTextSearch: fullTextSearch,
 		OrderBy:        &defaultOrder,
@@ -126,7 +129,7 @@ func listAuditTrailEntriesJSON(
 		return err
 	}
 
-	return cmd.OutputJSON(auditTrailEntries)
+	return internalCmd.OutputJSON(auditTrailEntries)
 }
 
 func searchAllAuditTrailEntries(ctx context.Context, input structs.SearchInput) ([]auditTrailEntryNode, error) {
@@ -205,7 +208,7 @@ func formatAuditTrailResource(resource *auditTrailResource) string {
 		return ""
 	}
 
-	formatted := cmd.HumanizeAuditTrailResourceType(resource.ResourceType)
+	formatted := internalCmd.HumanizeAuditTrailResourceType(resource.ResourceType)
 
 	if resource.ResourceID != nil {
 		formatted += " - " + *resource.ResourceID

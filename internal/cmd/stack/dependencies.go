@@ -1,59 +1,61 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/spacelift-io/spacectl/internal/cmd"
+	"github.com/urfave/cli/v3"
+
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
-func dependenciesOn(cliCtx *cli.Context) error {
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+func dependenciesOn(ctx context.Context, cmd *cli.Command) error {
+	outputFormat, err := internalCmd.GetOutputFormat(cmd)
 	if err != nil {
 		return err
 	}
 
-	got, err := dependenciesListOneStack(cliCtx)
-	if err != nil {
-		return err
-	}
-
-	switch outputFormat {
-	case cmd.OutputFormatTable:
-		return cmd.OutputTable(got.dependsOnTableData(), true)
-	case cmd.OutputFormatJSON:
-		return cmd.OutputJSON(got.DependsOn)
-	}
-
-	return fmt.Errorf("unknown output format: %v", outputFormat)
-}
-
-func dependenciesOff(cliCtx *cli.Context) error {
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
-	if err != nil {
-		return err
-	}
-
-	got, err := dependenciesListOneStack(cliCtx)
+	got, err := dependenciesListOneStack(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
 	switch outputFormat {
-	case cmd.OutputFormatTable:
-		return cmd.OutputTable(got.dependedOnByTableData(), true)
-	case cmd.OutputFormatJSON:
-		return cmd.OutputJSON(got.IsDependedOnBy)
+	case internalCmd.OutputFormatTable:
+		return internalCmd.OutputTable(got.dependsOnTableData(), true)
+	case internalCmd.OutputFormatJSON:
+		return internalCmd.OutputJSON(got.DependsOn)
 	}
 
 	return fmt.Errorf("unknown output format: %v", outputFormat)
 }
 
-func dependenciesListOneStack(cliCtx *cli.Context) (*stackWithDependencies, error) {
-	id, err := getStackID(cliCtx)
+func dependenciesOff(ctx context.Context, cmd *cli.Command) error {
+	outputFormat, err := internalCmd.GetOutputFormat(cmd)
+	if err != nil {
+		return err
+	}
+
+	got, err := dependenciesListOneStack(ctx, cmd)
+	if err != nil {
+		return err
+	}
+
+	switch outputFormat {
+	case internalCmd.OutputFormatTable:
+		return internalCmd.OutputTable(got.dependedOnByTableData(), true)
+	case internalCmd.OutputFormatJSON:
+		return internalCmd.OutputJSON(got.IsDependedOnBy)
+	}
+
+	return fmt.Errorf("unknown output format: %v", outputFormat)
+}
+
+func dependenciesListOneStack(ctx context.Context, cmd *cli.Command) (*stackWithDependencies, error) {
+	id, err := getStackID(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +65,7 @@ func dependenciesListOneStack(cliCtx *cli.Context) (*stackWithDependencies, erro
 	}
 
 	variables := map[string]any{"id": graphql.ID(id)}
-	if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 		return nil, errors.Wrap(err, "failed to query one stack")
 	}
 

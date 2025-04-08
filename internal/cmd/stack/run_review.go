@@ -5,9 +5,10 @@ import (
 	"fmt"
 
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/client/enums"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 type runReviewMutation struct {
@@ -22,34 +23,34 @@ var flagRunReviewNote = &cli.StringFlag{
 	Required: false,
 }
 
-func runApprove(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func runApprove(ctx context.Context, cmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
-	runID := cliCtx.String(flagRequiredRun.Name)
-	note := cliCtx.String(flagRunReviewNote.Name)
+	runID := cmd.String(flagRequiredRun.Name)
+	note := cmd.String(flagRunReviewNote.Name)
 
-	if nArgs := cliCtx.NArg(); nArgs != 0 {
+	if nArgs := cmd.NArg(); nArgs != 0 {
 		return fmt.Errorf("expected zero arguments but got %d", nArgs)
 	}
 
-	return addRunReview(cliCtx.Context, stackID, runID, note, enums.RunReviewDecisionApprove)
+	return addRunReview(ctx, stackID, runID, note, enums.RunReviewDecisionApprove)
 }
 
-func runReject(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func runReject(ctx context.Context, cmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
-	runID := cliCtx.String(flagRequiredRun.Name)
-	note := cliCtx.String(flagRunReviewNote.Name)
+	runID := cmd.String(flagRequiredRun.Name)
+	note := cmd.String(flagRunReviewNote.Name)
 
-	if nArgs := cliCtx.NArg(); nArgs != 0 {
+	if nArgs := cmd.NArg(); nArgs != 0 {
 		return fmt.Errorf("expected zero arguments but got %d", nArgs)
 	}
 
-	return addRunReview(cliCtx.Context, stackID, runID, note, enums.RunReviewDecisionReject)
+	return addRunReview(ctx, stackID, runID, note, enums.RunReviewDecisionReject)
 }
 
 func addRunReview(ctx context.Context, stackID, runID, note string, decision enums.RunReviewDecision) error {

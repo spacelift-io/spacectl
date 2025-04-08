@@ -9,9 +9,10 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -27,8 +28,8 @@ const (
 // 1. Check the --id flag, if set, use that value.
 // 2. Check the --run flag, if set, try to get the stack associated with the run.
 // 2. Check the current directory to determine repository and subdirectory and search for a stack.
-func getStackID(cliCtx *cli.Context) (string, error) {
-	stack, err := getStack[stackID](cliCtx)
+func getStackID(ctx context.Context, cmd *cli.Command) (string, error) {
+	stack, err := getStack[stackID](ctx, cmd)
 	if err != nil {
 		return "", err
 	}
@@ -36,10 +37,10 @@ func getStackID(cliCtx *cli.Context) (string, error) {
 	return stack.ID, nil
 }
 
-func getStack[T hasIDAndName](cliCtx *cli.Context) (*T, error) {
-	if cliCtx.IsSet(flagStackID.Name) {
-		stackID := cliCtx.String(flagStackID.Name)
-		stack, err := stackGetByID[T](cliCtx.Context, stackID)
+func getStack[T hasIDAndName](ctx context.Context, cmd *cli.Command) (*T, error) {
+	if cmd.IsSet(flagStackID.Name) {
+		stackID := cmd.String(flagStackID.Name)
+		stack, err := stackGetByID[T](ctx, stackID)
 		if errors.Is(err, errNoStackFound) {
 			return nil, fmt.Errorf("stack with id %q could not be found. Please check that the stack exists and that you have access to it. To list available stacks run: spacectl stack list", stackID)
 		}
@@ -48,9 +49,9 @@ func getStack[T hasIDAndName](cliCtx *cli.Context) (*T, error) {
 		}
 
 		return stack, nil
-	} else if cliCtx.IsSet(flagRun.Name) {
-		runID := cliCtx.String(flagRun.Name)
-		stack, err := stackGetByRunID[T](cliCtx.Context, runID)
+	} else if cmd.IsSet(flagRun.Name) {
+		runID := cmd.String(flagRun.Name)
+		stack, err := stackGetByRunID[T](ctx, runID)
 		if errors.Is(err, errNoStackFound) {
 			return nil, fmt.Errorf("run with id %q was not found. Please check that the run exists and that you have access to it. To list available stacks run: spacectl stack run list", runID)
 		}
@@ -73,7 +74,7 @@ func getStack[T hasIDAndName](cliCtx *cli.Context) (*T, error) {
 
 	skip := os.Getenv(envPromptSkipKey) == "true"
 
-	got, err := findAndSelectStack[T](cliCtx.Context, &stackSearchParams{
+	got, err := findAndSelectStack[T](ctx, &stackSearchParams{
 		count:          50,
 		projectRoot:    &subdir,
 		repositoryName: name,

@@ -1,29 +1,31 @@
 package policy
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/spacelift-io/spacectl/internal/cmd"
+	"github.com/urfave/cli/v3"
+
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 type simulateCommand struct{}
 
-func (c *simulateCommand) simulate(cliCtx *cli.Context) error {
-	policyID := cliCtx.String(flagRequiredPolicyID.Name)
-	input := cliCtx.String(flagSimulationInput.Name)
+func (c *simulateCommand) simulate(ctx context.Context, cmd *cli.Command) error {
+	policyID := cmd.String(flagRequiredPolicyID.Name)
+	input := cmd.String(flagSimulationInput.Name)
 
 	parsedInput, err := parseInput(input)
 	if err != nil {
 		return err
 	}
 
-	b, found, err := getPolicyByID(cliCtx.Context, policyID)
+	b, found, err := getPolicyByID(ctx, policyID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to query for policy ID %q", policyID)
 	}
@@ -42,11 +44,11 @@ func (c *simulateCommand) simulate(cliCtx *cli.Context) error {
 		"type":  b.Type,
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 
-	return cmd.OutputJSON(mutation.PolicySimulate)
+	return internalCmd.OutputJSON(mutation.PolicySimulate)
 }
 
 func parseInput(input string) (string, error) {

@@ -1,9 +1,10 @@
 package provider
 
 import (
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 // Command encapsulates the provider command subtree.
@@ -11,7 +12,7 @@ func Command() *cli.Command {
 	return &cli.Command{
 		Name:  "provider",
 		Usage: "Manage a Terraform provider",
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Category: "GPG key management",
 				Name:     "add-gpg-key",

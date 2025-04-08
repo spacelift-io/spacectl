@@ -1,17 +1,19 @@
 package module
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
-func createVersion(cliCtx *cli.Context) error {
-	moduleID := cliCtx.String(flagModuleID.Name)
-	forcedCommitSHA := cliCtx.String(flagCommitSHA.Name)
-	forcedVersion := cliCtx.String(flagVersion.Name)
+func createVersion(ctx context.Context, cmd *cli.Command) error {
+	moduleID := cmd.String(flagModuleID.Name)
+	forcedCommitSHA := cmd.String(flagCommitSHA.Name)
+	forcedVersion := cmd.String(flagVersion.Name)
 
 	var mutation struct {
 		CreateModuleVersion struct {
@@ -35,7 +37,7 @@ func createVersion(cliCtx *cli.Context) error {
 		"version":   version,
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 

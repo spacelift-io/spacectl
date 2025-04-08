@@ -8,15 +8,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v3"
-
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
+	"github.com/urfave/cli/v3"
 )
 
 func createVersion() cli.ActionFunc {
-	return func(ctx context.Context, cmd *cli.Command) error {
+	return func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 		// Assuming that spacectl is ran from the root of the repository,
 		// containing the release artifacts in the "dist" directory.
 		dir := cmd.String(flagGoReleaserDir.Name)
@@ -32,7 +31,7 @@ func createVersion() cli.ActionFunc {
 		fmt.Println("Retrieving release data from ", dir)
 		versionData, err := internal.BuildGoReleaserVersionData(dir)
 		if err != nil {
-			return errors.Wrap(err, "invalid release data")
+			return ctx, errors.Wrap(err, "invalid release data")
 		}
 
 		fmt.Println("Creating version ", versionData.Metadata.Version)
@@ -44,7 +43,7 @@ func createVersion() cli.ActionFunc {
 
 		checksumsFileChecksum, err := checksumsFile.Checksum(dir)
 		if err != nil {
-			return errors.Wrap(err, "could not calculate checksum of checksums file")
+			return ctx, errors.Wrap(err, "could not calculate checksum of checksums file")
 		}
 
 		signatureFile, err := versionData.Artifacts.SignatureFile()
@@ -54,7 +53,7 @@ func createVersion() cli.ActionFunc {
 
 		signatureFileChecksum, err := signatureFile.Checksum(dir)
 		if err != nil {
-			return errors.Wrap(err, "could not calculate checksum of signature file")
+			return ctx, errors.Wrap(err, "could not calculate checksum of signature file")
 		}
 
 		var createMutation struct {
@@ -87,12 +86,12 @@ func createVersion() cli.ActionFunc {
 
 		fmt.Println("Uploading the checksums file")
 		if err := checksumsFile.Upload(ctx, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsUploadURL, createMutation.CreateTerraformProviderVersion.SHA256SumsUploadHeaders.HTTPHeaders()); err != nil {
-			return errors.Wrap(err, "could not upload checksums file")
+			return ctx, errors.Wrap(err, "could not upload checksums file")
 		}
 
 		fmt.Println("Uploading the signatures file")
 		if err := signatureFile.Upload(ctx, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadURL, createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadHeaders.HTTPHeaders()); err != nil {
-			return errors.Wrap(err, "could not upload signature file")
+			return ctx, errors.Wrap(err, "could not upload signature file")
 		}
 
 		versionID := createMutation.CreateTerraformProviderVersion.Version.ID
@@ -100,7 +99,7 @@ func createVersion() cli.ActionFunc {
 		archives := versionData.Artifacts.Archives()
 		for i := range archives {
 			if err := archives[i].ValidateFilename(providerType, versionData.Metadata.Version); err != nil {
-				return errors.Wrapf(err, "invalid artifact filename: %s", archives[i].Name)
+				return ctx, errors.Wrapf(err, "invalid artifact filename: %s", archives[i].Name)
 			}
 
 			if useRegisterPlatformV2 {

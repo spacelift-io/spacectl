@@ -1,16 +1,20 @@
 package actions
 
-import "github.com/urfave/cli/v2"
+import (
+	"context"
+
+	"github.com/urfave/cli/v3"
+)
 
 // Multi combines multiple CLI actions.
 func Multi(steps ...cli.BeforeFunc) cli.BeforeFunc {
-	return func(ctx *cli.Context) error {
+	return func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 		for _, step := range steps {
-			if err := step(ctx); err != nil {
-				return err
+			if ctx, err := step(ctx, cmd); err != nil {
+				return ctx, err
 			}
 		}
 
-		return nil
+		return ctx, nil
 	}
 }
