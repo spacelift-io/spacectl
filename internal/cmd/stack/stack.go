@@ -425,6 +425,7 @@ func Command() *cli.Command {
 				Flags: []cli.Flag{
 					flagStackID,
 					flagDestroyResources,
+					flagSkipConfirmation,
 				},
 				Action:    deleteStack(),
 				Before:    authenticated.Ensure,

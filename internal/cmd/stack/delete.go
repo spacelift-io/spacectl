@@ -1,8 +1,11 @@
 package stack
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/shurcooL/graphql"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -15,11 +18,32 @@ var flagDestroyResources = &cli.BoolFlag{
 	Value: false,
 }
 
+var flagSkipConfirmation = &cli.BoolFlag{
+	Name:  "skip-confirmation",
+	Usage: "Whether to skip confirmation prompt before deleting the stack",
+	Value: false,
+}
+
 func deleteStack() cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
 		stackID, err := getStackID(cliCtx)
 		if err != nil {
 			return err
+		}
+
+		if !cliCtx.Bool(flagSkipConfirmation.Name) {
+			fmt.Print("Are you sure you want to delete this stack? (y/n): ")
+
+			reader := bufio.NewReader(os.Stdin)
+			response, err := reader.ReadString('\n')
+			if err != nil {
+				return err
+			}
+
+			if strings.TrimSpace(response) != "y" {
+				fmt.Println("Stack deletion aborted.")
+				return nil
+			}
 		}
 
 		destroyResources := cliCtx.Bool(flagDestroyResources.Name)
