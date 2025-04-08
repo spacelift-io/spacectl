@@ -8,9 +8,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 type blueprintInput struct {
@@ -42,15 +44,15 @@ type blueprint struct {
 
 type showCommand struct{}
 
-func (c *showCommand) show(cliCtx *cli.Context) error {
-	blueprintID := cliCtx.String(flagRequiredBlueprintID.Name)
+func (c *showCommand) show(ctx context.Context, cmd *cli.Command) error {
+	blueprintID := cmd.String(flagRequiredBlueprintID.Name)
 
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	outputFormat, err := internalCmd.GetOutputFormat(cmd)
 	if err != nil {
 		return err
 	}
 
-	b, found, err := getBlueprintByID(cliCtx.Context, blueprintID)
+	b, found, err := getBlueprintByID(ctx, blueprintID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to query for blueprint ID %q", blueprintID)
 	}
@@ -60,10 +62,10 @@ func (c *showCommand) show(cliCtx *cli.Context) error {
 	}
 
 	switch outputFormat {
-	case cmd.OutputFormatTable:
+	case internalCmd.OutputFormatTable:
 		return c.showBlueprintTable(b)
-	case cmd.OutputFormatJSON:
-		return cmd.OutputJSON(b)
+	case internalCmd.OutputFormatJSON:
+		return internalCmd.OutputJSON(b)
 	}
 
 	return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -134,7 +136,7 @@ func (c *showCommand) outputInputs(b blueprint) error {
 		})
 	}
 
-	return cmd.OutputTable(tableData, true)
+	return internalCmd.OutputTable(tableData, true)
 }
 
 func (c *showCommand) outputSpace(b blueprint) error {
@@ -145,7 +147,7 @@ func (c *showCommand) outputSpace(b blueprint) error {
 		{"Access Level", b.Space.AccessLevel},
 	}
 
-	return cmd.OutputTable(tableData, false)
+	return internalCmd.OutputTable(tableData, false)
 }
 
 func (c *showCommand) outputRawTemplate(b blueprint) {

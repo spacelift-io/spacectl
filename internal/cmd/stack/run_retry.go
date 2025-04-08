@@ -1,19 +1,21 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
-func runRetry(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func runRetry(ctx context.Context, cmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
-	runID := cliCtx.String(flagRequiredRun.Name)
+	runID := cmd.String(flagRequiredRun.Name)
 
 	var mutation struct {
 		RunRetry struct {
@@ -26,7 +28,7 @@ func runRetry(cliCtx *cli.Context) error {
 		"run":   graphql.ID(runID),
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 
@@ -37,11 +39,11 @@ func runRetry(cliCtx *cli.Context) error {
 		mutation.RunRetry.ID,
 	))
 
-	if !cliCtx.Bool(flagTail.Name) {
+	if !cmd.Bool(flagTail.Name) {
 		return nil
 	}
 
-	terminal, err := runLogsWithAction(cliCtx.Context, stackID, mutation.RunRetry.ID, nil)
+	terminal, err := runLogsWithAction(ctx, stackID, mutation.RunRetry.ID, nil)
 	if err != nil {
 		return err
 	}

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
-	"time"
+
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/audittrail"
 	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
@@ -17,23 +19,16 @@ import (
 	versioncmd "github.com/spacelift-io/spacectl/internal/cmd/version"
 	"github.com/spacelift-io/spacectl/internal/cmd/whoami"
 	"github.com/spacelift-io/spacectl/internal/cmd/workerpools"
-	"github.com/urfave/cli/v2"
 )
 
 var version = "dev"
-var date = "2006-01-02T15:04:05Z"
 
 func main() {
-	compileTime, err := time.Parse(time.RFC3339, date)
-	if err != nil {
-		log.Fatalf("Could not parse compilation date: %v", err)
-	}
-	app := &cli.App{
-		Name:                 "spacectl",
-		Version:              version,
-		Compiled:             compileTime,
-		Usage:                "Programmatic access to Spacelift GraphQL API.",
-		EnableBashCompletion: true,
+	cmd := &cli.Command{
+		Name:                  "spacectl",
+		Version:               version,
+		Usage:                 "Programmatic access to Spacelift GraphQL API.",
+		EnableShellCompletion: true,
 		Commands: []*cli.Command{
 			module.Command(),
 			profile.Command(),
@@ -50,7 +45,7 @@ func main() {
 		},
 	}
 
-	if err := app.Run(os.Args); err != nil {
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
 }

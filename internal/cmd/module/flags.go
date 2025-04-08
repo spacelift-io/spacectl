@@ -1,6 +1,6 @@
 package module
 
-import "github.com/urfave/cli/v2"
+import "github.com/urfave/cli/v3"
 
 var flagModuleID = &cli.StringFlag{
 	Name:     "id",

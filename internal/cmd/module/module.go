@@ -1,9 +1,11 @@
 package module
 
 import (
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 // Command encapsulates the module command subtree.
@@ -11,7 +13,7 @@ func Command() *cli.Command {
 	return &cli.Command{
 		Name:  "module",
 		Usage: "Manage a Spacelift module",
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Category: "Module management",
 				Name:     "create-version",
@@ -35,7 +37,7 @@ func Command() *cli.Command {
 				},
 				Action:    deleteVersion,
 				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
+				ArgsUsage: internalCmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Module management",
@@ -51,20 +53,20 @@ func Command() *cli.Command {
 				},
 				Action:    localPreview(),
 				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
+				ArgsUsage: internalCmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Module management",
 				Name:     "list",
 				Usage:    "List all modules available and their current version",
 				Flags: []cli.Flag{
-					cmd.FlagOutputFormat,
-					cmd.FlagLimit,
-					cmd.FlagSearch,
+					internalCmd.FlagOutputFormat,
+					internalCmd.FlagLimit,
+					internalCmd.FlagSearch,
 				},
 				Action:    listModules(),
 				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
+				ArgsUsage: internalCmd.EmptyArgsUsage,
 			},
 			{
 				Category: "Module management",
@@ -72,11 +74,11 @@ func Command() *cli.Command {
 				Usage:    "List 20 latest non failed versions for a module",
 				Flags: []cli.Flag{
 					flagModuleID,
-					cmd.FlagOutputFormat,
+					internalCmd.FlagOutputFormat,
 				},
 				Action:    listVersions(),
 				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
+				ArgsUsage: internalCmd.EmptyArgsUsage,
 			},
 		},
 	}

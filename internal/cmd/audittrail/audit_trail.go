@@ -1,16 +1,17 @@
 package audittrail
 
 import (
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 func Command() *cli.Command {
 	return &cli.Command{
 		Name:  "audit-trail",
 		Usage: "Manage a Spacelift audit trail entries",
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:  "list",
 				Usage: "List the audit trail entries you have access to",

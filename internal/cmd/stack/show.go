@@ -1,6 +1,7 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -8,9 +9,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 const (
@@ -115,13 +118,13 @@ type showStackQuery struct {
 
 type showStackCommand struct{}
 
-func (c *showStackCommand) showStack(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func (c *showStackCommand) showStack(ctx context.Context, cmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	outputFormat, err := internalCmd.GetOutputFormat(cmd)
 	if err != nil {
 		return err
 	}
@@ -131,7 +134,7 @@ func (c *showStackCommand) showStack(cliCtx *cli.Context) error {
 		"stackId": graphql.ID(stackID),
 	}
 
-	if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 		return errors.Wrapf(err, "failed to query for stack ID %q", stackID)
 	}
 
@@ -140,10 +143,10 @@ func (c *showStackCommand) showStack(cliCtx *cli.Context) error {
 	}
 
 	switch outputFormat {
-	case cmd.OutputFormatTable:
+	case internalCmd.OutputFormatTable:
 		return c.showStackTable(query)
-	case cmd.OutputFormatJSON:
-		return cmd.OutputJSON(query.Stack)
+	case internalCmd.OutputFormatJSON:
+		return internalCmd.OutputJSON(query.Stack)
 	}
 
 	return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -195,7 +198,7 @@ func (c *showStackCommand) outputVCSSettings(query showStackQuery) error {
 		{"Branch", query.Stack.Branch},
 	}
 
-	return cmd.OutputTable(tableData, false)
+	return internalCmd.OutputTable(tableData, false)
 }
 
 func (c *showStackCommand) outputBackendSettings(query showStackQuery) error {
@@ -215,7 +218,7 @@ func (c *showStackCommand) outputBackendSettings(query showStackQuery) error {
 		tableData = append(tableData, []string{"Managed state", fmt.Sprint(query.Stack.ManagesStateFile)})
 	}
 
-	return cmd.OutputTable(tableData, false)
+	return internalCmd.OutputTable(tableData, false)
 }
 
 func (c *showStackCommand) outputBehaviorSettings(query showStackQuery) error {
@@ -236,7 +239,7 @@ func (c *showStackCommand) outputBehaviorSettings(query showStackQuery) error {
 		{"Runner image", stringWithDefault(query.Stack.RunnerImage, "default")},
 	}
 
-	if err := cmd.OutputTable(tableData, false); err != nil {
+	if err := internalCmd.OutputTable(tableData, false); err != nil {
 		return err
 	}
 
@@ -304,7 +307,7 @@ func (c *showStackCommand) outputContexts(query showStackQuery) error {
 		})
 	}
 
-	return cmd.OutputTable(tableData, true)
+	return internalCmd.OutputTable(tableData, true)
 }
 
 func (c *showStackCommand) outputPolicies(query showStackQuery) error {
@@ -323,7 +326,7 @@ func (c *showStackCommand) outputPolicies(query showStackQuery) error {
 		})
 	}
 
-	return cmd.OutputTable(tableData, true)
+	return internalCmd.OutputTable(tableData, true)
 }
 
 func (c *showStackCommand) outputScripts(scripts []string, title string) error {
@@ -364,7 +367,7 @@ func (c *showStackCommand) outputModuleVersionUsage(query showStackQuery) error 
 		})
 	}
 
-	return cmd.OutputTable(tableData, true)
+	return internalCmd.OutputTable(tableData, true)
 }
 
 func (c *showStackCommand) humanizeVendor(vendorConfigType string) string {

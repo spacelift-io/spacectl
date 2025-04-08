@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )

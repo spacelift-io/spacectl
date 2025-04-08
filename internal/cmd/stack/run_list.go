@@ -7,28 +7,30 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
-func runList(cliCtx *cli.Context) error {
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+func runList(ctx context.Context, cmd *cli.Command) error {
+	outputFormat, err := internalCmd.GetOutputFormat(cmd)
 	if err != nil {
 		return err
 	}
 
-	stackID, err := getStackID(cliCtx)
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
-	maxResults := cliCtx.Int(flagMaxResults.Name)
+	maxResults := cmd.Int(flagMaxResults.Name)
 
 	switch outputFormat {
-	case cmd.OutputFormatTable:
-		return listRunsTable(cliCtx.Context, stackID, maxResults)
-	case cmd.OutputFormatJSON:
-		return listRunsJSON(cliCtx.Context, stackID, maxResults)
+	case internalCmd.OutputFormatTable:
+		return listRunsTable(ctx, stackID, int(maxResults))
+	case internalCmd.OutputFormatJSON:
+		return listRunsJSON(ctx, stackID, int(maxResults))
 	}
 
 	return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -97,7 +99,7 @@ func listRunsJSON(ctx context.Context, stackID string, maxResults int) error {
 		before = &query.Stack.Runs[len(query.Stack.Runs)-1].ID
 	}
 
-	return cmd.OutputJSON(results)
+	return internalCmd.OutputJSON(results)
 }
 
 type runsTableQuery struct {
@@ -184,5 +186,5 @@ func listRunsTable(ctx context.Context, stackID string, maxResults int) error {
 		})
 	}
 
-	return cmd.OutputTable(tableData, true)
+	return internalCmd.OutputTable(tableData, true)
 }

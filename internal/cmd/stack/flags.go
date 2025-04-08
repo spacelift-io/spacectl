@@ -1,6 +1,6 @@
 package stack
 
-import "github.com/urfave/cli/v2"
+import "github.com/urfave/cli/v3"
 
 // flagStackID is flag used for passing the ID for a stack.
 //

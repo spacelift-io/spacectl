@@ -6,12 +6,13 @@ import (
 	"fmt"
 
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
-func setCurrentCommit(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func setCurrentCommit(ctx context.Context, cmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
@@ -26,11 +27,9 @@ func setCurrentCommit(cliCtx *cli.Context) error {
 	}
 
 	variables := map[string]interface{}{
-		"sha":   graphql.String(cliCtx.String(flagRequiredCommitSHA.Name)),
+		"sha":   graphql.String(cmd.String(flagRequiredCommitSHA.Name)),
 		"stack": graphql.ID(stackID),
 	}
-
-	ctx := context.Background()
 
 	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return err

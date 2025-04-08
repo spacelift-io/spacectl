@@ -1,12 +1,14 @@
 package profile
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/client/session"
-	"github.com/spacelift-io/spacectl/internal/cmd"
-	"github.com/urfave/cli/v2"
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 )
 
 type profileListOutput struct {
@@ -21,12 +23,12 @@ func listCommand() *cli.Command {
 		Name:  "list",
 		Usage: "List all your Spacelift account profiles",
 		Flags: []cli.Flag{
-			cmd.FlagOutputFormat,
-			cmd.FlagNoColor,
+			internalCmd.FlagOutputFormat,
+			internalCmd.FlagNoColor,
 		},
-		ArgsUsage: cmd.EmptyArgsUsage,
-		Before:    cmd.HandleNoColor,
-		Action: func(ctx *cli.Context) error {
+		ArgsUsage: internalCmd.EmptyArgsUsage,
+		Before:    internalCmd.HandleNoColor,
+		Action: func(ctx context.Context, cmd *cli.Command) error {
 			profiles := manager.GetAll()
 
 			currentProfile := manager.Current()
@@ -36,14 +38,14 @@ func listCommand() *cli.Command {
 				return profiles[i].Alias < profiles[j].Alias
 			})
 
-			var outputFormat cmd.OutputFormat
+			var outputFormat internalCmd.OutputFormat
 			var err error
-			if outputFormat, err = cmd.GetOutputFormat(ctx); err != nil {
+			if outputFormat, err = internalCmd.GetOutputFormat(cmd); err != nil {
 				return err
 			}
 
 			switch outputFormat {
-			case cmd.OutputFormatTable:
+			case internalCmd.OutputFormatTable:
 				tableData := [][]string{{"Current", "Alias", "Endpoint", "Type"}}
 				for _, profile := range profiles {
 					tableData = append(tableData, []string{
@@ -54,9 +56,9 @@ func listCommand() *cli.Command {
 					})
 				}
 
-				return cmd.OutputTable(tableData, true)
+				return internalCmd.OutputTable(tableData, true)
 
-			case cmd.OutputFormatJSON:
+			case internalCmd.OutputFormatJSON:
 				var profileList []profileListOutput
 
 				for _, profile := range profiles {
@@ -68,7 +70,7 @@ func listCommand() *cli.Command {
 					})
 				}
 
-				return cmd.OutputJSON(&profileList)
+				return internalCmd.OutputJSON(&profileList)
 			}
 
 			return fmt.Errorf("unknown output format: %v", outputFormat)

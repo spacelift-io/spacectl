@@ -15,7 +15,7 @@ linters-settings:
     sections:
       - standard
       - default
-      - prefix(github.com/spacelift-io/backend)
+      - prefix(github.com/spacelift-io/spacectl)
   goconst:
     min-len: 2
     min-occurrences: 2
@@ -41,7 +41,7 @@ linters-settings:
   gofmt:
     simplify: true
   goimports:
-    local-prefixes: github.com/spacelift-io/backend
+    local-prefixes: github.com/spacelift-io/spacectl
   govet:
     enable:
       - nilness

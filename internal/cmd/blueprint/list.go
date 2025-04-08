@@ -8,35 +8,38 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
-	"github.com/spacelift-io/spacectl/internal/cmd"
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 func listBlueprints() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	return func(ctx context.Context, cmd *cli.Command) error {
+		outputFormat, err := internalCmd.GetOutputFormat(cmd)
 		if err != nil {
 			return err
 		}
 
 		var limit *uint
-		if cliCtx.IsSet(cmd.FlagLimit.Name) {
-			limit = internal.Ptr(cliCtx.Uint(cmd.FlagLimit.Name))
+		if cmd.IsSet(internalCmd.FlagLimit.Name) {
+			limit = internal.Ptr(uint(cmd.Uint(internalCmd.FlagLimit.Name)))
 		}
 
 		var search *string
-		if cliCtx.IsSet(cmd.FlagSearch.Name) {
-			search = internal.Ptr(cliCtx.String(cmd.FlagSearch.Name))
+		if cmd.IsSet(internalCmd.FlagSearch.Name) {
+			search = internal.Ptr(cmd.String(internalCmd.FlagSearch.Name))
 		}
 
 		switch outputFormat {
-		case cmd.OutputFormatTable:
-			return listBlueprintsTable(cliCtx, search, limit)
-		case cmd.OutputFormatJSON:
-			return listBlueprintsJSON(cliCtx, search, limit)
+		case internalCmd.OutputFormatTable:
+			err := listBlueprintsTable(ctx, cmd, search, limit)
+			return err
+		case internalCmd.OutputFormatJSON:
+			err := listBlueprintsJSON(ctx, search, limit)
+			return err
 		}
 
 		return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -44,7 +47,7 @@ func listBlueprints() cli.ActionFunc {
 }
 
 func listBlueprintsJSON(
-	ctx *cli.Context,
+	ctx context.Context,
 	search *string,
 	limit *uint,
 ) error {
@@ -58,7 +61,7 @@ func listBlueprintsJSON(
 		fullTextSearch = graphql.NewString(graphql.String(*search))
 	}
 
-	blueprints, err := searchAllBlueprints(ctx.Context, structs.SearchInput{
+	blueprints, err := searchAllBlueprints(ctx, structs.SearchInput{
 		First:          first,
 		FullTextSearch: fullTextSearch,
 	})
@@ -66,11 +69,12 @@ func listBlueprintsJSON(
 		return err
 	}
 
-	return cmd.OutputJSON(blueprints)
+	return internalCmd.OutputJSON(blueprints)
 }
 
 func listBlueprintsTable(
-	ctx *cli.Context,
+	ctx context.Context,
+	cmd *cli.Command,
 	search *string,
 	limit *uint,
 ) error {
@@ -93,13 +97,13 @@ func listBlueprintsTable(
 		},
 	}
 
-	blueprints, err := searchAllBlueprints(ctx.Context, input)
+	blueprints, err := searchAllBlueprints(ctx, input)
 	if err != nil {
 		return err
 	}
 
 	columns := []string{"Name", "ID", "Description", "State", "Space", "Updated At"}
-	if ctx.Bool(cmd.FlagShowLabels.Name) {
+	if cmd.Bool(internalCmd.FlagShowLabels.Name) {
 		columns = append(columns, "Labels")
 	}
 
@@ -109,18 +113,18 @@ func listBlueprintsTable(
 			b.Name,
 			b.ID,
 			b.Description,
-			cmd.HumanizeBlueprintState(b.State),
+			internalCmd.HumanizeBlueprintState(b.State),
 			b.Space.Name,
-			cmd.HumanizeUnixSeconds(b.UpdatedAt),
+			internalCmd.HumanizeUnixSeconds(b.UpdatedAt),
 		}
-		if ctx.Bool(cmd.FlagShowLabels.Name) {
+		if cmd.Bool(internalCmd.FlagShowLabels.Name) {
 			row = append(row, strings.Join(b.Labels, ", "))
 		}
 
 		tableData = append(tableData, row)
 	}
 
-	return cmd.OutputTable(tableData, true)
+	return internalCmd.OutputTable(tableData, true)
 }
 
 // searchAllBlueprints returns a list of stacks based on the provided search input.

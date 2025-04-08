@@ -1,6 +1,6 @@
 package workerpools
 
-import "github.com/urfave/cli/v2"
+import "github.com/urfave/cli/v3"
 
 var flagPoolIDNamed = &cli.StringFlag{
 	Name:     "pool-id",

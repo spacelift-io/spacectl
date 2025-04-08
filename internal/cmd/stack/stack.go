@@ -1,9 +1,10 @@
 package stack
 
 import (
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 // Command encapsulates the stack command subtree.
@@ -11,7 +12,7 @@ func Command() *cli.Command {
 	return &cli.Command{
 		Name:  "stack",
 		Usage: "Manage a Spacelift stack",
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Category: "Run management",
 				Name:     "confirm",
@@ -226,7 +227,7 @@ func Command() *cli.Command {
 			{
 				Name:  "run",
 				Usage: "Manage a stack's runs",
-				Subcommands: []*cli.Command{
+				Commands: []*cli.Command{
 					{
 						Name:  "list",
 						Usage: "Lists the runs for a specified stack",
@@ -257,7 +258,7 @@ func Command() *cli.Command {
 			{
 				Name:  "environment",
 				Usage: "Manage a stack's environment",
-				Subcommands: []*cli.Command{
+				Commands: []*cli.Command{
 					{
 						Name:  "setvar",
 						Usage: "Sets an environment variable.",
@@ -434,7 +435,7 @@ func Command() *cli.Command {
 			{
 				Name:  "resources",
 				Usage: "Manage and view resources for stacks",
-				Subcommands: []*cli.Command{
+				Commands: []*cli.Command{
 					{
 						Name:  "list",
 						Usage: "Sets an environment variable.",
@@ -451,7 +452,7 @@ func Command() *cli.Command {
 			{
 				Name:  "dependencies",
 				Usage: "View stack dependencies",
-				Subcommands: []*cli.Command{
+				Commands: []*cli.Command{
 					{
 						Name:  "on",
 						Usage: "Get stacks which the provided that depends on",

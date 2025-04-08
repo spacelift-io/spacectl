@@ -1,18 +1,20 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/shurcooL/graphql"
-	"github.com/spacelift-io/spacectl/internal/cmd"
+	"github.com/urfave/cli/v3"
+
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
-	"github.com/urfave/cli/v2"
 )
 
 func listVersions() cli.ActionFunc {
-	return func(cliCtx *cli.Context) (err error) {
-		outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	return func(ctx context.Context, cmd *cli.Command) (err error) {
+		outputFormat, err := internalCmd.GetOutputFormat(cmd)
 		if err != nil {
 			return err
 		}
@@ -23,10 +25,10 @@ func listVersions() cli.ActionFunc {
 			} `graphql:"terraformProvider(id: $id)"`
 		}
 
-		providerType := cliCtx.String(flagProviderType.Name)
+		providerType := cmd.String(flagProviderType.Name)
 
 		variables := map[string]any{"id": graphql.ID(providerType)}
-		if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+		if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 			return fmt.Errorf("could not list Terraform provider versions: %w", err)
 		}
 
@@ -37,15 +39,15 @@ func listVersions() cli.ActionFunc {
 		versions := query.TerraformProvider.Versions
 
 		switch outputFormat {
-		case cmd.OutputFormatJSON:
-			return cmd.OutputJSON(map[string]any{"versions": versions})
-		case cmd.OutputFormatTable:
+		case internalCmd.OutputFormatJSON:
+			return internalCmd.OutputJSON(map[string]any{"versions": versions})
+		case internalCmd.OutputFormatTable:
 			rows := [][]string{versions.Headers()}
 			for _, version := range versions {
 				rows = append(rows, version.Row())
 			}
 
-			return cmd.OutputTable(rows, true)
+			return internalCmd.OutputTable(rows, true)
 		default:
 			return fmt.Errorf("unknown output format: %s", outputFormat)
 		}

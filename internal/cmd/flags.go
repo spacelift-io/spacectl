@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // FlagOutputFormat allows users to change the output format of commands that support it.

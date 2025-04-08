@@ -11,22 +11,23 @@ import (
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
-func openCommandInBrowser(cliCtx *cli.Context) error {
-	if stackID := cliCtx.String(flagStackID.Name); stackID != "" {
+func openCommandInBrowser(ctx context.Context, cmd *cli.Command) error {
+	if stackID := cmd.String(flagStackID.Name); stackID != "" {
 		return browser.OpenURL(authenticated.Client.URL(
 			"/stack/%s",
 			stackID,
 		))
 	}
 
-	ignoreSubdir := cliCtx.Bool(flagIgnoreSubdir.Name)
-	getCurrentBranch := cliCtx.Bool(flagCurrentBranch.Name)
-	count := cliCtx.Int(flagSearchCount.Name)
+	ignoreSubdir := cmd.Bool(flagIgnoreSubdir.Name)
+	getCurrentBranch := cmd.Bool(flagCurrentBranch.Name)
+	count := int(cmd.Int(flagSearchCount.Name))
 
 	var subdir *string
 	if !ignoreSubdir {
@@ -51,7 +52,7 @@ func openCommandInBrowser(cliCtx *cli.Context) error {
 		return err
 	}
 
-	return findAndOpenStackInBrowser(cliCtx.Context, &stackSearchParams{
+	return findAndOpenStackInBrowser(ctx, &stackSearchParams{
 		count:          count,
 		projectRoot:    subdir,
 		repositoryName: name,

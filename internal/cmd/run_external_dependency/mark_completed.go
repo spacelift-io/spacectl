@@ -1,17 +1,19 @@
 package runexternaldependency
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"strings"
 
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
-func markRunExternalDependencyAsCompleted(cliCtx *cli.Context) error {
-	externalDependencyID := cliCtx.String(flagRunExternalDependencyID.Name)
-	status := cliCtx.String(flagStatus.Name)
+func markRunExternalDependencyAsCompleted(ctx context.Context, cmd *cli.Command) error {
+	externalDependencyID := cmd.String(flagRunExternalDependencyID.Name)
+	status := cmd.String(flagStatus.Name)
 
 	var mutation struct {
 		RunExternalDependencyMarkAsFinished struct {
@@ -29,7 +31,7 @@ func markRunExternalDependencyAsCompleted(cliCtx *cli.Context) error {
 		"status":     RunExternalDependencyStatus(strings.ToUpper(status)),
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 

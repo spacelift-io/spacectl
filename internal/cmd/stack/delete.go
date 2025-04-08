@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 var flagDestroyResources = &cli.BoolFlag{
@@ -25,13 +26,13 @@ var flagSkipConfirmation = &cli.BoolFlag{
 }
 
 func deleteStack() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		stackID, err := getStackID(cliCtx)
+	return func(ctx context.Context, cmd *cli.Command) error {
+		stackID, err := getStackID(ctx, cmd)
 		if err != nil {
 			return err
 		}
 
-		if !cliCtx.Bool(flagSkipConfirmation.Name) {
+		if !cmd.Bool(flagSkipConfirmation.Name) {
 			fmt.Print("Are you sure you want to delete this stack? (y/n): ")
 
 			reader := bufio.NewReader(os.Stdin)
@@ -46,7 +47,7 @@ func deleteStack() cli.ActionFunc {
 			}
 		}
 
-		destroyResources := cliCtx.Bool(flagDestroyResources.Name)
+		destroyResources := cmd.Bool(flagDestroyResources.Name)
 
 		fmt.Printf("Deleting stack %s\n", stackID)
 		if destroyResources {
@@ -63,8 +64,6 @@ func deleteStack() cli.ActionFunc {
 			"id":               graphql.ID(stackID),
 			"destroyResources": graphql.Boolean(destroyResources),
 		}
-
-		ctx := context.Background()
 
 		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 			return err

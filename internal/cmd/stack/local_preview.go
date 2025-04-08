@@ -9,20 +9,21 @@ import (
 
 	"github.com/mholt/archiver/v3"
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 func localPreview() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		envVars, err := parseEnvVariablesForLocalPreview(cliCtx)
+	return func(ctx context.Context, cmd *cli.Command) error {
+		envVars, err := parseEnvVariablesForLocalPreview(cmd)
 		if err != nil {
 			return err
 		}
 
-		if got := cliCtx.StringSlice(flagTarget.Name); len(got) > 0 {
+		if got := cmd.StringSlice(flagTarget.Name); len(got) > 0 {
 			var val string
 			for _, v := range got {
 				val = strings.Join([]string{val, "-target=" + v}, " ")
@@ -34,7 +35,7 @@ func localPreview() cli.ActionFunc {
 			})
 		}
 
-		stack, err := getStack[stack](cliCtx)
+		stack, err := getStack[stack](ctx, cmd)
 		if err != nil {
 			return err
 		}
@@ -44,17 +45,15 @@ func localPreview() cli.ActionFunc {
 			return fmt.Errorf("local preview has not been enabled for this stack, please enable local preview in the stack settings: %s", linkToStack)
 		}
 
-		ctx := context.Background()
-
 		var packagePath *string
-		if cliCtx.Bool(flagProjectRootOnly.Name) {
+		if cmd.Bool(flagProjectRootOnly.Name) {
 			root, err := getGitRepositorySubdir()
 			if err != nil {
 				return fmt.Errorf("couldn't get the packagePath: %w", err)
 			}
 			packagePath = &root
 		}
-		if !cliCtx.Bool(flagNoFindRepositoryRoot.Name) {
+		if !cmd.Bool(flagNoFindRepositoryRoot.Name) {
 			if err := internal.MoveToRepositoryRoot(); err != nil {
 				return fmt.Errorf("couldn't move to repository root: %w", err)
 			}
@@ -85,7 +84,7 @@ func localPreview() cli.ActionFunc {
 		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", uploadMutation.UploadLocalWorkspace.ID))
 
 		ignoreFiles := []string{".terraformignore"}
-		if !cliCtx.IsSet(flagDisregardGitignore.Name) {
+		if !cmd.IsSet(flagDisregardGitignore.Name) {
 			ignoreFiles = append(ignoreFiles, ".gitignore")
 		}
 
@@ -102,7 +101,7 @@ func localPreview() cli.ActionFunc {
 			return fmt.Errorf("couldn't archive local directory: %w", err)
 		}
 
-		if cliCtx.Bool(flagNoUpload.Name) {
+		if cmd.Bool(flagNoUpload.Name) {
 			fmt.Println("No upload flag was provided, will not create run, saved archive at:", fp)
 			return nil
 		}
@@ -128,8 +127,8 @@ func localPreview() cli.ActionFunc {
 		}
 
 		var requestOpts []graphql.RequestOption
-		if cliCtx.IsSet(flagRunMetadata.Name) {
-			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
+		if cmd.IsSet(flagRunMetadata.Name) {
+			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cmd.String(flagRunMetadata.Name)))
 		}
 
 		if err = authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {
@@ -138,8 +137,8 @@ func localPreview() cli.ActionFunc {
 
 		fmt.Println("You have successfully created a local preview run!")
 
-		if cliCtx.Bool(flagPrioritizeRun.Name) {
-			_, err = setRunPriority(cliCtx, stack.ID, triggerMutation.RunProposeLocalWorkspace.ID, true)
+		if cmd.Bool(flagPrioritizeRun.Name) {
+			_, err = setRunPriority(ctx, stack.ID, triggerMutation.RunProposeLocalWorkspace.ID, true)
 			if err != nil {
 				fmt.Printf("Failed to prioritize the run due to err: %v\n", err)
 				fmt.Println("Resolve the issue and prioritize the run manually")
@@ -155,7 +154,7 @@ func localPreview() cli.ActionFunc {
 		)
 		fmt.Println("The live run can be visited at", linkToRun)
 
-		if cliCtx.Bool(flagNoTail.Name) {
+		if cmd.Bool(flagNoTail.Name) {
 			return nil
 		}
 
@@ -192,17 +191,17 @@ func parseEnvVar(env string, envVars []EnvironmentVariable, mutateKey func(strin
 	}), nil
 }
 
-func parseEnvVariablesForLocalPreview(cliCtx *cli.Context) ([]EnvironmentVariable, error) {
+func parseEnvVariablesForLocalPreview(cmd *cli.Command) ([]EnvironmentVariable, error) {
 	envVars := make([]EnvironmentVariable, 0)
 
 	var err error
-	for _, ev := range cliCtx.StringSlice(flagOverrideEnvVars.Name) {
+	for _, ev := range cmd.StringSlice(flagOverrideEnvVars.Name) {
 		if envVars, err = parseEnvVar(ev, envVars, nil); err != nil {
 			return nil, err
 		}
 	}
 
-	for _, ev := range cliCtx.StringSlice(flagOverrideEnvVarsTF.Name) {
+	for _, ev := range cmd.StringSlice(flagOverrideEnvVarsTF.Name) {
 		if envVars, err = parseEnvVar(ev, envVars, func(s string) string {
 			return strings.Join([]string{"TF_", s}, "")
 		}); err != nil {

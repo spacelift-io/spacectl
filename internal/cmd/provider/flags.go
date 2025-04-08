@@ -1,6 +1,6 @@
 package provider
 
-import "github.com/urfave/cli/v2"
+import "github.com/urfave/cli/v3"
 
 var flagKeyGenerate = &cli.BoolFlag{
 	Name:  "generate",
@@ -45,7 +45,7 @@ var flagProviderType = &cli.StringFlag{
 var flagProviderVersionProtocols = &cli.StringSliceFlag{
 	Name:  "protocols",
 	Usage: "Terraform plugin protocols supported by the provider",
-	Value: cli.NewStringSlice("5.0"),
+	Value: []string{"5.0"},
 }
 
 var flagGoReleaserDir = &cli.StringFlag{
@@ -63,6 +63,6 @@ var flagRequiredVersionID = &cli.StringFlag{
 var flagGPGKeyID = &cli.StringFlag{
 	Name:     "gpg-key-id",
 	Usage:    "ID of the GPG key used to sign the provider version",
-	EnvVars:  []string{"GPG_KEY_ID"},
+	Sources:  cli.EnvVars("GPG_KEY_ID"),
 	Required: true,
 }

@@ -1,13 +1,15 @@
 package workerpools
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/spacelift-io/spacectl/internal/cmd"
+	"github.com/urfave/cli/v3"
+
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 type pool struct {
@@ -36,8 +38,8 @@ type listPoolsQuery struct {
 
 type listPoolsCommand struct{}
 
-func (c *listPoolsCommand) listPools(cliCtx *cli.Context) error {
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+func (c *listPoolsCommand) listPools(ctx context.Context, cmd *cli.Command) error {
+	outputFormat, err := internalCmd.GetOutputFormat(cmd)
 
 	if err != nil {
 		return err
@@ -45,14 +47,14 @@ func (c *listPoolsCommand) listPools(cliCtx *cli.Context) error {
 
 	var query listPoolsQuery
 
-	if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{}); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
 		return err
 	}
 
 	switch outputFormat {
-	case cmd.OutputFormatTable:
+	case internalCmd.OutputFormatTable:
 		return c.showOutputsTable(query.Pools)
-	case cmd.OutputFormatJSON:
+	case internalCmd.OutputFormatJSON:
 		return c.showOutputsJSON(query.Pools)
 	default:
 		return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -85,7 +87,7 @@ func (c *listPoolsCommand) showOutputsTable(pools []pool) error {
 		tableData = append(tableData, row)
 	}
 
-	return cmd.OutputTable(tableData, true)
+	return internalCmd.OutputTable(tableData, true)
 }
 
 func (c *listPoolsCommand) showOutputsJSON(pools []pool) error {
@@ -94,7 +96,7 @@ func (c *listPoolsCommand) showOutputsJSON(pools []pool) error {
 		row := pool.toJSONOutput()
 		output = append(output, row)
 	}
-	return cmd.OutputJSON(output)
+	return internalCmd.OutputJSON(output)
 }
 
 func (p *pool) toJSONOutput() poolJSONOutput {

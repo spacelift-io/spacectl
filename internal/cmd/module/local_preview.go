@@ -14,19 +14,19 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mholt/archiver/v3"
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
-	"golang.org/x/sync/errgroup"
 )
 
 func localPreview() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		moduleID := cliCtx.String(flagModuleID.Name)
-		ctx := context.Background()
+	return func(ctx context.Context, cmd *cli.Command) error {
+		moduleID := cmd.String(flagModuleID.Name)
 
-		if !cliCtx.Bool(flagNoFindRepositoryRoot.Name) {
+		if !cmd.Bool(flagNoFindRepositoryRoot.Name) {
 			if err := internal.MoveToRepositoryRoot(); err != nil {
 				return fmt.Errorf("couldn't move to repository root: %w", err)
 			}
@@ -53,7 +53,7 @@ func localPreview() cli.ActionFunc {
 		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", uploadMutation.UploadLocalWorkspace.ID))
 
 		ignoreFiles := []string{".terraformignore"}
-		if !cliCtx.IsSet(flagDisregardGitignore.Name) {
+		if !cmd.IsSet(flagDisregardGitignore.Name) {
 			ignoreFiles = append(ignoreFiles, ".gitignore")
 		}
 
@@ -70,7 +70,7 @@ func localPreview() cli.ActionFunc {
 			return fmt.Errorf("couldn't archive local directory: %w", err)
 		}
 
-		if cliCtx.Bool(flagNoUpload.Name) {
+		if cmd.Bool(flagNoUpload.Name) {
 			fmt.Println("No upload flag was provided, will not create run, saved archive at:", fp)
 			return nil
 		}
@@ -88,7 +88,7 @@ func localPreview() cli.ActionFunc {
 		}
 
 		tests := []graphql.String{}
-		for _, test := range cliCtx.StringSlice(flagTests.Name) {
+		for _, test := range cmd.StringSlice(flagTests.Name) {
 			tests = append(tests, graphql.String(test))
 		}
 		triggerVariables := map[string]interface{}{
@@ -98,8 +98,8 @@ func localPreview() cli.ActionFunc {
 		}
 
 		var requestOpts []graphql.RequestOption
-		if cliCtx.IsSet(flagRunMetadata.Name) {
-			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
+		if cmd.IsSet(flagRunMetadata.Name) {
+			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cmd.String(flagRunMetadata.Name)))
 		}
 
 		if err := authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {

@@ -1,20 +1,22 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
-func runDeprioritize(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func runDeprioritize(ctx context.Context, cmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
-	runID := cliCtx.String(flagRequiredRun.Name)
+	runID := cmd.String(flagRequiredRun.Name)
 
-	mutation, err := setRunPriority(cliCtx, stackID, runID, false)
+	mutation, err := setRunPriority(ctx, stackID, runID, false)
 	if err != nil {
 		return err
 	}
@@ -26,11 +28,11 @@ func runDeprioritize(cliCtx *cli.Context) error {
 		mutation.SetRunPriority.ID,
 	))
 
-	if !cliCtx.Bool(flagTail.Name) {
+	if !cmd.Bool(flagTail.Name) {
 		return nil
 	}
 
-	terminal, err := runLogsWithAction(cliCtx.Context, stackID, mutation.SetRunPriority.ID, nil)
+	terminal, err := runLogsWithAction(ctx, stackID, mutation.SetRunPriority.ID, nil)
 	if err != nil {
 		return err
 	}

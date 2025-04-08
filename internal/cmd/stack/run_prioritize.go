@@ -1,21 +1,23 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
-func runPrioritize(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func runPrioritize(ctx context.Context, cmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
-	runID := cliCtx.String(flagRequiredRun.Name)
+	runID := cmd.String(flagRequiredRun.Name)
 
-	mutation, err := setRunPriority(cliCtx, stackID, runID, true)
+	mutation, err := setRunPriority(ctx, stackID, runID, true)
 	if err != nil {
 		return err
 	}
@@ -27,11 +29,11 @@ func runPrioritize(cliCtx *cli.Context) error {
 		mutation.SetRunPriority.ID,
 	))
 
-	if !cliCtx.Bool(flagTail.Name) {
+	if !cmd.Bool(flagTail.Name) {
 		return nil
 	}
 
-	terminal, err := runLogsWithAction(cliCtx.Context, stackID, mutation.SetRunPriority.ID, nil)
+	terminal, err := runLogsWithAction(ctx, stackID, mutation.SetRunPriority.ID, nil)
 	if err != nil {
 		return err
 	}
@@ -45,7 +47,7 @@ type setRunPriorityMutation struct {
 	} `graphql:"runPrioritizeSet(stack: $stackId, run: $runId, prioritize: $prioritize)"`
 }
 
-func setRunPriority(cliCtx *cli.Context, stackID, runID string, prioritize bool) (setRunPriorityMutation, error) {
+func setRunPriority(ctx context.Context, stackID, runID string, prioritize bool) (setRunPriorityMutation, error) {
 	var mutation setRunPriorityMutation
 
 	variables := map[string]interface{}{
@@ -54,7 +56,7 @@ func setRunPriority(cliCtx *cli.Context, stackID, runID string, prioritize bool)
 		"prioritize": graphql.Boolean(prioritize),
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return setRunPriorityMutation{}, err
 	}
 

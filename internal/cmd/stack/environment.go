@@ -1,6 +1,7 @@
 package stack
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -10,9 +11,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/spacelift-io/spacectl/internal/cmd"
+	"github.com/urfave/cli/v3"
+
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 // ConfigType is a type of configuration element.
@@ -80,15 +82,15 @@ type listEnvQuery struct {
 
 type listEnvCommand struct{}
 
-func setVar(cliCtx *cli.Context) error {
-	if nArgs := cliCtx.NArg(); nArgs != 2 {
+func setVar(ctx context.Context, cmd *cli.Command) error {
+	if nArgs := cmd.NArg(); nArgs != 2 {
 		return fmt.Errorf("expected two arguments to `environment setvar` but got %d", nArgs)
 	}
 
-	envName := cliCtx.Args().Get(0)
-	envValue := cliCtx.Args().Get(1)
+	envName := cmd.Args().Get(0)
+	envValue := cmd.Args().Get(1)
 
-	stackID, err := getStackID(cliCtx)
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
@@ -107,11 +109,11 @@ func setVar(cliCtx *cli.Context) error {
 			ID:        graphql.ID(envName),
 			Type:      envVarTypeConfig,
 			Value:     graphql.String(envValue),
-			WriteOnly: graphql.Boolean(cliCtx.Bool(flagEnvironmentWriteOnly.Name)),
+			WriteOnly: graphql.Boolean(cmd.Bool(flagEnvironmentWriteOnly.Name)),
 		},
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 
@@ -126,13 +128,13 @@ func setVar(cliCtx *cli.Context) error {
 	return nil
 }
 
-func (e *listEnvCommand) listEnv(cliCtx *cli.Context) error {
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+func (e *listEnvCommand) listEnv(ctx context.Context, cmd *cli.Command) error {
+	outputFormat, err := internalCmd.GetOutputFormat(cmd)
 	if err != nil {
 		return err
 	}
 
-	stackID, err := getStackID(cliCtx)
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
@@ -142,7 +144,7 @@ func (e *listEnvCommand) listEnv(cliCtx *cli.Context) error {
 		"stack": graphql.ID(stackID),
 	}
 
-	if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 		return err
 	}
 
@@ -182,9 +184,9 @@ func (e *listEnvCommand) listEnv(cliCtx *cli.Context) error {
 	}
 
 	switch outputFormat {
-	case cmd.OutputFormatTable:
+	case internalCmd.OutputFormatTable:
 		return e.showOutputsTable(elements)
-	case cmd.OutputFormatJSON:
+	case internalCmd.OutputFormatJSON:
 		return e.showOutputsJSON(elements)
 	default:
 		return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -228,11 +230,11 @@ func (e *listEnvCommand) showOutputsTable(outputs []listEnvElementOutput) error 
 
 		tableData = append(tableData, row)
 	}
-	return cmd.OutputTable(tableData, true)
+	return internalCmd.OutputTable(tableData, true)
 }
 
 func (e *listEnvCommand) showOutputsJSON(outputs []listEnvElementOutput) error {
-	return cmd.OutputJSON(outputs)
+	return internalCmd.OutputJSON(outputs)
 }
 
 func (e *configElement) toConfigElementOutput(contextName *string, isAutoAttached *bool) (listEnvElementOutput, error) {
@@ -279,11 +281,11 @@ func (o *listEnvElementOutput) trimmedValue() string {
 	return valueNoNewlines
 }
 
-func mountFile(cliCtx *cli.Context) error {
-	nArgs := cliCtx.NArg()
+func mountFile(ctx context.Context, cmd *cli.Command) error {
+	nArgs := cmd.NArg()
 
-	envName := cliCtx.Args().Get(0)
-	stackID, err := getStackID(cliCtx)
+	envName := cmd.Args().Get(0)
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
@@ -298,7 +300,7 @@ func mountFile(cliCtx *cli.Context) error {
 			return fmt.Errorf("couldn't read from STDIN: %w", err)
 		}
 	case 2:
-		filePath := cliCtx.Args().Get(1)
+		filePath := cmd.Args().Get(1)
 
 		if fileContent, err = os.ReadFile(filePath); err != nil {
 			return fmt.Errorf("couldn't read file from %s: %w", filePath, err)
@@ -321,11 +323,11 @@ func mountFile(cliCtx *cli.Context) error {
 			ID:        graphql.ID(envName),
 			Type:      fileTypeConfig,
 			Value:     graphql.String(base64.StdEncoding.EncodeToString(fileContent)),
-			WriteOnly: graphql.Boolean(cliCtx.Bool(flagEnvironmentWriteOnly.Name)),
+			WriteOnly: graphql.Boolean(cmd.Bool(flagEnvironmentWriteOnly.Name)),
 		},
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 
@@ -335,17 +337,17 @@ func mountFile(cliCtx *cli.Context) error {
 	return nil
 }
 
-func deleteEnvironment(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func deleteEnvironment(ctx context.Context, cmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
-	if nArgs := cliCtx.NArg(); nArgs != 1 {
+	if nArgs := cmd.NArg(); nArgs != 1 {
 		return fmt.Errorf("expecting environment delete as only one agument, got %d instead", nArgs)
 	}
 
-	envName := cliCtx.Args().Get(0)
+	envName := cmd.Args().Get(0)
 
 	var mutation struct {
 		ConfigElement *struct {
@@ -358,7 +360,7 @@ func deleteEnvironment(cliCtx *cli.Context) error {
 		"id":    graphql.ID(envName),
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 

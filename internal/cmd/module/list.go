@@ -7,42 +7,45 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v3"
+
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
-	"github.com/spacelift-io/spacectl/internal/cmd"
+	internalCmd "github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 func listModules() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	return func(ctx context.Context, cmd *cli.Command) error {
+		outputFormat, err := internalCmd.GetOutputFormat(cmd)
 		if err != nil {
 			return err
 		}
 
 		var limit *uint
-		if cliCtx.IsSet(cmd.FlagLimit.Name) {
-			limit = internal.Ptr(cliCtx.Uint(cmd.FlagLimit.Name))
+		if cmd.IsSet(internalCmd.FlagLimit.Name) {
+			limit = internal.Ptr(uint(cmd.Uint(internalCmd.FlagLimit.Name)))
 		}
 
 		var search *string
-		if cliCtx.IsSet(cmd.FlagSearch.Name) {
-			search = internal.Ptr(cliCtx.String(cmd.FlagSearch.Name))
+		if cmd.IsSet(internalCmd.FlagSearch.Name) {
+			search = internal.Ptr(cmd.String(internalCmd.FlagSearch.Name))
 		}
 
 		switch outputFormat {
-		case cmd.OutputFormatTable:
-			return listModulesTable(cliCtx, search, limit)
-		case cmd.OutputFormatJSON:
-			return listModulesJSON(cliCtx, search, limit)
+		case internalCmd.OutputFormatTable:
+			err := listModulesTable(ctx, search, limit)
+			return err
+		case internalCmd.OutputFormatJSON:
+			err := listModulesJSON(ctx, search, limit)
+			return err
 		}
 
 		return fmt.Errorf("unknown output format: %v", outputFormat)
 	}
 }
 
-func listModulesJSON(ctx *cli.Context, search *string, limit *uint) error {
+func listModulesJSON(ctx context.Context, search *string, limit *uint) error {
 	var first *graphql.Int
 	if limit != nil {
 		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
@@ -53,7 +56,7 @@ func listModulesJSON(ctx *cli.Context, search *string, limit *uint) error {
 		fullTextSearch = graphql.NewString(graphql.String(*search))
 	}
 
-	modules, err := searchAllModules(ctx.Context, structs.SearchInput{
+	modules, err := searchAllModules(ctx, structs.SearchInput{
 		First:          first,
 		FullTextSearch: fullTextSearch,
 	})
@@ -61,10 +64,10 @@ func listModulesJSON(ctx *cli.Context, search *string, limit *uint) error {
 		return err
 	}
 
-	return cmd.OutputJSON(modules)
+	return internalCmd.OutputJSON(modules)
 }
 
-func listModulesTable(ctx *cli.Context, search *string, limit *uint) error {
+func listModulesTable(ctx context.Context, search *string, limit *uint) error {
 	const defaultLimit = 20
 
 	var first *graphql.Int
@@ -88,7 +91,7 @@ func listModulesTable(ctx *cli.Context, search *string, limit *uint) error {
 		},
 	}
 
-	modules, err := searchAllModules(ctx.Context, input)
+	modules, err := searchAllModules(ctx, input)
 	if err != nil {
 		return err
 	}
@@ -108,7 +111,7 @@ func listModulesTable(ctx *cli.Context, search *string, limit *uint) error {
 		tableData = append(tableData, row)
 	}
 
-	if err := cmd.OutputTable(tableData, true); err != nil {
+	if err := internalCmd.OutputTable(tableData, true); err != nil {
 		return err
 	}
 
