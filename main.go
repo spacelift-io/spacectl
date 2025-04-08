@@ -5,18 +5,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/spacelift-io/spacectl/internal/cmd/audittrail"
-	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
+	"github.com/Masterminds/semver/v3"
+	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/completion"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
-	"github.com/spacelift-io/spacectl/internal/cmd/policy"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
-	"github.com/spacelift-io/spacectl/internal/cmd/provider"
-	runexternaldependency "github.com/spacelift-io/spacectl/internal/cmd/run_external_dependency"
-	"github.com/spacelift-io/spacectl/internal/cmd/stack"
 	versioncmd "github.com/spacelift-io/spacectl/internal/cmd/version"
 	"github.com/spacelift-io/spacectl/internal/cmd/whoami"
-	"github.com/spacelift-io/spacectl/internal/cmd/workerpools"
 	"github.com/urfave/cli/v2"
 )
 
@@ -28,26 +23,34 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not parse compilation date: %v", err)
 	}
+
+	// TODO: query for the actual version
+	instanceVersion := cmd.SpaceliftInstanceVersion{
+		SaaS:    false,
+		Version: semver.MustParse("2.4.0"),
+	}
+
 	app := &cli.App{
 		Name:                 "spacectl",
 		Version:              version,
 		Compiled:             compileTime,
 		Usage:                "Programmatic access to Spacelift GraphQL API.",
 		EnableBashCompletion: true,
-		Commands: []*cli.Command{
-			module.Command(),
+		Commands: append([]*cli.Command{
 			profile.Command(),
-			provider.Command(),
-			runexternaldependency.Command(),
-			stack.Command(),
 			whoami.Command(),
 			versioncmd.Command(version),
-			workerpools.Command(),
 			completion.Command(),
-			blueprint.Command(),
-			policy.Command(),
-			audittrail.Command(),
-		},
+		}, cmd.ResolveCommands(instanceVersion, []cmd.Command{
+			module.VersionedCommand(),
+			// provider.Command(),
+			// runexternaldependency.Command(),
+			// stack.Command(),
+			// workerpools.Command(),
+			// blueprint.Command(),
+			// policy.Command(),
+			// audittrail.Command(),
+		})...),
 	}
 
 	if err := app.Run(os.Args); err != nil {
