@@ -21,7 +21,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func localPreview() cli.ActionFunc {
+func localPreview(useHeaders bool) cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
 		moduleID := cliCtx.String(flagModuleID.Name)
 		ctx := context.Background()
@@ -34,22 +34,57 @@ func localPreview() cli.ActionFunc {
 
 		fmt.Println("Packing local workspace...")
 
-		var uploadMutation struct {
-			UploadLocalWorkspace struct {
-				ID        string `graphql:"id"`
-				UploadURL string `graphql:"uploadUrl"`
-			} `graphql:"uploadLocalWorkspace(stack: $stack)"`
+		// Define struct types based on useHeaders flag
+
+		// Define concrete types
+		type basicResponse struct {
+			ID        string `graphql:"id"`
+			UploadURL string `graphql:"uploadUrl"`
 		}
+
+		type headersResponse struct {
+			ID            string            `graphql:"id"`
+			UploadURL     string            `graphql:"uploadUrl"`
+			UploadHeaders structs.StringMap `graphql:"uploadHeaders"`
+		}
+
+		var workspaceID string
+		var uploadURL string
+		var headers map[string]string
 
 		uploadVariables := map[string]interface{}{
 			"stack": graphql.ID(moduleID),
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &uploadMutation, uploadVariables); err != nil {
-			return err
+		if useHeaders {
+			// Use the headers response struct
+			var headersMutation struct {
+				UploadLocalWorkspace headersResponse `graphql:"uploadLocalWorkspace(stack: $stack)"`
+			}
+
+			if err := authenticated.Client.Mutate(ctx, &headersMutation, uploadVariables); err != nil {
+				return err
+			}
+
+			workspaceID = headersMutation.UploadLocalWorkspace.ID
+			uploadURL = headersMutation.UploadLocalWorkspace.UploadURL
+			headers = headersMutation.UploadLocalWorkspace.UploadHeaders.StdMap()
+		} else {
+			// Use the basic response struct
+			var basicMutation struct {
+				UploadLocalWorkspace basicResponse `graphql:"uploadLocalWorkspace(stack: $stack)"`
+			}
+
+			if err := authenticated.Client.Mutate(ctx, &basicMutation, uploadVariables); err != nil {
+				return err
+			}
+
+			workspaceID = basicMutation.UploadLocalWorkspace.ID
+			uploadURL = basicMutation.UploadLocalWorkspace.UploadURL
+			headers = nil
 		}
 
-		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", uploadMutation.UploadLocalWorkspace.ID))
+		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", workspaceID))
 
 		ignoreFiles := []string{".terraformignore"}
 		if !cliCtx.IsSet(flagDisregardGitignore.Name) {
@@ -78,7 +113,7 @@ func localPreview() cli.ActionFunc {
 
 		fmt.Println("Uploading local workspace...")
 
-		if err := internal.UploadArchive(ctx, uploadMutation.UploadLocalWorkspace.UploadURL, fp, nil); err != nil {
+		if err := internal.UploadArchive(ctx, uploadURL, fp, headers); err != nil {
 			return fmt.Errorf("couldn't upload archive: %w", err)
 		}
 
@@ -92,139 +127,7 @@ func localPreview() cli.ActionFunc {
 		}
 		triggerVariables := map[string]interface{}{
 			"module":    graphql.ID(moduleID),
-			"workspace": graphql.ID(uploadMutation.UploadLocalWorkspace.ID),
-			"testIds":   tests,
-		}
-
-		var requestOpts []graphql.RequestOption
-		if cliCtx.IsSet(flagRunMetadata.Name) {
-			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
-		}
-
-		if err := authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {
-			return err
-		}
-
-		model := newModuleLocalPreviewModel(moduleID, triggerMutation.VersionProposeLocalWorkspace)
-
-		go func() {
-			// Refresh run state every 5 seconds.
-			ticker := time.NewTicker(time.Second * 5)
-			defer ticker.Stop()
-			for range ticker.C {
-				newRuns := make([]runQuery, len(triggerMutation.VersionProposeLocalWorkspace))
-				var g errgroup.Group
-				for i := range newRuns {
-					index := i
-					g.Go(func() error {
-						var getRun struct {
-							Module struct {
-								Run runQuery `graphql:"run(id: $run)"`
-							} `graphql:"module(id: $module)"`
-						}
-
-						if err := authenticated.Client.Query(ctx, &getRun, map[string]interface{}{
-							"module": graphql.ID(moduleID),
-							"run":    graphql.ID(triggerMutation.VersionProposeLocalWorkspace[index].ID),
-						}); err != nil {
-							return err
-						}
-
-						newRuns[index] = getRun.Module.Run
-
-						return nil
-					})
-				}
-				if err := g.Wait(); err != nil {
-					log.Fatal("couldn't get runs: ", err)
-				}
-				model.setRuns(newRuns)
-			}
-		}()
-
-		// Run the UI.
-		if _, err := tea.NewProgram(model).Run(); err != nil {
-			fmt.Println("could not run program:", err)
-			os.Exit(1)
-		}
-
-		return nil
-	}
-}
-
-func localPreviewWithHeaders() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		moduleID := cliCtx.String(flagModuleID.Name)
-		ctx := context.Background()
-
-		if !cliCtx.Bool(flagNoFindRepositoryRoot.Name) {
-			if err := internal.MoveToRepositoryRoot(); err != nil {
-				return fmt.Errorf("couldn't move to repository root: %w", err)
-			}
-		}
-
-		fmt.Println("Packing local workspace...")
-
-		var uploadMutation struct {
-			UploadLocalWorkspace struct {
-				ID            string            `graphql:"id"`
-				UploadURL     string            `graphql:"uploadUrl"`
-				UploadHeaders structs.StringMap `graphql:"uploadHeaders"`
-			} `graphql:"uploadLocalWorkspace(stack: $stack)"`
-		}
-
-		uploadVariables := map[string]interface{}{
-			"stack": graphql.ID(moduleID),
-		}
-
-		if err := authenticated.Client.Mutate(ctx, &uploadMutation, uploadVariables); err != nil {
-			return err
-		}
-
-		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", uploadMutation.UploadLocalWorkspace.ID))
-
-		ignoreFiles := []string{".terraformignore"}
-		if !cliCtx.IsSet(flagDisregardGitignore.Name) {
-			ignoreFiles = append(ignoreFiles, ".gitignore")
-		}
-
-		matchFn, err := internal.GetIgnoreMatcherFn(ctx, nil, ignoreFiles)
-		if err != nil {
-			return fmt.Errorf("couldn't analyze .gitignore and .terraformignore files")
-		}
-
-		tgz := *archiver.DefaultTarGz
-		tgz.ForceArchiveImplicitTopLevelFolder = true
-		tgz.MatchFn = matchFn
-
-		if err := tgz.Archive([]string{"."}, fp); err != nil {
-			return fmt.Errorf("couldn't archive local directory: %w", err)
-		}
-
-		if cliCtx.Bool(flagNoUpload.Name) {
-			fmt.Println("No upload flag was provided, will not create run, saved archive at:", fp)
-			return nil
-		}
-
-		defer os.Remove(fp)
-
-		fmt.Println("Uploading local workspace...")
-
-		if err := internal.UploadArchive(ctx, uploadMutation.UploadLocalWorkspace.UploadURL, fp, uploadMutation.UploadLocalWorkspace.UploadHeaders.StdMap()); err != nil {
-			return fmt.Errorf("couldn't upload archive: %w", err)
-		}
-
-		var triggerMutation struct {
-			VersionProposeLocalWorkspace []runQuery `graphql:"versionProposeLocalWorkspace(module: $module, workspace: $workspace, testIds: $testIds)"`
-		}
-
-		tests := []graphql.String{}
-		for _, test := range cliCtx.StringSlice(flagTests.Name) {
-			tests = append(tests, graphql.String(test))
-		}
-		triggerVariables := map[string]interface{}{
-			"module":    graphql.ID(moduleID),
-			"workspace": graphql.ID(uploadMutation.UploadLocalWorkspace.ID),
+			"workspace": graphql.ID(workspaceID),
 			"testIds":   tests,
 		}
 
