@@ -7,6 +7,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/spacelift-io/spacectl/internal/cmd"
+	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
 	"github.com/spacelift-io/spacectl/internal/cmd/completion"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
@@ -51,7 +52,7 @@ func main() {
 			provider.Command(),
 			runexternaldependency.Command(),
 			workerpools.Command(),
-			// blueprint.Command(),
+			blueprint.Command(),
 			// policy.Command(),
 			// audittrail.Command(),
 		})...),
