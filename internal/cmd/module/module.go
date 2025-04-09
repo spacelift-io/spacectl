@@ -7,7 +7,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func VersionedCommand() cmd.Command {
+func Command() cmd.Command {
 	return cmd.Command{
 		Name:  "module",
 		Usage: "Manage a Spacelift module",

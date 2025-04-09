@@ -10,6 +10,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/completion"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
+	"github.com/spacelift-io/spacectl/internal/cmd/stack"
 	versioncmd "github.com/spacelift-io/spacectl/internal/cmd/version"
 	"github.com/spacelift-io/spacectl/internal/cmd/whoami"
 	"github.com/urfave/cli/v2"
@@ -42,10 +43,10 @@ func main() {
 			versioncmd.Command(version),
 			completion.Command(),
 		}, cmd.ResolveCommands(instanceVersion, []cmd.Command{
-			module.VersionedCommand(),
+			module.Command(),
+			stack.Command(),
 			// provider.Command(),
 			// runexternaldependency.Command(),
-			// stack.Command(),
 			// workerpools.Command(),
 			// blueprint.Command(),
 			// policy.Command(),
