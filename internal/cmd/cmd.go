@@ -18,26 +18,37 @@ func ResolveCommands(instanceVersion SpaceliftInstanceVersion, allCommands []Com
 			latestVersion.Command.Usage = command.Usage
 			latestVersion.Command.Category = command.Category
 
-			// TODO: make this recursive to ensure we get all levels of the command tree
-			var subcommands []*cli.Command
-			for _, subcommand := range command.Subcommands {
-				latestVersion := subcommand.FindLatestSupportedVersion(instanceVersion)
-				if latestVersion != nil {
-					latestVersion.Command.Name = subcommand.Name
-					latestVersion.Command.Usage = subcommand.Usage
-					latestVersion.Command.Category = subcommand.Category
-
-					subcommands = append(subcommands, latestVersion.Command)
-				}
-			}
-
-			latestVersion.Command.Subcommands = subcommands
+			// Recursively resolve subcommands
+			latestVersion.Command.Subcommands = resolveSubcommands(instanceVersion, command.Subcommands)
 
 			availableCommands = append(availableCommands, latestVersion.Command)
 		}
 	}
 
 	return availableCommands
+}
+
+// resolveSubcommands recursively processes command subcommands at any level of nesting
+func resolveSubcommands(instanceVersion SpaceliftInstanceVersion, subcommands []Command) []*cli.Command {
+	var resolvedSubcommands []*cli.Command
+	
+	for _, subcommand := range subcommands {
+		latestVersion := subcommand.FindLatestSupportedVersion(instanceVersion)
+		if latestVersion != nil {
+			latestVersion.Command.Name = subcommand.Name
+			latestVersion.Command.Usage = subcommand.Usage
+			latestVersion.Command.Category = subcommand.Category
+			
+			// Recursively process this subcommand's subcommands
+			if len(subcommand.Subcommands) > 0 {
+				latestVersion.Command.Subcommands = resolveSubcommands(instanceVersion, subcommand.Subcommands)
+			}
+			
+			resolvedSubcommands = append(resolvedSubcommands, latestVersion.Command)
+		}
+	}
+	
+	return resolvedSubcommands
 }
 
 // SupportedVersion is used to indicate what versions of Spacelift certain spacectl commands are
