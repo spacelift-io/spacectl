@@ -10,6 +10,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/completion"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
+	"github.com/spacelift-io/spacectl/internal/cmd/provider"
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
 	versioncmd "github.com/spacelift-io/spacectl/internal/cmd/version"
 	"github.com/spacelift-io/spacectl/internal/cmd/whoami"
@@ -45,7 +46,7 @@ func main() {
 		}, cmd.ResolveCommands(instanceVersion, []cmd.Command{
 			module.Command(),
 			stack.Command(),
-			// provider.Command(),
+			provider.Command(),
 			// runexternaldependency.Command(),
 			// workerpools.Command(),
 			// blueprint.Command(),
