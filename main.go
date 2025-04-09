@@ -11,6 +11,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider"
+	"github.com/spacelift-io/spacectl/internal/cmd/run_external_dependency"
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
 	versioncmd "github.com/spacelift-io/spacectl/internal/cmd/version"
 	"github.com/spacelift-io/spacectl/internal/cmd/whoami"
@@ -47,7 +48,7 @@ func main() {
 			module.Command(),
 			stack.Command(),
 			provider.Command(),
-			// runexternaldependency.Command(),
+			runexternaldependency.Command(),
 			// workerpools.Command(),
 			// blueprint.Command(),
 			// policy.Command(),
