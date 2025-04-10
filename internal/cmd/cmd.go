@@ -9,48 +9,6 @@ import (
 	spslices "github.com/spacelift-io/spacectl/internal/slices"
 )
 
-func ResolveCommands(instanceVersion SpaceliftInstanceVersion, allCommands []Command) []*cli.Command {
-	var availableCommands []*cli.Command
-	for _, command := range allCommands {
-		latestVersion := command.FindLatestSupportedVersion(instanceVersion)
-		if latestVersion != nil {
-			latestVersion.Command.Name = command.Name
-			latestVersion.Command.Usage = command.Usage
-			latestVersion.Command.Category = command.Category
-
-			// Recursively resolve subcommands
-			latestVersion.Command.Subcommands = resolveSubcommands(instanceVersion, command.Subcommands)
-
-			availableCommands = append(availableCommands, latestVersion.Command)
-		}
-	}
-
-	return availableCommands
-}
-
-// resolveSubcommands recursively processes command subcommands at any level of nesting
-func resolveSubcommands(instanceVersion SpaceliftInstanceVersion, subcommands []Command) []*cli.Command {
-	var resolvedSubcommands []*cli.Command
-	
-	for _, subcommand := range subcommands {
-		latestVersion := subcommand.FindLatestSupportedVersion(instanceVersion)
-		if latestVersion != nil {
-			latestVersion.Command.Name = subcommand.Name
-			latestVersion.Command.Usage = subcommand.Usage
-			latestVersion.Command.Category = subcommand.Category
-			
-			// Recursively process this subcommand's subcommands
-			if len(subcommand.Subcommands) > 0 {
-				latestVersion.Command.Subcommands = resolveSubcommands(instanceVersion, subcommand.Subcommands)
-			}
-			
-			resolvedSubcommands = append(resolvedSubcommands, latestVersion.Command)
-		}
-	}
-	
-	return resolvedSubcommands
-}
-
 // SupportedVersion is used to indicate what versions of Spacelift certain spacectl commands are
 // compatible with.
 type SupportedVersion string
@@ -89,12 +47,71 @@ type VersionedCommand struct {
 	Command *cli.Command
 }
 
+type SpaceliftInstanceType uint
+
+const (
+	// SpaceliftInstanceTypeUnknown indicates that we don't know what type of instance spacectl
+	// is being used against. This can happen before a profile has been created or if the credentials
+	// have expired.
+	SpaceliftInstanceTypeUnknown SpaceliftInstanceType = iota
+
+	// SpaceliftInstanceTypeSaaS indicates we're talking to Spacelift SaaS.
+	SpaceliftInstanceTypeSaaS
+
+	// SpaceliftInstanceTypeSelfHosted indicates we're talking to a Self-Hosted instance.
+	SpaceliftInstanceTypeSelfHosted
+)
+
 type SpaceliftInstanceVersion struct {
-	// SaaS indicates that we are communicating with a Spacelift SaaS instance.
-	SaaS bool
+	// InstanceType defines the type of instance we're connecting to.
+	InstanceType SpaceliftInstanceType
 
 	// Version indicates the Self-Hosted version we are communicating with. It will be nil for SaaS.
 	Version *semver.Version
+}
+
+// ResolveCommands finds the set of command versions from allCommands and their subcommands that
+// are available based on the specified Spacelift instance version.ß
+func ResolveCommands(instanceVersion SpaceliftInstanceVersion, allCommands []Command) []*cli.Command {
+	var availableCommands []*cli.Command
+	for _, command := range allCommands {
+		latestVersion := command.FindLatestSupportedVersion(instanceVersion)
+		if latestVersion != nil {
+			latestVersion.Command.Name = command.Name
+			latestVersion.Command.Usage = command.Usage
+			latestVersion.Command.Category = command.Category
+
+			// Recursively resolve subcommands
+			latestVersion.Command.Subcommands = resolveSubcommands(instanceVersion, command.Subcommands)
+
+			availableCommands = append(availableCommands, latestVersion.Command)
+		}
+	}
+
+	return availableCommands
+}
+
+// resolveSubcommands recursively processes command subcommands at any level of nesting
+func resolveSubcommands(instanceVersion SpaceliftInstanceVersion, subcommands []Command) []*cli.Command {
+	var resolvedSubcommands []*cli.Command
+
+	for _, subcommand := range subcommands {
+		latestVersion := subcommand.FindLatestSupportedVersion(instanceVersion)
+		if latestVersion != nil {
+			latestVersion.Command.Name = subcommand.Name
+			latestVersion.Command.Usage = subcommand.Usage
+			latestVersion.Command.Category = subcommand.Category
+
+			// Recursively process this subcommand's subcommands
+			if len(subcommand.Subcommands) > 0 {
+				latestVersion.Command.Subcommands = resolveSubcommands(instanceVersion, subcommand.Subcommands)
+			}
+
+			resolvedSubcommands = append(resolvedSubcommands, latestVersion.Command)
+		}
+	}
+
+	return resolvedSubcommands
 }
 
 // FindLatestSupportedVersion finds the latest supported version of the specified command. It returns
@@ -106,8 +123,14 @@ func (c Command) FindLatestSupportedVersion(instanceVersion SpaceliftInstanceVer
 	// // Sort the commands into order of preference: "latest", specific versions, then "all".
 	// // Return the first command, or nil if none is supported.
 	availableCommands := c.Versions
-	if !instanceVersion.SaaS {
+	if instanceVersion.InstanceType != SpaceliftInstanceTypeSaaS {
 		availableCommands = spslices.Filter(availableCommands, func(v VersionedCommand) bool {
+			if instanceVersion.InstanceType == SpaceliftInstanceTypeUnknown && v.EarliestVersion != SupportedVersionAll {
+				// If we don't know the type / version of the instance, we can only return commands available
+				// to any version of Spacelift.
+				return false
+			}
+
 			if v.EarliestVersion == SupportedVersionLatest {
 				// If the version is marked as "latest", it won't be available yet in a Self-Hosted
 				// instance because a version of Self-Hosted supporting the command hasn't been released

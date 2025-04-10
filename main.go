@@ -33,8 +33,8 @@ func main() {
 
 	// TODO: query for the actual version
 	instanceVersion := cmd.SpaceliftInstanceVersion{
-		SaaS:    false,
-		Version: semver.MustParse("2.4.0"),
+		InstanceType: cmd.SpaceliftInstanceTypeSelfHosted,
+		Version:      semver.MustParse("2.4.0"),
 	}
 
 	app := &cli.App{
