@@ -8,10 +8,11 @@ import (
 	"strings"
 
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v2"
+
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd"
-	"github.com/urfave/cli/v2"
 )
 
 func listStacks() cli.ActionFunc {

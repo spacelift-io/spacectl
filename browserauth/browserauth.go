@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/spacelift-io/spacectl/client/session"
 	"github.com/spacelift-io/spacectl/internal"
 )

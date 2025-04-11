@@ -11,9 +11,10 @@ import (
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v2"
+
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 func openCommandInBrowser(cliCtx *cli.Context) error {
