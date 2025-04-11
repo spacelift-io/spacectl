@@ -671,14 +671,21 @@ func Command() cmd.Command {
 				Category: "Stack management",
 				Name:     "delete",
 				Usage:    "Delete a stack",
-				Flags: []cli.Flag{
-					flagStackID,
-					flagDestroyResources,
-					flagSkipConfirmation,
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagDestroyResources,
+								flagSkipConfirmation,
+							},
+							Action:    deleteStack(),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
 				},
-				Action:    deleteStack(),
-				Before:    authenticated.Ensure,
-				ArgsUsage: cmd.EmptyArgsUsage,
 			},
 			{
 				Name:  "resources",
