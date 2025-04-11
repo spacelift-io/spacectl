@@ -1,9 +1,10 @@
 package workerpools
 
 import (
+	"github.com/urfave/cli/v2"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 // Command encapsulates the workerpool command subtree.
@@ -35,8 +36,8 @@ func Command() cmd.Command {
 				},
 			},
 			{
-				Name:   "watch",
-				Usage:  "Starts an interactive watcher for a worker pool",
+				Name:  "watch",
+				Usage: "Starts an interactive watcher for a worker pool",
 				Versions: []cmd.VersionedCommand{
 					{
 						EarliestVersion: cmd.SupportedVersionAll,
