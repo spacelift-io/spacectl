@@ -1,10 +1,15 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
+	"github.com/spacelift-io/spacectl/client"
+	"github.com/spacelift-io/spacectl/client/session"
+	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/audittrail"
 	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
 	"github.com/spacelift-io/spacectl/internal/cmd/completion"
@@ -23,31 +28,90 @@ import (
 var version = "dev"
 var date = "2006-01-02T15:04:05Z"
 
+type debugInfoQuery struct {
+	DebugInfo struct {
+		SelfHostedVersion string `graphql:"selfHostedVersion"`
+	} `graphql:"debugInfo"`
+}
+
+func getSpaceliftInstanceVersion() cmd.SpaceliftInstanceVersion {
+	// Default fallback when we can't determine the version
+	instanceVersion := cmd.SpaceliftInstanceVersion{
+		InstanceType: cmd.SpaceliftInstanceTypeUnknown,
+	}
+
+	ctx, httpClient := session.Defaults()
+
+	// Create a new session - this may fail if the user doesn't have valid credentials
+	sess, err := session.New(ctx, httpClient)
+	if err != nil {
+		return instanceVersion
+	}
+
+	// Create a new client using the session
+	c := client.New(httpClient, sess)
+
+	// Make the GraphQL query to get debug info
+	var query debugInfoQuery
+	if err := c.Query(context.Background(), &query, nil); err != nil {
+		// If the query fails, return the unknown instance type
+		return instanceVersion
+	}
+
+	// If the query succeeds, determine if this is a SaaS or Self-Hosted instance
+	if query.DebugInfo.SelfHostedVersion == "" {
+		// Empty version means SaaS
+		instanceVersion.InstanceType = cmd.SpaceliftInstanceTypeSaaS
+	} else {
+		// Non-empty version means Self-Hosted
+		instanceVersion.InstanceType = cmd.SpaceliftInstanceTypeSelfHosted
+
+		// Parse the version string into a semantic version
+		v, err := semver.NewVersion(query.DebugInfo.SelfHostedVersion)
+		if err == nil {
+			instanceVersion.Version = v
+		} else {
+			log.Printf("Warning: Failed to parse Self-Hosted version string: %q: %v",
+				query.DebugInfo.SelfHostedVersion, err)
+		}
+	}
+
+	return instanceVersion
+}
+
 func main() {
 	compileTime, err := time.Parse(time.RFC3339, date)
 	if err != nil {
 		log.Fatalf("Could not parse compilation date: %v", err)
 	}
+
+	instanceVersion := getSpaceliftInstanceVersion()
+
+	if instanceVersion.InstanceType == cmd.SpaceliftInstanceTypeUnknown {
+		log.Println("Warning: Unable to determine Spacelift instance type. Some commands may be unavailable until you authenticate with Spacelift.")
+	}
+
 	app := &cli.App{
 		Name:                 "spacectl",
 		Version:              version,
 		Compiled:             compileTime,
 		Usage:                "Programmatic access to Spacelift GraphQL API.",
 		EnableBashCompletion: true,
-		Commands: []*cli.Command{
-			module.Command(),
+		Commands: append([]*cli.Command{
 			profile.Command(),
+			whoami.Command(),
+			versioncmd.Command(version, instanceVersion),
+			completion.Command(),
+		}, cmd.ResolveCommands(instanceVersion, []cmd.Command{
+			module.Command(),
+			stack.Command(),
 			provider.Command(),
 			runexternaldependency.Command(),
-			stack.Command(),
-			whoami.Command(),
-			versioncmd.Command(version),
 			workerpools.Command(),
-			completion.Command(),
 			blueprint.Command(),
 			policy.Command(),
 			audittrail.Command(),
-		},
+		})...),
 	}
 
 	if err := app.Run(os.Args); err != nil {
