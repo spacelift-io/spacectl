@@ -70,6 +70,31 @@ type SpaceliftInstanceVersion struct {
 	Version *semver.Version
 }
 
+// SimplifiedVersion returns the version (if set) without the prerelease or metadata parts.
+func (v SpaceliftInstanceVersion) SimplifiedVersion() *semver.Version {
+	if v.Version == nil {
+		return nil
+	}
+
+	return semver.New(v.Version.Major(), v.Version.Minor(), v.Version.Patch(), "", "")
+}
+
+// String returns a string representation of the instance version.
+func (v SpaceliftInstanceVersion) String() string {
+	switch v.InstanceType {
+	case SpaceliftInstanceTypeSaaS:
+		return "SaaS"
+	case SpaceliftInstanceTypeUnknown:
+		return "Unknown"
+	}
+
+	if v.Version != nil {
+		return "Self-Hosted " + v.Version.String()
+	}
+
+	return "Self-Hosted"
+}
+
 // ResolveCommands finds the set of command versions from allCommands and their subcommands that
 // are available based on the specified Spacelift instance version.ß
 func ResolveCommands(instanceVersion SpaceliftInstanceVersion, allCommands []Command) []*cli.Command {
@@ -150,7 +175,7 @@ func (c Command) FindLatestSupportedVersion(instanceVersion SpaceliftInstanceVer
 			// If the command only supports certain Self-Hosted instances, only include it if
 			// the Spacelift instance we're connecting to is running at least the earliest version
 			// supported by the command.
-			return instanceVersion.Version.GreaterThanEqual(version)
+			return instanceVersion.SimplifiedVersion().GreaterThanEqual(version)
 		})
 	}
 

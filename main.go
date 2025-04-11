@@ -69,10 +69,7 @@ func getSpaceliftInstanceVersion() cmd.SpaceliftInstanceVersion {
 		// Parse the version string into a semantic version
 		v, err := semver.NewVersion(query.DebugInfo.SelfHostedVersion)
 		if err == nil {
-			// We strip the prerelease and metadata info from the version to allow us to consider
-			// versions like v3.0.0-alpha.1 equivalent to v3.0.0 to make testing unreleased versions
-			// of Self-Hosted easier.
-			instanceVersion.Version = semver.New(v.Major(), v.Minor(), v.Patch(), "", "")
+			instanceVersion.Version = v
 		} else {
 			log.Printf("Warning: Failed to parse Self-Hosted version string: %q: %v",
 				query.DebugInfo.SelfHostedVersion, err)
@@ -103,7 +100,7 @@ func main() {
 		Commands: append([]*cli.Command{
 			profile.Command(),
 			whoami.Command(),
-			versioncmd.Command(version),
+			versioncmd.Command(version, instanceVersion),
 			completion.Command(),
 		}, cmd.ResolveCommands(instanceVersion, []cmd.Command{
 			module.Command(),

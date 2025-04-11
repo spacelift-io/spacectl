@@ -201,6 +201,15 @@ func (t *CommandTests) Test_FindLatestSupportedVersion_SelfHosted() {
 			selfHostedVersion: semver.MustParse("1.1.3"),
 			expectedVersion:   nullable.OfValue[cmd.SupportedVersion](cmd.SupportedVersionAll),
 		},
+		"ignores prerelease information in version number": {
+			versions: []cmd.VersionedCommand{
+				{EarliestVersion: cmd.SupportedVersionAll},
+				{EarliestVersion: cmd.SupportedVersion("1.2.0")},
+				{EarliestVersion: cmd.SupportedVersion("3.0.0")},
+			},
+			selfHostedVersion: semver.MustParse("3.0.0-alpha.2"),
+			expectedVersion:   nullable.OfValue(cmd.SupportedVersion("3.0.0")),
+		},
 		"only all": {
 			versions: []cmd.VersionedCommand{
 				{EarliestVersion: cmd.SupportedVersionAll},
