@@ -9,6 +9,7 @@ import (
 
 	"github.com/franela/goblin"
 	"github.com/onsi/gomega"
+
 	"github.com/spacelift-io/spacectl/client/session"
 )
 

@@ -7,9 +7,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/urfave/cli/v2"
+
 	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/client/session"
-	"github.com/urfave/cli/v2"
 )
 
 const (

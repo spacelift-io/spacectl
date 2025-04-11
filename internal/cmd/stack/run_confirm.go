@@ -5,9 +5,10 @@ import (
 	"fmt"
 
 	"github.com/shurcooL/graphql"
+	"github.com/urfave/cli/v2"
+
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 func runConfirm() cli.ActionFunc {

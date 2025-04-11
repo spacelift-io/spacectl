@@ -3,8 +3,9 @@ package stack
 import (
 	"fmt"
 
-	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
+
+	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 func runDeprioritize(cliCtx *cli.Context) error {

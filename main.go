@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/urfave/cli/v2"
+
 	"github.com/spacelift-io/spacectl/internal/cmd/audittrail"
 	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
 	"github.com/spacelift-io/spacectl/internal/cmd/completion"
@@ -17,7 +19,6 @@ import (
 	versioncmd "github.com/spacelift-io/spacectl/internal/cmd/version"
 	"github.com/spacelift-io/spacectl/internal/cmd/whoami"
 	"github.com/spacelift-io/spacectl/internal/cmd/workerpools"
-	"github.com/urfave/cli/v2"
 )
 
 var version = "dev"

@@ -3,8 +3,9 @@ package profile
 import (
 	"fmt"
 
-	"github.com/spacelift-io/spacectl/client/session"
 	"github.com/urfave/cli/v2"
+
+	"github.com/spacelift-io/spacectl/client/session"
 )
 
 var (

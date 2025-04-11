@@ -15,7 +15,7 @@ linters-settings:
     sections:
       - standard
       - default
-      - prefix(github.com/spacelift-io/backend)
+      - prefix(github.com/spacelift-io/spacectl)
   goconst:
     min-len: 2
     min-occurrences: 2

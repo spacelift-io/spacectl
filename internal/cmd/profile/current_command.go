@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/urfave/cli/v2"
+
+	"github.com/spacelift-io/spacectl/internal/cmd"
 )
 
 func currentCommand() *cli.Command {

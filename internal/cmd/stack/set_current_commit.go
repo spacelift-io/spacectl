@@ -6,8 +6,9 @@ import (
 	"fmt"
 
 	"github.com/shurcooL/graphql"
-	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/urfave/cli/v2"
+
+	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 func setCurrentCommit(cliCtx *cli.Context) error {

@@ -13,10 +13,11 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
-	"github.com/spacelift-io/spacectl/browserauth"
-	"github.com/spacelift-io/spacectl/client/session"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
+
+	"github.com/spacelift-io/spacectl/browserauth"
+	"github.com/spacelift-io/spacectl/client/session"
 )
 
 func loginCommand() *cli.Command {
