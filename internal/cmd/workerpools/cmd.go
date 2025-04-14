@@ -1,9 +1,10 @@
 package workerpools
 
 import (
+	"github.com/urfave/cli/v2"
+
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/urfave/cli/v2"
 )
 
 // Command encapsulates the workerpool command subtree.
