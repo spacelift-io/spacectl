@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
@@ -15,19 +14,13 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 )
 
-func createVersion() cli.ActionFunc {
+func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 	return func(cliCtx *cli.Context) error {
 		// Assuming that spacectl is ran from the root of the repository,
 		// containing the release artifacts in the "dist" directory.
 		dir := cliCtx.String(flagGoReleaserDir.Name)
 
 		providerType := cliCtx.String(flagProviderType.Name)
-		var useRegisterPlatformV2 bool
-		if types, err := mutationTypes(cliCtx.Context); err == nil {
-			useRegisterPlatformV2 = types.hasTerraformProviderVersionRegisterPlatformV2Mutation()
-		} else {
-			fmt.Println("Failed to check for presence of terraformProviderVersionRegisterPlatformV2Mutation ", err.Error())
-		}
 
 		fmt.Println("Retrieving release data from ", dir)
 		versionData, err := internal.BuildGoReleaserVersionData(dir)
@@ -57,19 +50,6 @@ func createVersion() cli.ActionFunc {
 			return errors.Wrap(err, "could not calculate checksum of signature file")
 		}
 
-		var createMutation struct {
-			CreateTerraformProviderVersion struct {
-				SHA256SumsUploadURL     string            `graphql:"sha256SumsUploadURL"`
-				SHA256SumsUploadHeaders structs.StringMap `graphql:"sha256SumsUploadHeaders"`
-
-				SHA256SumsSigUploadURL     string            `graphql:"sha256SumsSigUploadURL"`
-				SHA256SumsSigUploadHeaders structs.StringMap `graphql:"sha256SumsSigUploadHeaders"`
-				Version                    struct {
-					ID string `graphql:"id"`
-				} `graphql:"version"`
-			} `graphql:"terraformProviderVersionCreate(provider: $provider, input: $input)"`
-		}
-
 		variables := map[string]any{
 			"provider": graphql.ID(providerType),
 			"input": TerraformProviderVersionInput{
@@ -81,21 +61,70 @@ func createVersion() cli.ActionFunc {
 			},
 		}
 
-		if err := authenticated.Client.Mutate(cliCtx.Context, &createMutation, variables); err != nil {
-			return err
+		var sha256SumsUploadURL, sha256SumsSigUploadURL string
+		var sha256SumsUploadHeaders, sha256SumsSigUploadHeaders http.Header
+		var versionID string
+
+		// We only introduced the upload headers to the GraphQL API for Self-Hosted v3, so we need to use
+		// a fallback in case spacectl is running against older versions.
+		if useHeadersFromAPI {
+			var createMutation struct {
+				CreateTerraformProviderVersion struct {
+					SHA256SumsUploadURL     string            `graphql:"sha256SumsUploadURL"`
+					SHA256SumsUploadHeaders structs.StringMap `graphql:"sha256SumsUploadHeaders"`
+
+					SHA256SumsSigUploadURL     string            `graphql:"sha256SumsSigUploadURL"`
+					SHA256SumsSigUploadHeaders structs.StringMap `graphql:"sha256SumsSigUploadHeaders"`
+					Version                    struct {
+						ID string `graphql:"id"`
+					} `graphql:"version"`
+				} `graphql:"terraformProviderVersionCreate(provider: $provider, input: $input)"`
+			}
+
+			if err := authenticated.Client.Mutate(cliCtx.Context, &createMutation, variables); err != nil {
+				return err
+			}
+
+			sha256SumsUploadURL = createMutation.CreateTerraformProviderVersion.SHA256SumsUploadURL
+			sha256SumsUploadHeaders = createMutation.CreateTerraformProviderVersion.SHA256SumsUploadHeaders.HTTPHeaders()
+
+			sha256SumsSigUploadURL = createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadURL
+			sha256SumsSigUploadHeaders = createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadHeaders.HTTPHeaders()
+
+			versionID = createMutation.CreateTerraformProviderVersion.Version.ID
+		} else {
+			var createMutation struct {
+				CreateTerraformProviderVersion struct {
+					SHA256SumsUploadURL    string `graphql:"sha256SumsUploadURL"`
+					SHA256SumsSigUploadURL string `graphql:"sha256SumsSigUploadURL"`
+					Version                struct {
+						ID string `graphql:"id"`
+					} `graphql:"version"`
+				} `graphql:"terraformProviderVersionCreate(provider: $provider, input: $input)"`
+			}
+
+			if err := authenticated.Client.Mutate(cliCtx.Context, &createMutation, variables); err != nil {
+				return err
+			}
+
+			sha256SumsUploadURL = createMutation.CreateTerraformProviderVersion.SHA256SumsUploadURL
+			sha256SumsUploadHeaders = checksumsFile.AWSMetadataHeaders()
+
+			sha256SumsSigUploadURL = createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadURL
+			sha256SumsSigUploadHeaders = signatureFile.AWSMetadataHeaders()
+
+			versionID = createMutation.CreateTerraformProviderVersion.Version.ID
 		}
 
 		fmt.Println("Uploading the checksums file")
-		if err := checksumsFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsUploadURL, createMutation.CreateTerraformProviderVersion.SHA256SumsUploadHeaders.HTTPHeaders()); err != nil {
+		if err := checksumsFile.Upload(cliCtx.Context, dir, sha256SumsUploadURL, sha256SumsUploadHeaders); err != nil {
 			return errors.Wrap(err, "could not upload checksums file")
 		}
 
 		fmt.Println("Uploading the signatures file")
-		if err := signatureFile.Upload(cliCtx.Context, dir, createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadURL, createMutation.CreateTerraformProviderVersion.SHA256SumsSigUploadHeaders.HTTPHeaders()); err != nil {
+		if err := signatureFile.Upload(cliCtx.Context, dir, sha256SumsSigUploadURL, sha256SumsSigUploadHeaders); err != nil {
 			return errors.Wrap(err, "could not upload signature file")
 		}
-
-		versionID := createMutation.CreateTerraformProviderVersion.Version.ID
 
 		archives := versionData.Artifacts.Archives()
 		for i := range archives {
@@ -103,7 +132,7 @@ func createVersion() cli.ActionFunc {
 				return errors.Wrapf(err, "invalid artifact filename: %s", archives[i].Name)
 			}
 
-			if useRegisterPlatformV2 {
+			if useHeadersFromAPI {
 				if err := registerPlatformV2(cliCtx.Context, dir, versionID, &archives[i]); err != nil {
 					return err
 				}
@@ -172,33 +201,6 @@ func registerPlatform(ctx context.Context, dir string, versionID string, artifac
 	}
 
 	return nil
-}
-
-type mutationTypesQuery struct {
-	Schema struct {
-		MutationType struct {
-			Fields []mutationTypeField
-		}
-	} `graphql:"__schema"`
-}
-
-type mutationTypeField struct {
-	Name string
-}
-
-func (q mutationTypesQuery) hasTerraformProviderVersionRegisterPlatformV2Mutation() bool {
-	return slices.ContainsFunc(q.Schema.MutationType.Fields, func(field mutationTypeField) bool {
-		return field.Name == "terraformProviderVersionRegisterPlatformV2"
-	})
-}
-
-func mutationTypes(ctx context.Context) (mutationTypesQuery, error) {
-	query := mutationTypesQuery{}
-	err := authenticated.Client.Query(ctx, &query, nil)
-	if err != nil {
-		return mutationTypesQuery{}, err
-	}
-	return query, nil
 }
 
 func registerPlatformV2(ctx context.Context, dir string, versionID string, artifact *internal.GoReleaserArtifact) error {
