@@ -269,6 +269,12 @@ By default the login process is interactive, however, if that does not fit your 
 
 You can switch between account profiles by using `spacectl profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacectl profile logout ${MY_ALIAS}` command.
 
+## MCP Server
+
+Spacectl includes an MCP (Model Context Protocol) server that allows AI models to interact with Spacelift through a standardized interface. MCP is an open protocol that standardizes how applications provide context to LLMs, similar to how USB-C provides a standardized way to connect devices to peripherals.
+
+You can start the MCP server using the spacectl binary (`spacectl mcp server`) or using Docker (`docker run -i --rm ghcr.io/spacelift-io/spacectl mcp server`). The server provides tools that AI assistants can use to interact with Spacelift, including browsing stacks, viewing run history, accessing logs, seeing infrastructure changes, triggering new runs, and managing resources. With these tools, AI assistants can securely access your Spacelift infrastructure data and perform operations on your behalf.
+
 ## Contributing
 
 For information about how to contribute to the development of spacectl, please see our [CONTRIBUTING.md](./CONTRIBUTING.md) file.

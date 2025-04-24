@@ -11,30 +11,43 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
 )
 
+// Command returns the MCP command subtree.
 func Command() cmd.Command {
 	return cmd.Command{
 		Name:  "mcp",
-		Usage: "Start MCP server",
+		Usage: "Manage MCP server",
 		Versions: []cmd.VersionedCommand{
 			{
 				EarliestVersion: cmd.SupportedVersionAll,
-				Command: &cli.Command{
-					Action: func(cliCtx *cli.Context) error {
-						s := server.NewMCPServer(
-							"Spacelift MCP Server",
-							"1.0.0",
-							server.WithResourceCapabilities(true, true),
-							server.WithLogging(),
-							server.WithRecovery(),
-						)
+				Command:         &cli.Command{},
+			},
+		},
+		Subcommands: []cmd.Command{
+			{
+				Name:  "server",
+				Usage: "Start MCP server",
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							ArgsUsage: cmd.EmptyArgsUsage,
+							Action: func(cliCtx *cli.Context) error {
+								s := server.NewMCPServer(
+									"Spacelift MCP Server",
+									"1.0.0",
+									server.WithResourceCapabilities(true, true),
+									server.WithLogging(),
+									server.WithRecovery(),
+								)
 
-						stack.RegisterMCPTools(s)
+								stack.RegisterMCPTools(s)
 
-						fmt.Println("Starting MCP server...")
-						return server.ServeStdio(s)
+								fmt.Println("Starting MCP server...")
+								return server.ServeStdio(s)
+							},
+							Before: authenticated.Ensure,
+						},
 					},
-					Before:    authenticated.Ensure,
-					ArgsUsage: cmd.EmptyArgsUsage,
 				},
 			},
 		},
