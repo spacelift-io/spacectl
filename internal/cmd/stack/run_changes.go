@@ -1,6 +1,8 @@
 package stack
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v2"
@@ -16,7 +18,7 @@ func runChanges(cliCtx *cli.Context) error {
 	}
 	run := cliCtx.String(flagRequiredRun.Name)
 
-	result, err := getRunChanges(cliCtx, stackID, run)
+	result, err := getRunChanges(cliCtx.Context, stackID, run)
 	if err != nil {
 		return err
 	}
@@ -24,7 +26,7 @@ func runChanges(cliCtx *cli.Context) error {
 	return cmd.OutputJSON(result)
 }
 
-func getRunChanges(cliCtx *cli.Context, stackID, runID string) ([]runChangesData, error) {
+func getRunChanges(ctx context.Context, stackID, runID string) ([]runChangesData, error) {
 	var query struct {
 		Stack struct {
 			Run struct {
@@ -37,7 +39,7 @@ func getRunChanges(cliCtx *cli.Context, stackID, runID string) ([]runChangesData
 		"stack": graphql.ID(stackID),
 		"run":   graphql.ID(runID),
 	}
-	if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 		return nil, errors.Wrap(err, "failed to query one stack")
 	}
 

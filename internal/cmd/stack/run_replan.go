@@ -77,7 +77,7 @@ func runReplan(cliCtx *cli.Context) error {
 }
 
 func interactiveResourceSelection(cliCtx *cli.Context, stackID, runID string) ([]string, error) {
-	resources, err := getRunChanges(cliCtx, stackID, runID)
+	resources, err := getRunChanges(cliCtx.Context, stackID, runID)
 	if err != nil {
 		return nil, err
 	}
