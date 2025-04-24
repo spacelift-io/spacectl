@@ -87,7 +87,23 @@ func Command() cmd.Command {
 								flagGoReleaserDir,
 								flagGPGKeyID,
 							},
-							Action:    createVersion(),
+							Action:    createVersion(false),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
+					{
+						// We added support for returning custom upload headers from the API as part of v3.0.0
+						// in order to support using other storage backends for Spacelift than S3.
+						EarliestVersion: cmd.SupportedVersion("3.0.0"),
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagProviderType,
+								flagProviderVersionProtocols,
+								flagGoReleaserDir,
+								flagGPGKeyID,
+							},
+							Action:    createVersion(true),
 							Before:    authenticated.Ensure,
 							ArgsUsage: cmd.EmptyArgsUsage,
 						},
