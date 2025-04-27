@@ -11,7 +11,7 @@ import (
 func Command() cmd.Command {
 	return cmd.Command{
 		Name:  "audit-trail",
-		Usage: "Manage a Spacelift audit trail entries",
+		Usage: "Manage Spacelift audit trail entries",
 		Versions: []cmd.VersionedCommand{
 			{
 				EarliestVersion: cmd.SupportedVersionAll,

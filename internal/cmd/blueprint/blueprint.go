@@ -14,7 +14,7 @@ import (
 func Command() cmd.Command {
 	return cmd.Command{
 		Name:  "blueprint",
-		Usage: "Manage a Spacelift blueprints",
+		Usage: "Manage Spacelift blueprints",
 		Versions: []cmd.VersionedCommand{
 			{
 				EarliestVersion: cmd.SupportedVersionAll,
