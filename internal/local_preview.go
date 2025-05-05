@@ -108,7 +108,7 @@ func GetIgnoreMatcherFn(ctx context.Context, projectRoot *string, ignoreFiles []
 // we also short circuit the file system walk if a directory is ignored.
 func CreateArchive(ctx context.Context, src, dest string, matchFn IgnoreMatcherFn) error {
 	if !strings.HasSuffix(dest, ".tar.gz") {
-		fmt.Errorf(".tar.gz extention required: %s", dest)
+		return fmt.Errorf(".tar.gz extention required: %s", dest)
 	}
 
 	srcInfo, err := os.Lstat(src)
@@ -141,7 +141,11 @@ func CreateArchive(ctx context.Context, src, dest string, matchFn IgnoreMatcherF
 	base := filepath.Base(dest)
 	prefixInArchive := strings.TrimSuffix(base, ".tar.gz")
 
-	return filepath.Walk(src, func(fpath string, info os.FileInfo, err error) error {
+	return filepath.Walk(src, func(fpath string, info os.FileInfo, werr error) error {
+		if werr != nil {
+			return nil
+		}
+
 		if !matchFn(fpath) {
 			if info.Mode().IsDir() {
 				return filepath.SkipDir
