@@ -275,7 +275,7 @@ Spacectl includes an MCP (Model Context Protocol) server that allows AI models t
 
 ### Authentication
 
-The MCP server uses the same authentication methods as the standard CLI. You can use any of the [authentication methods described above](#authentication), including environment variables and profile-based authentication.
+The MCP server uses the same authentication methods as the standard CLI. You can use any of the [authentication methods described above](#authentication).
 
 ### Configuration
 

@@ -16,7 +16,7 @@ import (
 )
 
 type McpOptions struct {
-	UseHeaders bool
+	UseHeadersForLocalPreview bool
 }
 
 func RegisterMCPTools(s *server.MCPServer, options McpOptions) {
@@ -469,7 +469,7 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 				Path:               path,
 				FindRepositoryRoot: false,
 				DisregardGitignore: false,
-				UseHeaders:         options.UseHeaders,
+				UseHeaders:         options.UseHeadersForLocalPreview,
 				NoUpload:           false,
 				ShowUploadProgress: false,
 			},

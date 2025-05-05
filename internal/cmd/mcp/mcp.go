@@ -33,7 +33,7 @@ func Command() cmd.Command {
 								s := mcpServer()
 
 								stack.RegisterMCPTools(s, stack.McpOptions{
-									UseHeaders: true,
+									UseHeadersForLocalPreview: false,
 								})
 
 								return server.ServeStdio(s)
@@ -49,7 +49,7 @@ func Command() cmd.Command {
 								s := mcpServer()
 
 								stack.RegisterMCPTools(s, stack.McpOptions{
-									UseHeaders: false,
+									UseHeadersForLocalPreview: true,
 								})
 
 								return server.ServeStdio(s)

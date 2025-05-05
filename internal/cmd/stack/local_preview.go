@@ -153,7 +153,7 @@ type LocalPreviewOptions struct {
 func createLocalPreviewRun(
 	ctx context.Context,
 	options LocalPreviewOptions,
-	printer io.Writer,
+	writer io.Writer,
 ) (string, error) {
 	envVars := options.EnvironmentVars
 
@@ -175,9 +175,9 @@ func createLocalPreviewRun(
 	}
 
 	if packagePath == nil {
-		fmt.Fprintln(printer, "Packing local workspace...")
+		fmt.Fprintln(writer, "Packing local workspace...")
 	} else {
-		fmt.Fprintf(printer, "Packing '%s' as local workspace...\n", *packagePath)
+		fmt.Fprintf(writer, "Packing '%s' as local workspace...\n", *packagePath)
 	}
 
 	// Define concrete types
@@ -248,13 +248,13 @@ func createLocalPreviewRun(
 	}
 
 	if options.NoUpload {
-		fmt.Fprintf(printer, "No upload flag was provided, will not create run, saved archive at: %s\n", fp)
+		fmt.Fprintf(writer, "No upload flag was provided, will not create run, saved archive at: %s\n", fp)
 		return "", nil
 	}
 
 	defer os.Remove(fp)
 
-	fmt.Fprintln(printer, "Uploading local workspace...")
+	fmt.Fprintln(writer, "Uploading local workspace...")
 
 	if err := internal.UploadArchive(ctx, uploadURL, fp, headers, options.ShowUploadProgress); err != nil {
 		return "", fmt.Errorf("couldn't upload archive: %w", err)
@@ -277,20 +277,20 @@ func createLocalPreviewRun(
 		requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, *options.RunMetadata))
 	}
 
-	fmt.Fprintln(printer, "Creating local preview run...")
+	fmt.Fprintln(writer, "Creating local preview run...")
 	if err = authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {
 		return "", err
 	}
 
-	fmt.Fprintln(printer, "You have successfully created a local preview run!")
+	fmt.Fprintln(writer, "You have successfully created a local preview run!")
 
 	if options.PrioritizeRun {
 		_, err = setRunPriority(ctx, options.StackID, triggerMutation.RunProposeLocalWorkspace.ID, true)
 		if err != nil {
-			fmt.Fprintln(printer, "Failed to prioritize the run due to err:", err)
-			fmt.Fprintln(printer, "Resolve the issue and prioritize the run manually")
+			fmt.Fprintln(writer, "Failed to prioritize the run due to err:", err)
+			fmt.Fprintln(writer, "Resolve the issue and prioritize the run manually")
 		} else {
-			fmt.Fprintln(printer, "The run has been successfully prioritized!")
+			fmt.Fprintln(writer, "The run has been successfully prioritized!")
 		}
 	}
 
