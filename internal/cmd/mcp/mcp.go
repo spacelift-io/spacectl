@@ -1,8 +1,6 @@
 package mcp
 
 import (
-	"fmt"
-
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/urfave/cli/v2"
 
@@ -32,17 +30,28 @@ func Command() cmd.Command {
 						Command: &cli.Command{
 							ArgsUsage: cmd.EmptyArgsUsage,
 							Action: func(cliCtx *cli.Context) error {
-								s := server.NewMCPServer(
-									"Spacelift MCP Server",
-									"1.0.0",
-									server.WithResourceCapabilities(true, true),
-									server.WithLogging(),
-									server.WithRecovery(),
-								)
+								s := mcpServer()
 
-								stack.RegisterMCPTools(s)
+								stack.RegisterMCPTools(s, stack.McpOptions{
+									UseHeaders: true,
+								})
 
-								fmt.Println("Starting MCP server...")
+								return server.ServeStdio(s)
+							},
+							Before: authenticated.Ensure,
+						},
+					},
+					{
+						EarliestVersion: cmd.SupportedVersion("2.5.0"),
+						Command: &cli.Command{
+							ArgsUsage: cmd.EmptyArgsUsage,
+							Action: func(cliCtx *cli.Context) error {
+								s := mcpServer()
+
+								stack.RegisterMCPTools(s, stack.McpOptions{
+									UseHeaders: false,
+								})
+
 								return server.ServeStdio(s)
 							},
 							Before: authenticated.Ensure,
@@ -52,4 +61,16 @@ func Command() cmd.Command {
 			},
 		},
 	}
+}
+
+func mcpServer() *server.MCPServer {
+	s := server.NewMCPServer(
+		"Spacelift MCP Server",
+		"1.0.0",
+		server.WithResourceCapabilities(true, true),
+		server.WithLogging(),
+		server.WithRecovery(),
+	)
+
+	return s
 }

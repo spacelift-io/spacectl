@@ -184,7 +184,7 @@ func CreateArchive(ctx context.Context, src, dest string, matchFn IgnoreMatcherF
 }
 
 // UploadArchive uploads a tarball to the target endpoint and displays a fancy progress bar.
-func UploadArchive(ctx context.Context, uploadURL, path string, uploadHeaders map[string]string) (err error) {
+func UploadArchive(ctx context.Context, uploadURL, path string, uploadHeaders map[string]string, showProgress bool) (err error) {
 	stat, err := os.Stat(path)
 	if err != nil {
 		return fmt.Errorf("couldn't stat archive file: %w", err)
@@ -196,11 +196,14 @@ func UploadArchive(ctx context.Context, uploadURL, path string, uploadHeaders ma
 		return fmt.Errorf("couldn't open archive file: %w", err)
 	}
 
-	bar := pb.Full.Start64(stat.Size())
-	barReader := bar.NewProxyReader(f)
-	defer bar.Finish()
+	var reader io.Reader = f
+	if showProgress {
+		bar := pb.Full.Start64(stat.Size())
+		reader = bar.NewProxyReader(f)
+		defer bar.Finish()
+	}
 
-	req, err := http.NewRequest(http.MethodPut, uploadURL, barReader)
+	req, err := http.NewRequest(http.MethodPut, uploadURL, reader)
 	if err != nil {
 		return fmt.Errorf("couldn't create upload request: %w", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -14,7 +15,11 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func RegisterMCPTools(s *server.MCPServer) {
+type McpOptions struct {
+	UseHeaders bool
+}
+
+func RegisterMCPTools(s *server.MCPServer, options McpOptions) {
 	registerListStacksTool(s)
 	registerListStackRunsTool(s)
 	registerGetStackRunLogsTool(s)
@@ -23,6 +28,7 @@ func RegisterMCPTools(s *server.MCPServer) {
 	registerDiscardStackRunTool(s)
 	registerConfirmStackRunTool(s)
 	registerListResourcesTool(s)
+	registerLocalPreviewTool(s, options)
 }
 
 func registerListStacksTool(s *server.MCPServer) {
@@ -386,6 +392,136 @@ func registerListResourcesTool(s *server.MCPServer) {
 		}
 
 		return listResourcesForAllStacks(ctx)
+	})
+}
+
+func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
+	var localPreviewTool = mcp.NewTool("local_preview",
+		mcp.WithDescription(`Start a preview (proposed run) based on the current project.`),
+		mcp.WithToolAnnotation(mcp.ToolAnnotation{
+			Title: "Local Preview",
+		}),
+		mcp.WithString("stack_id", mcp.Description("The ID of the stack"), mcp.Required()),
+		mcp.WithObject("environment_variables", mcp.Description("Environment variables to set for the run")),
+		mcp.WithArray("targets", mcp.Description("Limit the planning operation to only the given module, resource, or resource instance and all of its dependencies.")),
+		mcp.WithString("path", mcp.Description("The path to the local workspace. If not provided, the current working directory will be used.")),
+		mcp.WithString("await_for_completion", mcp.Description("Wait for the run to complete before returning the result."), mcp.DefaultString("true"), mcp.Enum("true", "false")),
+	)
+
+	s.AddTool(localPreviewTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		stackID := request.Params.Arguments["stack_id"].(string)
+
+		stack, err := stackGetByID[stack](ctx, stackID)
+		if errors.Is(err, errNoStackFound) {
+			return mcp.NewToolResultText("Stack not found"), nil
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to check if stack exists: %w", err)
+		}
+
+		if !stack.LocalPreviewEnabled {
+			linkToStack := authenticated.Client.URL("/stack/%s", stack.ID)
+			return mcp.NewToolResultText(fmt.Sprintf("Local preview has not been enabled for this stack, please enable local preview in the stack settings: %s", linkToStack)), nil
+		}
+
+		var envVars []EnvironmentVariable
+		if request.Params.Arguments["environment_variables"] != nil {
+			v := request.Params.Arguments["environment_variables"].(map[string]any)
+			for k, v := range v {
+				if o, ok := v.(string); ok {
+					envVars = append(envVars, EnvironmentVariable{
+						Key:   graphql.String(k),
+						Value: graphql.String(o),
+					})
+				}
+			}
+		}
+
+		var targets []string
+		if request.Params.Arguments["targets"] != nil {
+			v := request.Params.Arguments["targets"].([]any)
+			for _, t := range v {
+				if o, ok := t.(string); ok {
+					targets = append(targets, o)
+				}
+			}
+		}
+
+		var path *string
+		if p, ok := request.Params.Arguments["path"].(string); ok && p != "" {
+			path = &p
+		}
+
+		awaitForCompletion := true
+		if a, ok := request.Params.Arguments["await_for_completion"].(string); ok && a != "" {
+			awaitForCompletion = a == "true"
+		}
+
+		// Create a string builder to capture output
+		var outputBuilder strings.Builder
+
+		runID, err := createLocalPreviewRun(
+			ctx,
+			LocalPreviewOptions{
+				StackID:            stackID,
+				EnvironmentVars:    envVars,
+				Targets:            targets,
+				Path:               path,
+				FindRepositoryRoot: false,
+				DisregardGitignore: false,
+				UseHeaders:         options.UseHeaders,
+				NoUpload:           false,
+				ShowUploadProgress: false,
+			},
+			&outputBuilder,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to create local preview run: %w", err)
+		}
+
+		// Get the captured output
+		output := outputBuilder.String()
+
+		// Add run URL to the output
+		linkToRun := authenticated.Client.URL(
+			"/stack/%s/run/%s",
+			stackID,
+			runID,
+		)
+		output += fmt.Sprintf("\nThe live run can be visited at %s\n", linkToRun)
+
+		if !awaitForCompletion {
+			return mcp.NewToolResultText(output), nil
+		}
+
+		logLines := make(chan string)
+		var allLogs []string
+
+		go func() {
+			for line := range logLines {
+				allLogs = append(allLogs, line)
+			}
+		}()
+
+		terminal, err := runStates(ctx, stackID, runID, logLines, nil)
+		close(logLines)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to collect run logs: %w", err)
+		}
+
+		// Add logs to output
+		output += "\n\nRun logs:\n\n"
+		for _, line := range allLogs {
+			output += line
+		}
+
+		if terminal != nil {
+			output += fmt.Sprintf("\n\nRun completed with state: %s\n", terminal.State)
+		}
+
+		return mcp.NewToolResultText(output), nil
 	})
 }
 
