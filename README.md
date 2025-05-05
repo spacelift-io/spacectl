@@ -273,7 +273,58 @@ You can switch between account profiles by using `spacectl profile select ${MY_A
 
 Spacectl includes an MCP (Model Context Protocol) server that allows AI models to interact with Spacelift through a standardized interface. MCP is an open protocol that standardizes how applications provide context to LLMs, similar to how USB-C provides a standardized way to connect devices to peripherals.
 
-You can start the MCP server using the spacectl binary (`spacectl mcp server`) or using Docker (`docker run -i --rm ghcr.io/spacelift-io/spacectl mcp server`). The server provides tools that AI assistants can use to interact with Spacelift, including browsing stacks, viewing run history, accessing logs, seeing infrastructure changes, triggering new runs, and managing resources. With these tools, AI assistants can securely access your Spacelift infrastructure data and perform operations on your behalf.
+### Authentication
+
+The MCP server uses the same authentication methods as the standard CLI. You can use any of the [authentication methods described above](#authentication), including environment variables and profile-based authentication.
+
+### Configuration
+
+To use the Spacelift MCP server with your AI tool:
+
+1. Find your tool's MCP configuration file
+2. Add the following configuration:
+
+```json
+{
+  "mcpServers": {
+    "spacelift": {
+      "command": "spacectl",
+      "args": ["mcp", "server"]
+    }
+  }
+}
+```
+
+Or if you prefer using Docker:
+
+```json
+{
+  "mcpServers": {
+    "spacelift": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "ghcr.io/spacelift-io/spacectl", "mcp", "server"]
+    }
+  }
+}
+```
+
+3. Restart your AI tool to apply the changes
+
+### Available Tools
+
+The MCP server provides several tools for AI assistants to interact with Spacelift:
+
+- **list_stacks**: Browse and search through your Spacelift stacks
+- **list_stack_runs**: View the run history for a specific stack
+- **get_stack_run_logs**: Access detailed logs for a specific run
+- **get_stack_run_changes**: See infrastructure changes from a run
+- **trigger_stack_run**: Start a new run for a stack
+- **confirm_stack_run**: Approve a run that is waiting for confirmation
+- **discard_stack_run**: Cancel a pending or in-progress run
+- **list_resources**: View infrastructure resources managed by your stacks
+- **local_preview**: Create a preview run using local workspace files
+
+With these tools, AI assistants can securely access your Spacelift infrastructure data and perform operations on your behalf.
 
 ## Contributing
 
