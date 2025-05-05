@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v2"
 
@@ -127,12 +126,9 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 			return fmt.Errorf("couldn't analyze .gitignore and .terraformignore files")
 		}
 
-		tgz := *archiver.DefaultTarGz
-		tgz.ForceArchiveImplicitTopLevelFolder = true
-		tgz.MatchFn = matchFn
-
-		if err := tgz.Archive([]string{"."}, fp); err != nil {
-			return fmt.Errorf("couldn't archive local directory: %w", err)
+		err = internal.CreateArchive(ctx, ".", fp, matchFn)
+		if err != nil {
+			return fmt.Errorf("CreateArchive: %w", err)
 		}
 
 		if cliCtx.Bool(flagNoUpload.Name) {
