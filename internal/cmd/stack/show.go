@@ -205,7 +205,7 @@ func (c *showStackCommand) outputBackendSettings(query showStackQuery) error {
 		{"Vendor", c.humanizeVendor(query.Stack.VendorConfig.Vendor)},
 	}
 
-	if query.Stack.VendorConfig.Vendor == stackConfigVendorPulumi {
+	if query.Stack.VendorConfig.Vendor == stackConfigVendorPulumi { //nolint: staticcheck
 		tableData = append(tableData, []string{"Login URL", query.Stack.VendorConfig.Pulumi.LoginURL})
 		tableData = append(tableData, []string{"Stack name", query.Stack.VendorConfig.Pulumi.StackName})
 	} else if query.Stack.VendorConfig.Vendor == stackConfigVendorTerraform {
