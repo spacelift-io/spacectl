@@ -166,35 +166,24 @@ func registerGetStackRunLogsTool(s *server.MCPServer) {
 		stackID := request.Params.Arguments["stack_id"].(string)
 		runID := request.Params.Arguments["run_id"].(string)
 
-		// Create a channel to collect log lines
 		logLines := make(chan string)
 		var allLogs []string
 		var terminal *structs.RunStateTransition
 		var err error
 
-		// Start a goroutine to collect logs
-		done := make(chan struct{})
 		go func() {
 			for line := range logLines {
 				allLogs = append(allLogs, line)
 			}
-			close(done)
 		}()
 
-		// Run the log collection
-		go func() {
-			terminal, err = runStates(ctx, stackID, runID, logLines, nil)
-			close(logLines)
-		}()
-
-		// Wait for log collection to complete
-		<-done
+		terminal, err = runStates(ctx, stackID, runID, logLines, nil)
+		close(logLines)
 
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to collect run logs")
 		}
 
-		// Format the output
 		output := fmt.Sprintf("Logs for run %s in stack %s:\n\n", runID, stackID)
 
 		for _, line := range allLogs {
