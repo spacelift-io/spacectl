@@ -15,6 +15,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/audittrail"
 	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
 	"github.com/spacelift-io/spacectl/internal/cmd/completion"
+	"github.com/spacelift-io/spacectl/internal/cmd/mcp"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/policy"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
@@ -110,6 +111,7 @@ func main() {
 			blueprint.Command(),
 			policy.Command(),
 			audittrail.Command(),
+			mcp.Command(),
 		})...),
 	}
 

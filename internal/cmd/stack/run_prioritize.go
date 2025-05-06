@@ -1,6 +1,7 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/shurcooL/graphql"
@@ -16,7 +17,7 @@ func runPrioritize(cliCtx *cli.Context) error {
 	}
 	runID := cliCtx.String(flagRequiredRun.Name)
 
-	mutation, err := setRunPriority(cliCtx, stackID, runID, true)
+	mutation, err := setRunPriority(cliCtx.Context, stackID, runID, true)
 	if err != nil {
 		return err
 	}
@@ -46,7 +47,7 @@ type setRunPriorityMutation struct {
 	} `graphql:"runPrioritizeSet(stack: $stackId, run: $runId, prioritize: $prioritize)"`
 }
 
-func setRunPriority(cliCtx *cli.Context, stackID, runID string, prioritize bool) (setRunPriorityMutation, error) {
+func setRunPriority(ctx context.Context, stackID, runID string, prioritize bool) (setRunPriorityMutation, error) {
 	var mutation setRunPriorityMutation
 
 	variables := map[string]interface{}{
@@ -55,7 +56,7 @@ func setRunPriority(cliCtx *cli.Context, stackID, runID string, prioritize bool)
 		"prioritize": graphql.Boolean(prioritize),
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return setRunPriorityMutation{}, err
 	}
 

@@ -122,11 +122,12 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string, acFn 
 			backoff = 0
 			reportedStates[transition.State] = struct{}{}
 
-			fmt.Println("")
-			fmt.Println("-----------------")
-			fmt.Println(transition.About())
-			fmt.Println("-----------------")
-			fmt.Println("")
+			sink <- fmt.Sprintf(`
+-----------------
+%s
+-----------------
+
+`, transition.About())
 
 			if transition.HasLogs {
 				if err := runStateLogs(ctx, stack, run, transition.State, transition.StateVersion, sink, transition.Terminal); err != nil {

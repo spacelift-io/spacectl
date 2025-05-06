@@ -114,7 +114,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 
 		fmt.Println("Uploading local workspace...")
 
-		if err := internal.UploadArchive(ctx, uploadURL, fp, headers); err != nil {
+		if err := internal.UploadArchive(ctx, uploadURL, fp, headers, true); err != nil {
 			return fmt.Errorf("couldn't upload archive: %w", err)
 		}
 

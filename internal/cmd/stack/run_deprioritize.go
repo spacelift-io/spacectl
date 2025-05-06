@@ -15,7 +15,7 @@ func runDeprioritize(cliCtx *cli.Context) error {
 	}
 	runID := cliCtx.String(flagRequiredRun.Name)
 
-	mutation, err := setRunPriority(cliCtx, stackID, runID, false)
+	mutation, err := setRunPriority(cliCtx.Context, stackID, runID, false)
 	if err != nil {
 		return err
 	}
