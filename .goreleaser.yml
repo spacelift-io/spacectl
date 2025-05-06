@@ -17,7 +17,7 @@ builds:
 archives:
   # Our GitHub Action relies on this format and file path, so please don't change it:
   # https://github.com/spacelift-io/setup-spacectl
-  - format: zip
+  - formats: [zip]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - LICENSE
