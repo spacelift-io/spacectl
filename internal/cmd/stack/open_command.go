@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cli/cli/v2/git"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
@@ -85,24 +86,22 @@ func getRepositoryName() (string, error) {
 		return "", err
 	}
 
-	return cleanupRepositoryString(string(out))
+	gitURL := strings.TrimSpace(string(out))
+	return cleanupRepositoryString(gitURL)
 }
 
 func cleanupRepositoryString(s string) (string, error) {
-	var userRepo string
-
-	switch {
-	case strings.HasPrefix(s, "https://"):
-		userRepo = strings.TrimPrefix(s, "https://")
-		userRepo = userRepo[strings.Index(userRepo, "/")+1:]
-	case strings.HasPrefix(s, "git@"):
-		userRepo = strings.TrimPrefix(s, "git@")
-		userRepo = userRepo[strings.Index(userRepo, ":")+1:]
-	default:
+	validGitURL := git.IsURL(s)
+	if !validGitURL {
 		return "", fmt.Errorf("unsupported repository string: %s", s)
 	}
 
-	return strings.TrimSuffix(strings.TrimSpace(userRepo), ".git"), nil
+	gitURL, err := git.ParseURL(s)
+	if err != nil {
+		return "", fmt.Errorf("error parsing git url: %v", err)
+	}
+	path := strings.TrimSuffix(strings.TrimPrefix(gitURL.Path, "/"), ".git")
+	return path, nil
 }
 
 func getGitCurrentBranch() (string, error) {
