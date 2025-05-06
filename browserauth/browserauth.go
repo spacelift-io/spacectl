@@ -126,7 +126,7 @@ func BeginWithBindAddress(credentials *session.StoredCredentials, host string, p
 	handler.AuthenticationURL = authURL.String()
 
 	// Start the HTTP server
-	go handler.serveHttp(listener)
+	go handler.serveHTTP(listener)
 
 	return handler, nil
 }
@@ -159,7 +159,7 @@ func (h *Handler) Wait(ctx context.Context) error {
 // Start the local auth callback server on the given network listener. This will
 // server forever/until the server is shutdown/closed. This method is assumed to
 // be started as a background routine, and logs any startup errors w/ log.Printf.
-func (h *Handler) serveHttp(listener net.Listener) {
+func (h *Handler) serveHTTP(listener net.Listener) {
 	err := h.server.Serve(listener)
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Printf("could not start local auth server: %s", err)

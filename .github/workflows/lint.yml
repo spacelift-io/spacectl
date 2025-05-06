@@ -34,7 +34,7 @@ jobs:
         run: go vet ./...
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
           args: --verbose
-          version: ${{ env.GOLANGCI_LINT_VERSION }}
+          version: v2.1.6

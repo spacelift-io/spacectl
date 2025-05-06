@@ -206,7 +206,7 @@ func registerPlatform(ctx context.Context, dir string, versionID string, artifac
 func registerPlatformV2(ctx context.Context, dir string, versionID string, artifact *internal.GoReleaserArtifact) error {
 	var mutation struct {
 		RegisterTerraformProviderVersionPlatform struct {
-			UploadUrl     string `json:"uploadUrl"`
+			UploadURL     string `json:"uploadUrl"`
 			UploadHeaders struct {
 				Entries []struct {
 					Key   string `json:"key"`
@@ -242,7 +242,7 @@ func registerPlatformV2(ctx context.Context, dir string, versionID string, artif
 		header.Set(entry.Key, entry.Value)
 	}
 
-	if err := artifact.Upload(ctx, dir, mutation.RegisterTerraformProviderVersionPlatform.UploadUrl, header); err != nil {
+	if err := artifact.Upload(ctx, dir, mutation.RegisterTerraformProviderVersionPlatform.UploadURL, header); err != nil {
 		return errors.Wrapf(err, "could not upload artifact: %s", artifact.Name)
 	}
 
