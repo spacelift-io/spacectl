@@ -302,7 +302,19 @@ Or if you prefer using Docker:
   "mcpServers": {
     "spacelift": {
       "command": "docker",
-      "args": ["run", "-i", "--rm", "ghcr.io/spacelift-io/spacectl", "mcp", "server"]
+      "args": [
+        "run", 
+        "-i", 
+        "--rm", 
+        "-e", "SPACELIFT_API_TOKEN=your-api-token-here",
+        // Or use API key authentication:
+        // "-e", "SPACELIFT_API_KEY_ENDPOINT=https://your-account.app.spacelift.io",
+        // "-e", "SPACELIFT_API_KEY_ID=your-key-id",
+        // "-e", "SPACELIFT_API_KEY_SECRET=your-key-secret",
+        "ghcr.io/spacelift-io/spacectl", 
+        "mcp", 
+        "server"
+      ]
     }
   }
 }
