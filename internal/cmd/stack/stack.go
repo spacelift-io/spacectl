@@ -383,6 +383,20 @@ func Command() cmd.Command {
 									ArgsUsage: cmd.EmptyArgsUsage,
 								},
 							},
+							{
+								EarliestVersion: cmd.SupportedVersionLatest,
+								Command: &cli.Command{
+									Flags: []cli.Flag{
+										flagStackID,
+										flagMaxResults,
+										flagPreviewRuns,
+										cmd.FlagOutputFormat,
+									},
+									Action:    runList,
+									Before:    authenticated.Ensure,
+									ArgsUsage: cmd.EmptyArgsUsage,
+								},
+							},
 						},
 					},
 				},
