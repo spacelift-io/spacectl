@@ -29,9 +29,19 @@ func runList(cliCtx *cli.Context) error {
 
 	switch outputFormat {
 	case cmd.OutputFormatTable:
-		return listRunsTable(cliCtx.Context, stackID, maxResults, showPreview)
+		return listRunsTable(cliCtx.Context, maxResults, func(ctx context.Context, before *string) ([]runsTableQuery, error) {
+			if showPreview {
+				return queryPreviewRuns[runsTableQuery](ctx, stackID, before)
+			}
+			return queryTrackedRuns[runsTableQuery](ctx, stackID, before)
+		})
 	case cmd.OutputFormatJSON:
-		return listRunsJSON(cliCtx.Context, stackID, maxResults, showPreview)
+		return listRunsJSON(cliCtx.Context, maxResults, func(ctx context.Context, before *string) ([]runsJSONQuery, error) {
+			if showPreview {
+				return queryPreviewRuns[runsJSONQuery](ctx, stackID, before)
+			}
+			return queryTrackedRuns[runsJSONQuery](ctx, stackID, before)
+		})
 	}
 
 	return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -112,18 +122,12 @@ func queryPreviewRuns[T any](ctx context.Context, stackID string, before *string
 
 }
 
-func fetchRuns[T withCursor](ctx context.Context, stackID string, maxResults int, preview bool) ([]T, error) {
+func fetchRuns[T withCursor](ctx context.Context, maxResults int, fetcher func(context.Context, *string) ([]T, error)) ([]T, error) {
 	var results []T
 	var before *string
 
 	for len(results) < maxResults {
-		var err error
-		var runs []T
-		if preview {
-			runs, err = queryPreviewRuns[T](ctx, stackID, before)
-		} else {
-			runs, err = queryTrackedRuns[T](ctx, stackID, before)
-		}
+		runs, err := fetcher(ctx, before)
 
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to query run list")
@@ -143,8 +147,8 @@ func fetchRuns[T withCursor](ctx context.Context, stackID string, maxResults int
 	return results, nil
 }
 
-func listRunsJSON(ctx context.Context, stackID string, maxResults int, showPreviewRuns bool) error {
-	results, err := fetchRuns[runsJSONQuery](ctx, stackID, maxResults, showPreviewRuns)
+func listRunsJSON(ctx context.Context, maxResults int, fetcher func(context.Context, *string) ([]runsJSONQuery, error)) error {
+	results, err := fetchRuns(ctx, maxResults, fetcher)
 	if err != nil {
 		return err
 	}
@@ -173,8 +177,8 @@ func (r runsTableQuery) Cursor() string {
 	return r.ID
 }
 
-func listRunsTable(ctx context.Context, stackID string, maxResults int, showPreviewRuns bool) error {
-	results, err := fetchRuns[runsTableQuery](ctx, stackID, maxResults, showPreviewRuns)
+func listRunsTable(ctx context.Context, maxResults int, fetcher func(context.Context, *string) ([]runsTableQuery, error)) error {
+	results, err := fetchRuns(ctx, maxResults, fetcher)
 	if err != nil {
 		return err
 	}
