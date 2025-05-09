@@ -107,6 +107,12 @@ var flagMaxResults = &cli.IntFlag{
 	Value: 10,
 }
 
+var flagPreviewRuns = &cli.BoolFlag{
+	Name:  "preview-runs",
+	Usage: "Returns preview runs",
+	Value: false,
+}
+
 var flagNoUpload = &cli.BoolFlag{
 	Name:  "no-upload",
 	Usage: "Indicate whether Spacectl should prepare the workspace archive, but skip uploading it. Useful for debugging ignorefiles.",

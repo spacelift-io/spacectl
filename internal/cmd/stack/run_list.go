@@ -11,6 +11,7 @@ import (
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/nullable"
 )
 
 func runList(cliCtx *cli.Context) error {
@@ -24,12 +25,23 @@ func runList(cliCtx *cli.Context) error {
 		return err
 	}
 	maxResults := cliCtx.Int(flagMaxResults.Name)
+	showPreview := cliCtx.Bool(flagPreviewRuns.Name)
 
 	switch outputFormat {
 	case cmd.OutputFormatTable:
-		return listRunsTable(cliCtx.Context, stackID, maxResults)
+		return listRunsTable(cliCtx.Context, maxResults, func(ctx context.Context, before *string) ([]runsTableQuery, error) {
+			if showPreview {
+				return queryPreviewRuns[runsTableQuery](ctx, stackID, before)
+			}
+			return queryTrackedRuns[runsTableQuery](ctx, stackID, before)
+		})
 	case cmd.OutputFormatJSON:
-		return listRunsJSON(cliCtx.Context, stackID, maxResults)
+		return listRunsJSON(cliCtx.Context, maxResults, func(ctx context.Context, before *string) ([]runsJSONQuery, error) {
+			if showPreview {
+				return queryPreviewRuns[runsJSONQuery](ctx, stackID, before)
+			}
+			return queryTrackedRuns[runsJSONQuery](ctx, stackID, before)
+		})
 	}
 
 	return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -65,37 +77,80 @@ type runsJSONQuery struct {
 	TriggeredBy    string `graphql:"triggeredBy" json:"triggeredBy"`
 }
 
-func listRunsJSON(ctx context.Context, stackID string, maxResults int) error {
-	var results []runsJSONQuery
+func (r runsJSONQuery) Cursor() string {
+	return r.ID
+}
+
+type withCursor interface {
+	Cursor() string
+}
+
+func queryTrackedRuns[T any](ctx context.Context, stackID string, before *string) ([]T, error) {
+	var query struct {
+		Stack *struct {
+			Runs []T `graphql:"runs(before: $before)"`
+		} `graphql:"stack(id: $stackId)"`
+	}
+
+	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
+		return nil, errors.Wrap(err, "failed to query run list")
+	}
+
+	if query.Stack == nil {
+		return nil, fmt.Errorf("stack %q not found", stackID)
+	}
+
+	return query.Stack.Runs, nil
+}
+
+func queryPreviewRuns[T any](ctx context.Context, stackID string, before *string) ([]T, error) {
+	var query struct {
+		Stack *struct {
+			ProposedRuns []T `graphql:"proposedRuns(before: $before)"`
+		} `graphql:"stack(id: $stackId)"`
+	}
+
+	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
+		return nil, errors.Wrap(err, "failed to query run list")
+	}
+
+	if query.Stack == nil {
+		return nil, fmt.Errorf("stack %q not found", stackID)
+	}
+
+	return query.Stack.ProposedRuns, nil
+
+}
+
+func fetchRuns[T withCursor](ctx context.Context, maxResults int, fetcher func(context.Context, *string) ([]T, error)) ([]T, error) {
+	var results []T
 	var before *string
 
 	for len(results) < maxResults {
-		var query struct {
-			Stack *struct {
-				Runs []runsJSONQuery `graphql:"runs(before: $before)"`
-			} `graphql:"stack(id: $stackId)"`
+		runs, err := fetcher(ctx, before)
+
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to query run list")
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
-			return errors.Wrap(err, "failed to query run list")
-		}
-
-		if query.Stack == nil {
-			return fmt.Errorf("stack %q not found", stackID)
-		}
-
-		if len(query.Stack.Runs) == 0 {
+		if len(runs) == 0 {
 			break
 		}
 
-		resultsToAdd := maxResults - len(results)
-		if resultsToAdd > len(query.Stack.Runs) {
-			resultsToAdd = len(query.Stack.Runs)
-		}
+		resultsToAdd := min(maxResults-len(results), len(runs))
 
-		results = append(results, query.Stack.Runs[:resultsToAdd]...)
+		results = append(results, runs[:resultsToAdd]...)
 
-		before = &query.Stack.Runs[len(query.Stack.Runs)-1].ID
+		before = nullable.OfValue(runs[len(runs)-1].Cursor())
+	}
+
+	return results, nil
+}
+
+func listRunsJSON(ctx context.Context, maxResults int, fetcher func(context.Context, *string) ([]runsJSONQuery, error)) error {
+	results, err := fetchRuns(ctx, maxResults, fetcher)
+	if err != nil {
+		return err
 	}
 
 	return cmd.OutputJSON(results)
@@ -118,37 +173,14 @@ type runsTableQuery struct {
 	} `graphql:"delta"`
 }
 
-func listRunsTable(ctx context.Context, stackID string, maxResults int) error {
-	var results []runsTableQuery
-	var before *string
+func (r runsTableQuery) Cursor() string {
+	return r.ID
+}
 
-	for len(results) < maxResults {
-		var query struct {
-			Stack *struct {
-				Runs []runsTableQuery `graphql:"runs(before: $before)"`
-			} `graphql:"stack(id: $stackId)"`
-		}
-
-		if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
-			return errors.Wrap(err, "failed to query run list")
-		}
-
-		if query.Stack == nil {
-			return fmt.Errorf("stack %q not found", stackID)
-		}
-
-		if len(query.Stack.Runs) == 0 {
-			break
-		}
-
-		resultsToAdd := maxResults - len(results)
-		if resultsToAdd > len(query.Stack.Runs) {
-			resultsToAdd = len(query.Stack.Runs)
-		}
-
-		results = append(results, query.Stack.Runs[:resultsToAdd]...)
-
-		before = &query.Stack.Runs[len(query.Stack.Runs)-1].ID
+func listRunsTable(ctx context.Context, maxResults int, fetcher func(context.Context, *string) ([]runsTableQuery, error)) error {
+	results, err := fetchRuns(ctx, maxResults, fetcher)
+	if err != nil {
+		return err
 	}
 
 	tableData := [][]string{{"ID", "Status", "Message", "Commit", "Triggered At", "Triggered By", "Changes"}}
