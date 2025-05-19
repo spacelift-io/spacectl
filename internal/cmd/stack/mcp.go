@@ -15,6 +15,8 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
+const maxLocalPreviewRunLogLines = 1000
+
 type McpOptions struct {
 	UseHeadersForLocalPreview bool
 }
@@ -22,6 +24,8 @@ type McpOptions struct {
 func RegisterMCPTools(s *server.MCPServer, options McpOptions) {
 	registerListStacksTool(s)
 	registerListStackRunsTool(s)
+	registerListStackProposedRunsTool(s)
+	registerGetStackRunTool(s)
 	registerGetStackRunLogsTool(s)
 	registerGetStackRunChangesTool(s)
 	registerTriggerStackRunTool(s)
@@ -96,7 +100,7 @@ func registerListStacksTool(s *server.MCPServer) {
 
 func registerListStackRunsTool(s *server.MCPServer) {
 	stackRunsTool := mcp.NewTool("list_stack_runs",
-		mcp.WithDescription(`Retrieve a paginated list of runs for a specific Spacelift stack Use the pagination cursor to navigate through the run history.`),
+		mcp.WithDescription(`Retrieve a paginated list of tracked runs (runs making changes in resources) for a specific Spacelift stack Use the pagination cursor to navigate through the run history. This tool does not include proposed (preview) runs`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Stack Runs",
 			ReadOnlyHint: true,
@@ -151,20 +155,138 @@ func registerListStackRunsTool(s *server.MCPServer) {
 	})
 }
 
+func registerListStackProposedRunsTool(s *server.MCPServer) {
+	stackRunsTool := mcp.NewTool("list_stack_proposed_runs",
+		mcp.WithDescription(`Retrieve a paginated list of preview (including local preview) runs (runs showing preview of introduced changes) for a specific Spacelift stack Use the pagination cursor to navigate through the run history. This tools does not include tracked runs`),
+		mcp.WithToolAnnotation(mcp.ToolAnnotation{
+			Title:        "List Stack Runs",
+			ReadOnlyHint: true,
+		}),
+		mcp.WithString("stack_id", mcp.Description("The ID of the stack to list runs for"), mcp.Required()),
+		mcp.WithString("next_page_cursor", mcp.Description("The pagination cursor to use for fetching the next page of results")),
+	)
+
+	s.AddTool(stackRunsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		stackID := request.Params.Arguments["stack_id"].(string)
+
+		var before *string
+		if request.Params.Arguments["next_page_cursor"] != nil {
+			cursor := request.Params.Arguments["next_page_cursor"].(string)
+			before = &cursor
+		}
+
+		var query struct {
+			Stack *struct {
+				ProposedRuns []runsJSONQuery `graphql:"proposedRuns(before: $before)"`
+			} `graphql:"stack(id: $stackId)"`
+		}
+
+		if err := authenticated.Client.Query(ctx, &query, map[string]any{"stackId": stackID, "before": before}); err != nil {
+			return nil, errors.Wrap(err, "failed to query run list")
+		}
+		if query.Stack == nil {
+			return nil, errors.Errorf("failed to lookup runs for stack %q", stackID)
+		}
+
+		runs := query.Stack.ProposedRuns
+
+		runsJSON, err := json.Marshal(runs)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal runs to JSON")
+		}
+
+		output := string(runsJSON)
+
+		if len(runs) == 0 {
+			if before != nil {
+				output = fmt.Sprintf("No more runs available for stack %q. You have reached the end of the list.", stackID)
+			} else {
+				output = fmt.Sprintf("No runs found for stack %q.", stackID)
+			}
+		} else {
+			nextPageCursor := runs[len(runs)-1].ID
+			output = fmt.Sprintf("Showing runs for stack %q:\n%s\n\nThis is not the complete list. To view more runs, use this tool again with this cursor as \"next_page_cursor\": \"%s\"", stackID, output, nextPageCursor)
+		}
+
+		return mcp.NewToolResultText(output), nil
+	})
+}
+
+func registerGetStackRunTool(s *server.MCPServer) {
+	stackRunsTool := mcp.NewTool("get_stack_run",
+		mcp.WithDescription(`Retrieve a specific run for a Spacelift stack. Use the pagination cursor to navigate through the run history.`),
+		mcp.WithToolAnnotation(mcp.ToolAnnotation{
+			Title:        "Get Stack Run",
+			ReadOnlyHint: true,
+		}),
+		mcp.WithString("stack_id", mcp.Description("The ID of the stack to list runs for"), mcp.Required()),
+		mcp.WithString("run_id", mcp.Description("The ID of the run to retrieve"), mcp.Required()),
+	)
+
+	s.AddTool(stackRunsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		stackID := request.Params.Arguments["stack_id"].(string)
+		runID := request.Params.Arguments["run_id"].(string)
+
+		var query struct {
+			Stack *struct {
+				Run *runsJSONQuery `graphql:"run(id: $runId)"`
+			} `graphql:"stack(id: $stackId)"`
+		}
+
+		if err := authenticated.Client.Query(ctx, &query, map[string]any{"stackId": stackID, "runId": runID}); err != nil {
+			return nil, errors.Wrap(err, "failed to query run list")
+		}
+		if query.Stack == nil {
+			return mcp.NewToolResultText("Stack not found"), nil
+		}
+		if query.Stack.Run == nil {
+			return mcp.NewToolResultText("Run not found"), nil
+		}
+
+		runs := query.Stack.Run
+
+		runJSON, err := json.Marshal(runs)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal runs to JSON")
+		}
+
+		output := string(runJSON)
+
+		return mcp.NewToolResultText(output), nil
+	})
+}
+
 func registerGetStackRunLogsTool(s *server.MCPServer) {
 	stackRunLogsTool := mcp.NewTool("get_stack_run_logs",
-		mcp.WithDescription(`Retrieve the complete logs for a specific run of a Spacelift stack. Shows all output generated during the run execution, including commands, errors, and results.`),
+		mcp.WithDescription(`Retrieve logs for a specific run of a Spacelift stack. Shows output generated during the run execution, including commands, errors, and results. You can use skip and limit parameters to retrieve specific line ranges.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Stack Run Logs",
 			ReadOnlyHint: true,
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack"), mcp.Required()),
 		mcp.WithString("run_id", mcp.Description("The ID of the run"), mcp.Required()),
+		mcp.WithNumber("skip", mcp.Description("Skip the first N lines of the log output. Can be used together with `limit` parameter for pagination.")),
+		mcp.WithNumber("limit", mcp.Description("The maximum number of log lines to retrieve. Can be used together with `skip` parameter for pagination.")),
 	)
 
 	s.AddTool(stackRunLogsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		stackID := request.Params.Arguments["stack_id"].(string)
 		runID := request.Params.Arguments["run_id"].(string)
+
+		var skip, limit *int
+		if request.Params.Arguments["skip"] != nil {
+			skipVal := int(request.Params.Arguments["skip"].(float64))
+			if skipVal >= 0 {
+				skip = &skipVal
+			}
+		}
+
+		if request.Params.Arguments["limit"] != nil {
+			limitVal := int(request.Params.Arguments["limit"].(float64))
+			if limitVal >= 0 {
+				limit = &limitVal
+			}
+		}
 
 		logLines := make(chan string)
 		var allLogs []string
@@ -194,8 +316,40 @@ func registerGetStackRunLogsTool(s *server.MCPServer) {
 			output += fmt.Sprintf("\n\nRun completed with state: %s", terminal.State)
 		}
 
+		output = trimStringByLines(output, skip, limit)
+
 		return mcp.NewToolResultText(output), nil
 	})
+}
+
+func trimStringByLines(input string, skip *int, limit *int) string {
+	startLine := 0
+	if skip != nil {
+		startLine = max(*skip, 0)
+	}
+
+	lines := strings.Split(input, "\n")
+
+	if startLine >= len(lines) {
+		return fmt.Sprintf("No more log lines available. You have reached the end of the list. Total number of log lines: %d. Skipped %d lines.", len(lines), startLine)
+	}
+
+	endLine := len(lines)
+	if limit != nil {
+		endLine = min(startLine+*limit, len(lines))
+	}
+
+	newResult := strings.Join(lines[startLine:endLine], "\n")
+
+	if startLine > 0 {
+		newResult = fmt.Sprintf("... %d lines before ...\n%s", startLine, newResult)
+	}
+
+	if endLine < len(lines) {
+		newResult = fmt.Sprintf("%s\n... %d more lines available ...", newResult, len(lines)-endLine)
+	}
+
+	return newResult
 }
 
 func registerGetStackRunChangesTool(s *server.MCPServer) {
@@ -394,7 +548,12 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 		mcp.WithObject("environment_variables", mcp.Description("Environment variables to set for the run")),
 		mcp.WithArray("targets", mcp.Description("Limit the planning operation to only the given module, resource, or resource instance and all of its dependencies.")),
 		mcp.WithString("path", mcp.Description("The path to the local workspace. If not provided, the current working directory will be used.")),
-		mcp.WithString("await_for_completion", mcp.Description("Wait for the run to complete before returning the result."), mcp.DefaultString("true"), mcp.Enum("true", "false")),
+		mcp.WithString(
+			"await_for_completion",
+			mcp.Description("Wait for the run to complete before returning the result. If true, the tool will wait for the run to complete and return logs once it is complete."),
+			mcp.DefaultString("true"),
+			mcp.Enum("true", "false"),
+		),
 	)
 
 	s.AddTool(localPreviewTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -507,7 +666,18 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 		}
 
 		if terminal != nil {
-			output += fmt.Sprintf("\n\nRun completed with state: %s\n", terminal.State)
+			output += fmt.Sprintf("\n\nRun '%s' completed with state: %s\n", runID, terminal.State)
+		}
+
+		outputLines := strings.Split(output, "\n")
+		outputLinesCount := len(outputLines)
+		// Limit the number of lines, because mcp clients often limit amount of ouput tokens. "get_stack_run_logs" tool has pagination and can be used to view the full logs
+		if outputLinesCount > maxLocalPreviewRunLogLines {
+			fromIndex := outputLinesCount - maxLocalPreviewRunLogLines
+
+			outputLines = outputLines[fromIndex:]
+			output = strings.Join(outputLines, "\n")
+			output = fmt.Sprintf("... %d lines omitted. Use 'get_stack_run_logs' tool to view the full logs ...\n%s", outputLinesCount-maxLocalPreviewRunLogLines, output)
 		}
 
 		return mcp.NewToolResultText(output), nil
