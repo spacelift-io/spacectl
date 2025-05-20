@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -43,15 +43,15 @@ type blueprint struct {
 
 type showCommand struct{}
 
-func (c *showCommand) show(cliCtx *cli.Context) error {
-	blueprintID := cliCtx.String(flagRequiredBlueprintID.Name)
+func (c *showCommand) show(ctx context.Context, cliCmd *cli.Command) error {
+	blueprintID := cliCmd.String(flagRequiredBlueprintID.Name)
 
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	outputFormat, err := cmd.GetOutputFormat(cliCmd)
 	if err != nil {
 		return err
 	}
 
-	b, found, err := getBlueprintByID(cliCtx.Context, blueprintID)
+	b, found, err := getBlueprintByID(ctx, blueprintID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to query for blueprint ID %q", blueprintID)
 	}

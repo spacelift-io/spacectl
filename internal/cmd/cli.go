@@ -1,35 +1,36 @@
 package cmd
 
 import (
+	"context"
 	"os"
 
 	"github.com/mattn/go-isatty"
 	"github.com/pterm/pterm"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // PerformAllBefore wraps all the specified BeforeFuncs into a single BeforeFunc.
 func PerformAllBefore(actions ...cli.BeforeFunc) cli.BeforeFunc {
-	return func(ctx *cli.Context) error {
+	return func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 		for i := range actions {
 			action := actions[i]
-			if err := action(ctx); err != nil {
-				return err
+			if _, err := action(ctx, cmd); err != nil {
+				return ctx, err
 			}
 		}
 
-		return nil
+		return ctx, nil
 	}
 }
 
 // HandleNoColor handles FlagNoColor to disable console coloring.
-func HandleNoColor(ctx *cli.Context) error {
-	noColor := ctx.Bool(FlagNoColor.Name)
+func HandleNoColor(ctx context.Context, cmd *cli.Command) (context.Context, error) {
+	noColor := cmd.Bool(FlagNoColor.Name)
 	isTerminal := isatty.IsTerminal(os.Stdout.Fd())
 
 	if noColor || !isTerminal {
 		pterm.DisableColor()
 	}
 
-	return nil
+	return ctx, nil
 }

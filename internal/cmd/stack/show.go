@@ -1,6 +1,7 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -8,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -116,13 +117,13 @@ type showStackQuery struct {
 
 type showStackCommand struct{}
 
-func (c *showStackCommand) showStack(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func (c *showStackCommand) showStack(ctx context.Context, cliCmd *cli.Command) error {
+	stackID, err := getStackID(cliCmd)
 	if err != nil {
 		return err
 	}
 
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	outputFormat, err := cmd.GetOutputFormat(cliCmd)
 	if err != nil {
 		return err
 	}
@@ -132,7 +133,7 @@ func (c *showStackCommand) showStack(cliCtx *cli.Context) error {
 		"stackId": graphql.ID(stackID),
 	}
 
-	if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 		return errors.Wrapf(err, "failed to query for stack ID %q", stackID)
 	}
 

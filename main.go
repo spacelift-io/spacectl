@@ -4,10 +4,9 @@ import (
 	"context"
 	"log"
 	"os"
-	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/client/session"
@@ -41,11 +40,11 @@ func getSpaceliftInstanceVersion() cmd.SpaceliftInstanceVersion {
 		InstanceType: cmd.SpaceliftInstanceTypeUnknown,
 	}
 
-	ctx, httpClient := session.Defaults()
+	httpClient := session.Defaults()
 
 	// Create a new session - this may fail if the user doesn't have valid credentials.
 	// In that case we just treat the version as unknown.
-	sess, err := session.New(ctx, httpClient)
+	sess, err := session.New(context.Background(), httpClient)
 	if err != nil {
 		return instanceVersion
 	}
@@ -80,23 +79,17 @@ func getSpaceliftInstanceVersion() cmd.SpaceliftInstanceVersion {
 }
 
 func main() {
-	compileTime, err := time.Parse(time.RFC3339, date)
-	if err != nil {
-		log.Fatalf("Could not parse compilation date: %v", err)
-	}
-
 	instanceVersion := getSpaceliftInstanceVersion()
 
 	if instanceVersion.InstanceType == cmd.SpaceliftInstanceTypeUnknown {
 		log.Println("Warning: Unable to determine Spacelift instance type. Some commands may be unavailable until you authenticate with Spacelift.")
 	}
 
-	app := &cli.App{
-		Name:                 "spacectl",
-		Version:              version,
-		Compiled:             compileTime,
-		Usage:                "Programmatic access to Spacelift GraphQL API.",
-		EnableBashCompletion: true,
+	app := &cli.Command{
+		Name:                  "spacectl",
+		Version:               version,
+		Usage:                 "Programmatic access to Spacelift GraphQL API.",
+		EnableShellCompletion: true,
 		Commands: append([]*cli.Command{
 			profile.Command(),
 			whoami.Command(),
@@ -115,7 +108,7 @@ func main() {
 		})...),
 	}
 
-	if err := app.Run(os.Args); err != nil {
+	if err := app.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
 }

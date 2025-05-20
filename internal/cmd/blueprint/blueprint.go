@@ -1,10 +1,11 @@
 package blueprint
 
 import (
+	"context"
 	"fmt"
 	"math"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -89,27 +90,27 @@ func Command() cmd.Command {
 	}
 }
 
-func validateLimit(cliCtx *cli.Context) error {
-	if cliCtx.IsSet(cmd.FlagLimit.Name) {
-		if cliCtx.Uint(cmd.FlagLimit.Name) == 0 {
-			return fmt.Errorf("limit must be greater than 0")
+func validateLimit(ctx context.Context, cliCmd *cli.Command) (context.Context, error) {
+	if cliCmd.IsSet(cmd.FlagLimit.Name) {
+		if cliCmd.Uint(cmd.FlagLimit.Name) == 0 {
+			return ctx, fmt.Errorf("limit must be greater than 0")
 		}
 
-		if cliCtx.Uint(cmd.FlagLimit.Name) >= math.MaxInt32 {
-			return fmt.Errorf("limit must be less than %d", math.MaxInt32)
+		if cliCmd.Uint(cmd.FlagLimit.Name) >= math.MaxInt32 {
+			return ctx, fmt.Errorf("limit must be less than %d", math.MaxInt32)
 		}
 	}
 
-	return nil
+	return ctx, nil
 }
 
-func validateSearch(cliCtx *cli.Context) error {
-	if cliCtx.IsSet(cmd.FlagSearch.Name) {
-		if cliCtx.String(cmd.FlagSearch.Name) == "" {
-			return fmt.Errorf("search must be non-empty")
+func validateSearch(ctx context.Context, cliCmd *cli.Command) (context.Context, error) {
+	if cliCmd.IsSet(cmd.FlagSearch.Name) {
+		if cliCmd.String(cmd.FlagSearch.Name) == "" {
+			return ctx, fmt.Errorf("search must be non-empty")
 		}
 
 	}
 
-	return nil
+	return ctx, nil
 }

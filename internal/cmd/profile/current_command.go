@@ -1,10 +1,11 @@
 package profile
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 )
@@ -14,7 +15,7 @@ func currentCommand() *cli.Command {
 		Name:      "current",
 		Usage:     "Outputs your currently selected profile",
 		ArgsUsage: cmd.EmptyArgsUsage,
-		Action: func(ctx *cli.Context) error {
+		Action: func(ctx context.Context, cliCmd *cli.Command) error {
 			currentProfile := manager.Current()
 
 			if currentProfile == nil {

@@ -5,15 +5,15 @@ import (
 	"fmt"
 
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 func runConfirm() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		stackID, err := getStackID(cliCtx)
+	return func(ctx context.Context, cliCmd *cli.Command) error {
+		stackID, err := getStackID(cliCmd)
 		if err != nil {
 			return err
 		}
@@ -26,14 +26,12 @@ func runConfirm() cli.ActionFunc {
 
 		variables := map[string]interface{}{
 			"stack": graphql.ID(stackID),
-			"run":   graphql.ID(cliCtx.String(flagRequiredRun.Name)),
+			"run":   graphql.ID(cliCmd.String(flagRequiredRun.Name)),
 		}
 
-		ctx := context.Background()
-
 		var requestOpts []graphql.RequestOption
-		if cliCtx.IsSet(flagRunMetadata.Name) {
-			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
+		if cliCmd.IsSet(flagRunMetadata.Name) {
+			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCmd.String(flagRunMetadata.Name)))
 		}
 
 		if err := authenticated.Client.Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
@@ -48,7 +46,7 @@ func runConfirm() cli.ActionFunc {
 			mutation.RunConfirm.ID,
 		))
 
-		if !cliCtx.Bool(flagTail.Name) {
+		if !cliCmd.Bool(flagTail.Name) {
 			return nil
 		}
 

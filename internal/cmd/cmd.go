@@ -4,7 +4,7 @@ import (
 	"slices"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	spslices "github.com/spacelift-io/spacectl/internal/slices"
 )
@@ -107,7 +107,7 @@ func ResolveCommands(instanceVersion SpaceliftInstanceVersion, allCommands []Com
 			latestVersion.Command.Category = command.Category
 
 			// Recursively resolve subcommands
-			latestVersion.Command.Subcommands = resolveSubcommands(instanceVersion, command.Subcommands)
+			latestVersion.Command.Commands = resolveSubcommands(instanceVersion, command.Subcommands)
 
 			availableCommands = append(availableCommands, latestVersion.Command)
 		}
@@ -129,7 +129,7 @@ func resolveSubcommands(instanceVersion SpaceliftInstanceVersion, subcommands []
 
 			// Recursively process this subcommand's subcommands
 			if len(subcommand.Subcommands) > 0 {
-				latestVersion.Command.Subcommands = resolveSubcommands(instanceVersion, subcommand.Subcommands)
+				latestVersion.Command.Commands = resolveSubcommands(instanceVersion, subcommand.Subcommands)
 			}
 
 			resolvedSubcommands = append(resolvedSubcommands, latestVersion.Command)

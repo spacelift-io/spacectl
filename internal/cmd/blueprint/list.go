@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
@@ -17,27 +17,27 @@ import (
 )
 
 func listBlueprints() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	return func(ctx context.Context, cliCmd *cli.Command) error {
+		outputFormat, err := cmd.GetOutputFormat(cliCmd)
 		if err != nil {
 			return err
 		}
 
 		var limit *uint
-		if cliCtx.IsSet(cmd.FlagLimit.Name) {
-			limit = internal.Ptr(cliCtx.Uint(cmd.FlagLimit.Name))
+		if cliCmd.IsSet(cmd.FlagLimit.Name) {
+			limit = internal.Ptr(cliCmd.Uint(cmd.FlagLimit.Name))
 		}
 
 		var search *string
-		if cliCtx.IsSet(cmd.FlagSearch.Name) {
-			search = internal.Ptr(cliCtx.String(cmd.FlagSearch.Name))
+		if cliCmd.IsSet(cmd.FlagSearch.Name) {
+			search = internal.Ptr(cliCmd.String(cmd.FlagSearch.Name))
 		}
 
 		switch outputFormat {
 		case cmd.OutputFormatTable:
-			return listBlueprintsTable(cliCtx, search, limit)
+			return listBlueprintsTable(ctx, cliCmd, search, limit)
 		case cmd.OutputFormatJSON:
-			return listBlueprintsJSON(cliCtx, search, limit)
+			return listBlueprintsJSON(ctx, search, limit)
 		}
 
 		return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -45,7 +45,7 @@ func listBlueprints() cli.ActionFunc {
 }
 
 func listBlueprintsJSON(
-	ctx *cli.Context,
+	ctx context.Context,
 	search *string,
 	limit *uint,
 ) error {
@@ -59,7 +59,7 @@ func listBlueprintsJSON(
 		fullTextSearch = graphql.NewString(graphql.String(*search))
 	}
 
-	blueprints, err := searchAllBlueprints(ctx.Context, structs.SearchInput{
+	blueprints, err := searchAllBlueprints(ctx, structs.SearchInput{
 		First:          first,
 		FullTextSearch: fullTextSearch,
 	})
@@ -71,7 +71,8 @@ func listBlueprintsJSON(
 }
 
 func listBlueprintsTable(
-	ctx *cli.Context,
+	ctx context.Context,
+	cliCmd *cli.Command,
 	search *string,
 	limit *uint,
 ) error {
@@ -94,13 +95,13 @@ func listBlueprintsTable(
 		},
 	}
 
-	blueprints, err := searchAllBlueprints(ctx.Context, input)
+	blueprints, err := searchAllBlueprints(ctx, input)
 	if err != nil {
 		return err
 	}
 
 	columns := []string{"Name", "ID", "Description", "State", "Space", "Updated At"}
-	if ctx.Bool(cmd.FlagShowLabels.Name) {
+	if cliCmd.Bool(cmd.FlagShowLabels.Name) {
 		columns = append(columns, "Labels")
 	}
 
@@ -114,7 +115,7 @@ func listBlueprintsTable(
 			b.Space.Name,
 			cmd.HumanizeUnixSeconds(b.UpdatedAt),
 		}
-		if ctx.Bool(cmd.FlagShowLabels.Name) {
+		if cliCmd.Bool(cmd.FlagShowLabels.Name) {
 			row = append(row, strings.Join(b.Labels, ", "))
 		}
 

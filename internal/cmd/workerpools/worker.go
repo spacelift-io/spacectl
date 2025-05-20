@@ -1,13 +1,14 @@
 package workerpools
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -48,21 +49,21 @@ type drainWorkerCommand struct{}
 
 type undrainWorkerCommand struct{}
 
-func (c *listWorkersCommand) listWorkers(cliCtx *cli.Context) error {
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+func (c *listWorkersCommand) listWorkers(ctx context.Context, cliCmd *cli.Command) error {
+	outputFormat, err := cmd.GetOutputFormat(cliCmd)
 
 	if err != nil {
 		return err
 	}
 
-	workerPoolID := cliCtx.String(flagPoolIDNamed.Name)
+	workerPoolID := cliCmd.String(flagPoolIDNamed.Name)
 
 	var query listWorkersQuery
 	variables := map[string]interface{}{
 		"workerPool": workerPoolID,
 	}
 
-	if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 		return err
 	}
 
@@ -113,10 +114,10 @@ func (c *listWorkersCommand) showOutputsTable(workers []worker) error {
 	return cmd.OutputTable(tableData, true)
 }
 
-func (c *drainWorkerCommand) drainWorker(cliCtx *cli.Context) error {
-	workerID := cliCtx.String(flagWorkerID.Name)
-	workerPoolID := cliCtx.String(flagPoolIDNamed.Name)
-	waitUntilDrained := cliCtx.Bool(flagWaitUntilDrained.Name)
+func (c *drainWorkerCommand) drainWorker(ctx context.Context, cliCmd *cli.Command) error {
+	workerID := cliCmd.String(flagWorkerID.Name)
+	workerPoolID := cliCmd.String(flagPoolIDNamed.Name)
+	waitUntilDrained := cliCmd.Bool(flagWaitUntilDrained.Name)
 
 	var mutation drainWorkerMutation
 	variables := map[string]interface{}{
@@ -125,12 +126,12 @@ func (c *drainWorkerCommand) drainWorker(cliCtx *cli.Context) error {
 		"drain":      graphql.Boolean(true),
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 
 	if waitUntilDrained {
-		if err := c.waitUntilDrained(cliCtx, workerID, workerPoolID); err != nil {
+		if err := c.waitUntilDrained(ctx, workerID, workerPoolID); err != nil {
 			return err
 		}
 	}
@@ -140,7 +141,7 @@ func (c *drainWorkerCommand) drainWorker(cliCtx *cli.Context) error {
 	return nil
 }
 
-func (c *drainWorkerCommand) waitUntilDrained(cliCtx *cli.Context, workerID string, workerPoolID string) error {
+func (c *drainWorkerCommand) waitUntilDrained(ctx context.Context, workerID string, workerPoolID string) error {
 	var workerDrainedAndIdle = false
 	var firstRun = true
 
@@ -150,7 +151,7 @@ func (c *drainWorkerCommand) waitUntilDrained(cliCtx *cli.Context, workerID stri
 		}
 
 		var err error
-		workerDrainedAndIdle, err = c.drainedWorkerIsIdle(cliCtx, workerID, workerPoolID)
+		workerDrainedAndIdle, err = c.drainedWorkerIsIdle(ctx, workerID, workerPoolID)
 
 		if err != nil {
 			return err
@@ -162,7 +163,7 @@ func (c *drainWorkerCommand) waitUntilDrained(cliCtx *cli.Context, workerID stri
 	return nil
 }
 
-func (c *drainWorkerCommand) drainedWorkerIsIdle(cliCtx *cli.Context, workerID string, workerPoolID string) (bool, error) {
+func (c *drainWorkerCommand) drainedWorkerIsIdle(ctx context.Context, workerID string, workerPoolID string) (bool, error) {
 	type worker struct {
 		ID      string `graphql:"id"`
 		Drained bool   `graphql:"drained"`
@@ -179,7 +180,7 @@ func (c *drainWorkerCommand) drainedWorkerIsIdle(cliCtx *cli.Context, workerID s
 		"workerPool": graphql.ID(workerPoolID),
 	}
 
-	if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 		return false, err
 	}
 
@@ -203,9 +204,9 @@ func (c *drainWorkerCommand) drainedWorkerIsIdle(cliCtx *cli.Context, workerID s
 	return !workerToDrain.Busy, nil
 }
 
-func (c *undrainWorkerCommand) undrainWorker(cliCtx *cli.Context) error {
-	workerID := cliCtx.String(flagWorkerID.Name)
-	workerPoolID := cliCtx.String(flagPoolIDNamed.Name)
+func (c *undrainWorkerCommand) undrainWorker(ctx context.Context, cliCmd *cli.Command) error {
+	workerID := cliCmd.String(flagWorkerID.Name)
+	workerPoolID := cliCmd.String(flagPoolIDNamed.Name)
 
 	var mutation drainWorkerMutation
 	variables := map[string]interface{}{
@@ -214,7 +215,7 @@ func (c *undrainWorkerCommand) undrainWorker(cliCtx *cli.Context) error {
 		"drain":      graphql.Boolean(false),
 	}
 
-	err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables)
+	err := authenticated.Client.Mutate(ctx, &mutation, variables)
 
 	if err != nil {
 		return err
@@ -225,19 +226,19 @@ func (c *undrainWorkerCommand) undrainWorker(cliCtx *cli.Context) error {
 	return nil
 }
 
-func (c *cycleWorkersCommand) cycleWorkers(cliCtx *cli.Context) error {
+func (c *cycleWorkersCommand) cycleWorkers(ctx context.Context, cliCmd *cli.Command) error {
 	var mutation cycleWorkerMutation
 	variables := map[string]interface{}{
-		"workerPoolId": graphql.ID(cliCtx.String(flagPoolIDNamed.Name)),
+		"workerPoolId": graphql.ID(cliCmd.String(flagPoolIDNamed.Name)),
 	}
 
-	err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables)
+	err := authenticated.Client.Mutate(ctx, &mutation, variables)
 
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Successfully cycled worker pool %s\n", cliCtx.String(flagPoolIDNamed.Name))
+	fmt.Printf("Successfully cycled worker pool %s\n", cliCmd.String(flagPoolIDNamed.Name))
 
 	return nil
 }

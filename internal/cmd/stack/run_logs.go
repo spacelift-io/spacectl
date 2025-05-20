@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -19,19 +19,19 @@ import (
 // for example to confirm a run.
 type actionOnRunState func(state structs.RunState, stackID, runID string) error
 
-func runLogs(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func runLogs(ctx context.Context, cliCmd *cli.Command) error {
+	stackID, err := getStackID(cliCmd)
 	if err != nil {
 		return err
 	}
 
-	if (!cliCtx.IsSet(flagRun.Name) && !cliCtx.IsSet(flagRunLatest.Name)) ||
-		(cliCtx.IsSet(flagRun.Name) && cliCtx.IsSet(flagRunLatest.Name)) {
+	if (!cliCmd.IsSet(flagRun.Name) && !cliCmd.IsSet(flagRunLatest.Name)) ||
+		(cliCmd.IsSet(flagRun.Name) && cliCmd.IsSet(flagRunLatest.Name)) {
 		return errors.New("you must specify either --run or --run-latest")
 	}
 
-	runID := cliCtx.String(flagRun.Name)
-	if cliCtx.IsSet(flagRunLatest.Name) {
+	runID := cliCmd.String(flagRun.Name)
+	if cliCmd.IsSet(flagRunLatest.Name) {
 		type runsQuery struct {
 			ID string `graphql:"id"`
 		}
@@ -43,7 +43,7 @@ func runLogs(cliCtx *cli.Context) error {
 		}
 
 		var before *string
-		if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
+		if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
 			return errors.Wrap(err, "failed to query run list")
 		}
 
@@ -60,7 +60,7 @@ func runLogs(cliCtx *cli.Context) error {
 		fmt.Println("Using latest run", runID)
 	}
 
-	_, err = runLogsWithAction(context.Background(), stackID, runID, nil)
+	_, err = runLogsWithAction(ctx, stackID, runID, nil)
 	return err
 }
 

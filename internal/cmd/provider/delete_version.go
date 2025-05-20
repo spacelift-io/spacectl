@@ -1,18 +1,19 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 )
 
 func deleteVersion() cli.ActionFunc {
-	return func(cliCtx *cli.Context) (err error) {
-		versionID := cliCtx.String(flagRequiredVersionID.Name)
+	return func(ctx context.Context, cliCmd *cli.Command) (err error) {
+		versionID := cliCmd.String(flagRequiredVersionID.Name)
 
 		var deleteMutation struct {
 			DeleteVersion *internal.Version `graphql:"terraformProviderVersionDelete(version: $version)"`
@@ -20,7 +21,7 @@ func deleteVersion() cli.ActionFunc {
 
 		variables := map[string]any{"version": graphql.ID(versionID)}
 
-		if err := authenticated.Client.Mutate(cliCtx.Context, &deleteMutation, variables); err != nil {
+		if err := authenticated.Client.Mutate(ctx, &deleteMutation, variables); err != nil {
 			return fmt.Errorf("could not delete Terraform provider version: %w", err)
 		}
 

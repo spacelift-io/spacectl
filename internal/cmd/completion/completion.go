@@ -2,12 +2,13 @@ package completion
 
 import (
 	"bytes"
+	"context"
 	_ "embed"
 	"io"
 	"os"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var (
@@ -22,11 +23,11 @@ func Command() *cli.Command {
 	return &cli.Command{
 		Name:  "completion",
 		Usage: "Print out shell completion script",
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:  "bash",
 				Usage: "Print out bash shell completion script",
-				Action: func(cliCtx *cli.Context) error {
+				Action: func(_ context.Context, _ *cli.Command) error {
 					_, err := io.Copy(os.Stdout, bytes.NewReader(bashAutocomplete))
 					return err
 				},
@@ -34,7 +35,7 @@ func Command() *cli.Command {
 			{
 				Name:  "zsh",
 				Usage: "Print out zsh shell completion script",
-				Action: func(cliCtx *cli.Context) error {
+				Action: func(_ context.Context, _ *cli.Command) error {
 					_, err := io.Copy(os.Stdout, bytes.NewReader(zshAutocomplete))
 					return err
 				},
@@ -42,8 +43,8 @@ func Command() *cli.Command {
 			{
 				Name:  "fish",
 				Usage: "Print out fish shell completion script",
-				Action: func(cliCtx *cli.Context) error {
-					s, err := cliCtx.App.ToFishCompletion()
+				Action: func(_ context.Context, cliCmd *cli.Command) error {
+					s, err := cliCmd.Root().ToFishCompletion()
 					if err != nil {
 						return err
 					}

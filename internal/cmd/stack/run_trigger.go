@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
@@ -14,15 +14,15 @@ import (
 )
 
 func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		stackID, err := getStackID(cliCtx)
+	return func(ctx context.Context, cliCmd *cli.Command) error {
+		stackID, err := getStackID(cliCmd)
 		if err != nil {
 			return err
 		}
 
 		var runtimeConfigInput *RuntimeConfigInput
-		if cliCtx.IsSet(flagRuntimeConfig.Name) {
-			runtimeConfigFilePath := cliCtx.String(flagRuntimeConfig.Name)
+		if cliCmd.IsSet(flagRuntimeConfig.Name) {
+			runtimeConfigFilePath := cliCmd.String(flagRuntimeConfig.Name)
 
 			if _, err = os.Stat(runtimeConfigFilePath); err != nil {
 				return fmt.Errorf("runtime config file does not exist: %v", err)
@@ -53,15 +53,13 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 			"runtimeConfig": runtimeConfigInput,
 		}
 
-		if cliCtx.IsSet(flagCommitSHA.Name) {
-			variables["sha"] = graphql.NewString(graphql.String(cliCtx.String(flagCommitSHA.Name)))
+		if cliCmd.IsSet(flagCommitSHA.Name) {
+			variables["sha"] = graphql.NewString(graphql.String(cliCmd.String(flagCommitSHA.Name)))
 		}
 
-		ctx := context.Background()
-
 		var requestOpts []graphql.RequestOption
-		if cliCtx.IsSet(flagRunMetadata.Name) {
-			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
+		if cliCmd.IsSet(flagRunMetadata.Name) {
+			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCmd.String(flagRunMetadata.Name)))
 		}
 
 		if err := authenticated.Client.Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
@@ -76,7 +74,7 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 			mutation.RunTrigger.ID,
 		))
 
-		if !cliCtx.Bool(flagTail.Name) && !cliCtx.Bool(flagAutoConfirm.Name) {
+		if !cliCmd.Bool(flagTail.Name) && !cliCmd.Bool(flagAutoConfirm.Name) {
 			return nil
 		}
 
@@ -85,7 +83,7 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 				return nil
 			}
 
-			if !cliCtx.Bool(flagAutoConfirm.Name) {
+			if !cliCmd.Bool(flagAutoConfirm.Name) {
 				return nil
 			}
 

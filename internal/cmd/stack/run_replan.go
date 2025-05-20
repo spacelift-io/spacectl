@@ -1,35 +1,36 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/manifoldco/promptui"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 const rocketEmoji = "\U0001F680"
 
-func runReplan(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func runReplan(ctx context.Context, cliCmd *cli.Command) error {
+	stackID, err := getStackID(cliCmd)
 	if err != nil {
 		return err
 	}
 
-	runID := cliCtx.String(flagRequiredRun.Name)
+	runID := cliCmd.String(flagRequiredRun.Name)
 
 	var resources []string
-	if cliCtx.Bool(flagInteractive.Name) {
+	if cliCmd.Bool(flagInteractive.Name) {
 		var err error
-		resources, err = interactiveResourceSelection(cliCtx, stackID, runID)
+		resources, err = interactiveResourceSelection(ctx, stackID, runID)
 		if err != nil {
 			return err
 		}
 	} else {
-		resources = cliCtx.StringSlice(flagResources.Name)
+		resources = cliCmd.StringSlice(flagResources.Name)
 	}
 
 	if len(resources) == 0 {
@@ -53,7 +54,7 @@ func runReplan(cliCtx *cli.Context) error {
 		"targets": targets,
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 
@@ -64,11 +65,11 @@ func runReplan(cliCtx *cli.Context) error {
 		mutation.RunTargetedReplan.ID,
 	))
 
-	if !cliCtx.Bool(flagTail.Name) {
+	if !cliCmd.Bool(flagTail.Name) {
 		return nil
 	}
 
-	terminal, err := runLogsWithAction(cliCtx.Context, stackID, mutation.RunTargetedReplan.ID, nil)
+	terminal, err := runLogsWithAction(ctx, stackID, mutation.RunTargetedReplan.ID, nil)
 	if err != nil {
 		return err
 	}
@@ -76,8 +77,8 @@ func runReplan(cliCtx *cli.Context) error {
 	return terminal.Error()
 }
 
-func interactiveResourceSelection(cliCtx *cli.Context, stackID, runID string) ([]string, error) {
-	resources, err := getRunChanges(cliCtx.Context, stackID, runID)
+func interactiveResourceSelection(ctx context.Context, stackID, runID string) ([]string, error) {
+	resources, err := getRunChanges(ctx, stackID, runID)
 	if err != nil {
 		return nil, err
 	}

@@ -10,7 +10,7 @@ import (
 
 	"github.com/mholt/archiver/v3"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
@@ -19,13 +19,13 @@ import (
 )
 
 func localPreview(useHeaders bool) cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		envVars, err := parseEnvVariablesForLocalPreview(cliCtx)
+	return func(ctx context.Context, cliCmd *cli.Command) error {
+		envVars, err := parseEnvVariablesForLocalPreview(cliCmd)
 		if err != nil {
 			return err
 		}
 
-		stack, err := getStack[stack](cliCtx)
+		stack, err := getStack[stack](cliCmd)
 		if err != nil {
 			return err
 		}
@@ -35,10 +35,8 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 			return fmt.Errorf("local preview has not been enabled for this stack, please enable local preview in the stack settings: %s", linkToStack)
 		}
 
-		ctx := context.Background()
-
 		var packagePath *string
-		if cliCtx.Bool(flagProjectRootOnly.Name) {
+		if cliCmd.Bool(flagProjectRootOnly.Name) {
 			root, err := getGitRepositorySubdir()
 			if err != nil {
 				return fmt.Errorf("couldn't get the packagePath: %w", err)
@@ -47,8 +45,8 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 		}
 
 		var runMetadata *string
-		if cliCtx.IsSet(flagRunMetadata.Name) {
-			runMetadata = nullable.OfValue(cliCtx.String(flagRunMetadata.Name))
+		if cliCmd.IsSet(flagRunMetadata.Name) {
+			runMetadata = nullable.OfValue(cliCmd.String(flagRunMetadata.Name))
 		}
 
 		runID, err := createLocalPreviewRun(
@@ -56,12 +54,12 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 			LocalPreviewOptions{
 				StackID:            stack.ID,
 				EnvironmentVars:    envVars,
-				Targets:            cliCtx.StringSlice(flagTarget.Name),
+				Targets:            cliCmd.StringSlice(flagTarget.Name),
 				Path:               packagePath,
-				FindRepositoryRoot: !cliCtx.Bool(flagNoFindRepositoryRoot.Name),
-				DisregardGitignore: cliCtx.IsSet(flagDisregardGitignore.Name),
+				FindRepositoryRoot: !cliCmd.Bool(flagNoFindRepositoryRoot.Name),
+				DisregardGitignore: cliCmd.IsSet(flagDisregardGitignore.Name),
 				UseHeaders:         useHeaders,
-				NoUpload:           cliCtx.Bool(flagNoUpload.Name),
+				NoUpload:           cliCmd.Bool(flagNoUpload.Name),
 				RunMetadata:        runMetadata,
 				ShowUploadProgress: true,
 			},
@@ -79,7 +77,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 		)
 		fmt.Println("The live run can be visited at", linkToRun)
 
-		if cliCtx.Bool(flagNoTail.Name) {
+		if cliCmd.Bool(flagNoTail.Name) {
 			return nil
 		}
 
@@ -116,17 +114,17 @@ func parseEnvVar(env string, envVars []EnvironmentVariable, mutateKey func(strin
 	}), nil
 }
 
-func parseEnvVariablesForLocalPreview(cliCtx *cli.Context) ([]EnvironmentVariable, error) {
+func parseEnvVariablesForLocalPreview(cliCmd *cli.Command) ([]EnvironmentVariable, error) {
 	envVars := make([]EnvironmentVariable, 0)
 
 	var err error
-	for _, ev := range cliCtx.StringSlice(flagOverrideEnvVars.Name) {
+	for _, ev := range cliCmd.StringSlice(flagOverrideEnvVars.Name) {
 		if envVars, err = parseEnvVar(ev, envVars, nil); err != nil {
 			return nil, err
 		}
 	}
 
-	for _, ev := range cliCtx.StringSlice(flagOverrideEnvVarsTF.Name) {
+	for _, ev := range cliCmd.StringSlice(flagOverrideEnvVarsTF.Name) {
 		if envVars, err = parseEnvVar(ev, envVars, func(s string) string {
 			return strings.Join([]string{"TF_", s}, "")
 		}); err != nil {

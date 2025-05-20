@@ -1,7 +1,7 @@
 package module
 
 import (
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -31,7 +31,7 @@ func Command() cmd.Command {
 								flagCommitSHA,
 								flagVersion,
 							},
-							Action:    createVersion,
+							Action:    createVersionFunc(),
 							Before:    authenticated.Ensure,
 							ArgsUsage: cmd.EmptyArgsUsage,
 						},
@@ -50,7 +50,7 @@ func Command() cmd.Command {
 								flagModuleID,
 								flagVersionID,
 							},
-							Action:    deleteVersion,
+							Action:    deleteVersionFunc(),
 							Before:    authenticated.Ensure,
 							ArgsUsage: cmd.EmptyArgsUsage,
 						},
@@ -73,7 +73,7 @@ func Command() cmd.Command {
 								flagDisregardGitignore,
 								flagTests,
 							},
-							Action:    localPreview(false),
+							Action:    localPreviewFunc(false),
 							Before:    authenticated.Ensure,
 							ArgsUsage: cmd.EmptyArgsUsage,
 						},
@@ -89,7 +89,7 @@ func Command() cmd.Command {
 								flagDisregardGitignore,
 								flagTests,
 							},
-							Action:    localPreview(true),
+							Action:    localPreviewFunc(true),
 							Before:    authenticated.Ensure,
 							ArgsUsage: cmd.EmptyArgsUsage,
 						},

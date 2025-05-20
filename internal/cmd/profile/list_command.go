@@ -1,10 +1,11 @@
 package profile
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/session"
 	"github.com/spacelift-io/spacectl/internal/cmd"
@@ -27,7 +28,7 @@ func listCommand() *cli.Command {
 		},
 		ArgsUsage: cmd.EmptyArgsUsage,
 		Before:    cmd.HandleNoColor,
-		Action: func(ctx *cli.Context) error {
+		Action: func(ctx context.Context, cliCmd *cli.Command) error {
 			profiles := manager.GetAll()
 
 			currentProfile := manager.Current()
@@ -39,7 +40,7 @@ func listCommand() *cli.Command {
 
 			var outputFormat cmd.OutputFormat
 			var err error
-			if outputFormat, err = cmd.GetOutputFormat(ctx); err != nil {
+			if outputFormat, err = cmd.GetOutputFormat(cliCmd); err != nil {
 				return err
 			}
 

@@ -1,6 +1,6 @@
 package blueprint
 
-import "github.com/urfave/cli/v2"
+import "github.com/urfave/cli/v3"
 
 var flagRequiredBlueprintID = &cli.StringFlag{
 	Name:     "blueprint-id",

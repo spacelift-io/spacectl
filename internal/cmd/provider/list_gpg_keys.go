@@ -1,9 +1,10 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -11,8 +12,8 @@ import (
 )
 
 func listGPGKeys() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	return func(ctx context.Context, cliCmd *cli.Command) error {
+		outputFormat, err := cmd.GetOutputFormat(cliCmd)
 		if err != nil {
 			return err
 		}
@@ -21,7 +22,7 @@ func listGPGKeys() cli.ActionFunc {
 			GPGKeys internal.GPGKeys `graphql:"gpgKeys"`
 		}
 
-		if err := authenticated.Client.Query(cliCtx.Context, &query, nil); err != nil {
+		if err := authenticated.Client.Query(ctx, &query, nil); err != nil {
 			return err
 		}
 
