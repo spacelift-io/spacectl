@@ -48,19 +48,15 @@ func registerListStacksTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stacksTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		limit := 50
-		if request.GetArguments()["limit"] != nil {
-			limit = int(request.GetArguments()["limit"].(float64))
-		}
+		limit := request.GetInt("limit", 50)
+
 		var fullTextSearch *graphql.String
-		if request.GetArguments()["search"] != nil {
-			search := request.GetArguments()["search"].(string)
-			fullTextSearch = graphql.NewString(graphql.String(search))
+		if searchParam := request.GetString("search", ""); searchParam != "" {
+			fullTextSearch = graphql.NewString(graphql.String(searchParam))
 		}
 
 		var nextPageCursor *graphql.String
-		if request.GetArguments()["next_page_cursor"] != nil {
-			cursor := request.GetArguments()["next_page_cursor"].(string)
+		if cursor := request.GetString("next_page_cursor", ""); cursor != "" {
 			nextPageCursor = graphql.NewString(graphql.String(cursor))
 		}
 
@@ -110,11 +106,13 @@ func registerListStackRunsTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.GetArguments()["stack_id"].(string)
+		stackID, err := request.RequireString("stack_id")
+		if err != nil {
+			return nil, err
+		}
 
 		var before *string
-		if request.GetArguments()["next_page_cursor"] != nil {
-			cursor := request.GetArguments()["next_page_cursor"].(string)
+		if cursor := request.GetString("next_page_cursor", ""); cursor != "" {
 			before = &cursor
 		}
 
@@ -167,11 +165,13 @@ func registerListStackProposedRunsTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.GetArguments()["stack_id"].(string)
+		stackID, err := request.RequireString("stack_id")
+		if err != nil {
+			return nil, err
+		}
 
 		var before *string
-		if request.GetArguments()["next_page_cursor"] != nil {
-			cursor := request.GetArguments()["next_page_cursor"].(string)
+		if cursor := request.GetString("next_page_cursor", ""); cursor != "" {
 			before = &cursor
 		}
 
@@ -224,8 +224,15 @@ func registerGetStackRunTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.GetArguments()["stack_id"].(string)
-		runID := request.GetArguments()["run_id"].(string)
+		stackID, err := request.RequireString("stack_id")
+		if err != nil {
+			return nil, err
+		}
+
+		runID, err := request.RequireString("run_id")
+		if err != nil {
+			return nil, err
+		}
 
 		var query struct {
 			Stack *struct {
@@ -270,28 +277,28 @@ func registerGetStackRunLogsTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunLogsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.GetArguments()["stack_id"].(string)
-		runID := request.GetArguments()["run_id"].(string)
-
-		var skip, limit *int
-		if request.GetArguments()["skip"] != nil {
-			skipVal := int(request.GetArguments()["skip"].(float64))
-			if skipVal >= 0 {
-				skip = &skipVal
-			}
+		stackID, err := request.RequireString("stack_id")
+		if err != nil {
+			return nil, err
 		}
 
-		if request.GetArguments()["limit"] != nil {
-			limitVal := int(request.GetArguments()["limit"].(float64))
-			if limitVal >= 0 {
-				limit = &limitVal
-			}
+		runID, err := request.RequireString("run_id")
+		if err != nil {
+			return nil, err
+		}
+
+		var skip, limit *int
+		if skipVal := request.GetInt("skip", -1); skipVal >= 0 {
+			skip = &skipVal
+		}
+
+		if limitVal := request.GetInt("limit", -1); limitVal >= 0 {
+			limit = &limitVal
 		}
 
 		logLines := make(chan string)
 		var allLogs []string
 		var terminal *structs.RunStateTransition
-		var err error
 
 		go func() {
 			for line := range logLines {
@@ -364,8 +371,15 @@ func registerGetStackRunChangesTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunChangesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.GetArguments()["stack_id"].(string)
-		runID := request.GetArguments()["run_id"].(string)
+		stackID, err := request.RequireString("stack_id")
+		if err != nil {
+			return nil, err
+		}
+
+		runID, err := request.RequireString("run_id")
+		if err != nil {
+			return nil, err
+		}
 
 		changes, err := getRunChanges(ctx, stackID, runID)
 		if err != nil {
@@ -399,13 +413,13 @@ func registerTriggerStackRunTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunTriggerTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.GetArguments()["stack_id"].(string)
+		stackID, err := request.RequireString("stack_id")
+		if err != nil {
+			return nil, err
+		}
 
 		// Default run type is TRACKED
-		runType := "TRACKED"
-		if request.GetArguments()["run_type"] != nil {
-			runType = request.GetArguments()["run_type"].(string)
-		}
+		runType := request.GetString("run_type", "TRACKED")
 
 		var mutation struct {
 			RunTrigger struct {
@@ -419,8 +433,7 @@ func registerTriggerStackRunTool(s *server.MCPServer) {
 			"type":  structs.NewRunType(runType),
 		}
 
-		if request.GetArguments()["commit_sha"] != nil {
-			commitSha := request.GetArguments()["commit_sha"].(string)
+		if commitSha := request.GetString("commit_sha", ""); commitSha != "" {
 			variables["sha"] = graphql.NewString(graphql.String(commitSha))
 		}
 
@@ -450,8 +463,15 @@ func registerDiscardStackRunTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunDiscardTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.GetArguments()["stack_id"].(string)
-		runID := request.GetArguments()["run_id"].(string)
+		stackID, err := request.RequireString("stack_id")
+		if err != nil {
+			return nil, err
+		}
+
+		runID, err := request.RequireString("run_id")
+		if err != nil {
+			return nil, err
+		}
 
 		var mutation struct {
 			RunDiscard struct {
@@ -490,8 +510,15 @@ func registerConfirmStackRunTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunConfirmTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.GetArguments()["stack_id"].(string)
-		runID := request.GetArguments()["run_id"].(string)
+		stackID, err := request.RequireString("stack_id")
+		if err != nil {
+			return nil, err
+		}
+
+		runID, err := request.RequireString("run_id")
+		if err != nil {
+			return nil, err
+		}
 
 		var mutation struct {
 			RunConfirm struct {
@@ -530,7 +557,7 @@ func registerListResourcesTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(resourcesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		if stackID, ok := request.GetArguments()["stack_id"].(string); ok && stackID != "" {
+		if stackID := request.GetString("stack_id", ""); stackID != "" {
 			return listResourcesForOneStack(ctx, stackID)
 		}
 
@@ -557,7 +584,10 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 	)
 
 	s.AddTool(localPreviewTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.GetArguments()["stack_id"].(string)
+		stackID, err := request.RequireString("stack_id")
+		if err != nil {
+			return nil, err
+		}
 
 		stack, err := stackGetByID[stack](ctx, stackID)
 		if errors.Is(err, errNoStackFound) {
@@ -573,8 +603,8 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 		}
 
 		var envVars []EnvironmentVariable
-		if request.GetArguments()["environment_variables"] != nil {
-			v := request.GetArguments()["environment_variables"].(map[string]any)
+		if envVarParams := request.GetArguments()["environment_variables"]; envVarParams != nil {
+			v := envVarParams.(map[string]any)
 			for k, v := range v {
 				if o, ok := v.(string); ok {
 					envVars = append(envVars, EnvironmentVariable{
@@ -585,25 +615,14 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 			}
 		}
 
-		var targets []string
-		if request.GetArguments()["targets"] != nil {
-			v := request.GetArguments()["targets"].([]any)
-			for _, t := range v {
-				if o, ok := t.(string); ok {
-					targets = append(targets, o)
-				}
-			}
-		}
+		targets := request.GetStringSlice("targets", make([]string, 0))
 
 		var path *string
-		if p, ok := request.GetArguments()["path"].(string); ok && p != "" {
+		if p := request.GetString("path", ""); p != "" {
 			path = &p
 		}
 
-		awaitForCompletion := true
-		if a, ok := request.GetArguments()["await_for_completion"].(string); ok && a != "" {
-			awaitForCompletion = a == "true"
-		}
+		awaitForCompletion := request.GetString("await_for_completion", "true") == "true"
 
 		// Create a string builder to capture output
 		var outputBuilder strings.Builder
@@ -712,7 +731,7 @@ func listResourcesForAllStacks(ctx context.Context) (*mcp.CallToolResult, error)
 		Stacks []stackWithResources `graphql:"stacks" json:"stacks,omitempty"`
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, map[string]any{}); err != nil {
 		return nil, fmt.Errorf("failed to query all stacks resources: %w", err)
 	}
 
