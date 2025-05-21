@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -15,12 +15,12 @@ import (
 )
 
 func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
+	return func(ctx context.Context, cliCmd *cli.Command) error {
 		// Assuming that spacectl is ran from the root of the repository,
 		// containing the release artifacts in the "dist" directory.
-		dir := cliCtx.String(flagGoReleaserDir.Name)
+		dir := cliCmd.String(flagGoReleaserDir.Name)
 
-		providerType := cliCtx.String(flagProviderType.Name)
+		providerType := cliCmd.String(flagProviderType.Name)
 
 		fmt.Println("Retrieving release data from ", dir)
 		versionData, err := internal.BuildGoReleaserVersionData(dir)
@@ -54,10 +54,10 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 			"provider": graphql.ID(providerType),
 			"input": TerraformProviderVersionInput{
 				Number:           versionData.Metadata.Version,
-				ProtocolVersions: cliCtx.StringSlice(flagProviderVersionProtocols.Name),
+				ProtocolVersions: cliCmd.StringSlice(flagProviderVersionProtocols.Name),
 				SHASumsFileSHA:   checksumsFileChecksum,
 				SignatureFileSHA: signatureFileChecksum,
-				SigningKeyID:     cliCtx.String(flagGPGKeyID.Name),
+				SigningKeyID:     cliCmd.String(flagGPGKeyID.Name),
 			},
 		}
 
@@ -81,7 +81,7 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 				} `graphql:"terraformProviderVersionCreate(provider: $provider, input: $input)"`
 			}
 
-			if err := authenticated.Client.Mutate(cliCtx.Context, &createMutation, variables); err != nil {
+			if err := authenticated.Client.Mutate(ctx, &createMutation, variables); err != nil {
 				return err
 			}
 
@@ -103,7 +103,7 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 				} `graphql:"terraformProviderVersionCreate(provider: $provider, input: $input)"`
 			}
 
-			if err := authenticated.Client.Mutate(cliCtx.Context, &createMutation, variables); err != nil {
+			if err := authenticated.Client.Mutate(ctx, &createMutation, variables); err != nil {
 				return err
 			}
 
@@ -117,12 +117,12 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 		}
 
 		fmt.Println("Uploading the checksums file")
-		if err := checksumsFile.Upload(cliCtx.Context, dir, sha256SumsUploadURL, sha256SumsUploadHeaders); err != nil {
+		if err := checksumsFile.Upload(ctx, dir, sha256SumsUploadURL, sha256SumsUploadHeaders); err != nil {
 			return errors.Wrap(err, "could not upload checksums file")
 		}
 
 		fmt.Println("Uploading the signatures file")
-		if err := signatureFile.Upload(cliCtx.Context, dir, sha256SumsSigUploadURL, sha256SumsSigUploadHeaders); err != nil {
+		if err := signatureFile.Upload(ctx, dir, sha256SumsSigUploadURL, sha256SumsSigUploadHeaders); err != nil {
 			return errors.Wrap(err, "could not upload signature file")
 		}
 
@@ -133,11 +133,11 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 			}
 
 			if useHeadersFromAPI {
-				if err := registerPlatformV2(cliCtx.Context, dir, versionID, &archives[i]); err != nil {
+				if err := registerPlatformV2(ctx, dir, versionID, &archives[i]); err != nil {
 					return err
 				}
 			} else {
-				if err := registerPlatform(cliCtx.Context, dir, versionID, &archives[i]); err != nil {
+				if err := registerPlatform(ctx, dir, versionID, &archives[i]); err != nil {
 					return err
 				}
 			}
@@ -161,7 +161,7 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 
 		fmt.Println("Uploading the changelog")
 
-		if err := authenticated.Client.Mutate(cliCtx.Context, &changelogMutation, variables); err != nil {
+		if err := authenticated.Client.Mutate(ctx, &changelogMutation, variables); err != nil {
 			return errors.Wrap(err, "could not update changelog")
 		}
 

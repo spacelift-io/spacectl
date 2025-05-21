@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/pterm/pterm"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // OutputFormat defines the way that the results of a command are output to the user.
@@ -25,8 +25,8 @@ const (
 var AvailableOutputFormatStrings = []string{string(OutputFormatTable), string(OutputFormatJSON)}
 
 // GetOutputFormat gets the selected output format based on the CLI args.
-func GetOutputFormat(cliContext *cli.Context) (OutputFormat, error) {
-	format := cliContext.String(FlagOutputFormat.Name)
+func GetOutputFormat(cliCmd *cli.Command) (OutputFormat, error) {
+	format := cliCmd.String(FlagOutputFormat.Name)
 	if format == "" || strings.EqualFold(format, string(OutputFormatTable)) {
 		return OutputFormatTable, nil
 	}

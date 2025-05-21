@@ -1,11 +1,12 @@
 package profile
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/session"
 )
@@ -17,7 +18,7 @@ var flagBindHost = &cli.StringFlag{
 	Required:    false,
 	Value:       "localhost",
 	Destination: &bindHost,
-	EnvVars:     []string{"SPACECTL_BIND_HOST"},
+	Sources:     cli.EnvVars("SPACECTL_BIND_HOST"),
 }
 
 var bindPort int
@@ -27,7 +28,7 @@ var flagBindPort = &cli.IntFlag{
 	Required:    false,
 	Value:       0,
 	Destination: &bindPort,
-	EnvVars:     []string{"SPACECTL_BIND_PORT"},
+	Sources:     cli.EnvVars("SPACECTL_BIND_PORT"),
 }
 
 const (
@@ -46,8 +47,8 @@ var flagMethod = &cli.StringFlag{
 	Name:     "method",
 	Usage:    fmt.Sprintf("[Optional] the method to use for logging in to Spacelift: %s", strings.Join([]string{methodBrowser, methodAPI, methodGithub}, ", ")),
 	Required: false,
-	EnvVars:  []string{"SPACECTL_LOGIN_METHOD"},
-	Action: func(ctx *cli.Context, v string) error {
+	Sources:  cli.EnvVars("SPACECTL_LOGIN_METHOD"),
+	Action: func(_ context.Context, _ *cli.Command, v string) error {
 		if v == "" {
 			return nil
 		}
@@ -65,7 +66,7 @@ var flagEndpoint = &cli.StringFlag{
 	Name:     "endpoint",
 	Usage:    "[Optional] the endpoint to use for logging in to Spacelift",
 	Required: false,
-	EnvVars:  []string{"SPACECTL_LOGIN_ENDPOINT"},
+	Sources:  cli.EnvVars("SPACECTL_LOGIN_ENDPOINT"),
 }
 
 const (
@@ -77,9 +78,9 @@ var flagUsageViewCSVSince = &cli.StringFlag{
 	Name:     "since",
 	Usage:    "[Optional] the start of the time range to query for usage data in format YYYY-MM-DD",
 	Required: false,
-	EnvVars:  []string{"SPACECTL_USAGE_VIEW_CSV_SINCE"},
+	Sources:  cli.EnvVars("SPACECTL_USAGE_VIEW_CSV_SINCE"),
 	Value:    time.Now().Add(usageViewCSVDefaultRange).Format(usageViewCSVTimeFormat),
-	Action: func(context *cli.Context, s string) error {
+	Action: func(_ context.Context, _ *cli.Command, s string) error {
 		_, err := time.Parse(usageViewCSVTimeFormat, s)
 		if err != nil {
 			return err
@@ -92,9 +93,9 @@ var flagUsageViewCSVUntil = &cli.StringFlag{
 	Name:     "until",
 	Usage:    "[Optional] the end of the time range to query for usage data in format YYYY-MM-DD",
 	Required: false,
-	EnvVars:  []string{"SPACECTL_USAGE_VIEW_CSV_UNTIL"},
+	Sources:  cli.EnvVars("SPACECTL_USAGE_VIEW_CSV_UNTIL"),
 	Value:    time.Now().Format(usageViewCSVTimeFormat),
-	Action: func(context *cli.Context, s string) error {
+	Action: func(_ context.Context, _ *cli.Command, s string) error {
 		_, err := time.Parse(usageViewCSVTimeFormat, s)
 		if err != nil {
 			return err
@@ -117,9 +118,9 @@ var flagUsageViewCSVAspect = &cli.StringFlag{
 	Name:     "aspect",
 	Usage:    "[Optional] the aspect to query for usage data",
 	Required: false,
-	EnvVars:  []string{"SPACECTL_USAGE_VIEW_CSV_ASPECT"},
+	Sources:  cli.EnvVars("SPACECTL_USAGE_VIEW_CSV_ASPECT"),
 	Value:    aspectWorkerCount,
-	Action: func(context *cli.Context, s string) error {
+	Action: func(_ context.Context, _ *cli.Command, s string) error {
 		if _, isValidAspect := aspects[s]; !isValidAspect {
 			return fmt.Errorf("invalid aspect: %s", s)
 		}
@@ -141,9 +142,9 @@ var flagUsageViewCSVGroupBy = &cli.StringFlag{
 	Name:     "group-by",
 	Usage:    "[Optional] the aspect to group run minutes by",
 	Required: false,
-	EnvVars:  []string{"SPACECTL_USAGE_VIEW_CSV_GROUP_BY"},
+	Sources:  cli.EnvVars("SPACECTL_USAGE_VIEW_CSV_GROUP_BY"),
 	Value:    groupByRunType,
-	Action: func(context *cli.Context, s string) error {
+	Action: func(_ context.Context, _ *cli.Command, s string) error {
 		if _, isValidGroupBy := groupBys[s]; !isValidGroupBy {
 			return fmt.Errorf("invalid group-by: %s", s)
 		}
@@ -155,5 +156,5 @@ var flagUsageViewCSVFile = &cli.StringFlag{
 	Name:     "file",
 	Usage:    "[Optional] the file to save the CSV to",
 	Required: false,
-	EnvVars:  []string{"SPACECTL_USAGE_VIEW_CSV_FILE"},
+	Sources:  cli.EnvVars("SPACECTL_USAGE_VIEW_CSV_FILE"),
 }

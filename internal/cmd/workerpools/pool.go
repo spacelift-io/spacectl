@@ -1,11 +1,12 @@
 package workerpools
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -37,8 +38,8 @@ type listPoolsQuery struct {
 
 type listPoolsCommand struct{}
 
-func (c *listPoolsCommand) listPools(cliCtx *cli.Context) error {
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+func (c *listPoolsCommand) listPools(ctx context.Context, cliCmd *cli.Command) error {
+	outputFormat, err := cmd.GetOutputFormat(cliCmd)
 
 	if err != nil {
 		return err
@@ -46,7 +47,7 @@ func (c *listPoolsCommand) listPools(cliCtx *cli.Context) error {
 
 	var query listPoolsQuery
 
-	if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{}); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
 		return err
 	}
 

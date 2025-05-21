@@ -1,12 +1,13 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -29,14 +30,14 @@ type showOutputsQuery struct {
 
 type showOutputsStackCommand struct{}
 
-func (c *showOutputsStackCommand) showOutputs(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func (c *showOutputsStackCommand) showOutputs(ctx context.Context, cliCmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
-	outputID := cliCtx.String(flagOutputID.Name)
+	outputID := cliCmd.String(flagOutputID.Name)
 
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	outputFormat, err := cmd.GetOutputFormat(cliCmd)
 	if err != nil {
 		return err
 	}
@@ -46,7 +47,7 @@ func (c *showOutputsStackCommand) showOutputs(cliCtx *cli.Context) error {
 		"stackId": graphql.ID(stackID),
 	}
 
-	if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 		return errors.Wrapf(err, "failed to query for stack ID %q", stackID)
 	}
 

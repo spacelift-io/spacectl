@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
@@ -16,39 +16,39 @@ import (
 )
 
 func listStacks() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	return func(ctx context.Context, cliCmd *cli.Command) error {
+		outputFormat, err := cmd.GetOutputFormat(cliCmd)
 		if err != nil {
 			return err
 		}
 
 		var limit *uint
-		if cliCtx.IsSet(cmd.FlagLimit.Name) {
-			if cliCtx.Uint(cmd.FlagLimit.Name) == 0 {
+		if cliCmd.IsSet(cmd.FlagLimit.Name) {
+			if cliCmd.Uint(cmd.FlagLimit.Name) == 0 {
 				return fmt.Errorf("limit must be greater than 0")
 			}
 
-			if cliCtx.Uint(cmd.FlagLimit.Name) >= math.MaxInt32 {
+			if cliCmd.Uint(cmd.FlagLimit.Name) >= math.MaxInt32 {
 				return fmt.Errorf("limit must be less than %d", math.MaxInt32)
 			}
 
-			limit = internal.Ptr(cliCtx.Uint(cmd.FlagLimit.Name))
+			limit = internal.Ptr(cliCmd.Uint(cmd.FlagLimit.Name))
 		}
 
 		var search *string
-		if cliCtx.IsSet(cmd.FlagSearch.Name) {
-			if cliCtx.String(cmd.FlagSearch.Name) == "" {
+		if cliCmd.IsSet(cmd.FlagSearch.Name) {
+			if cliCmd.String(cmd.FlagSearch.Name) == "" {
 				return fmt.Errorf("search must be non-empty")
 			}
 
-			search = internal.Ptr(cliCtx.String(cmd.FlagSearch.Name))
+			search = internal.Ptr(cliCmd.String(cmd.FlagSearch.Name))
 		}
 
 		switch outputFormat {
 		case cmd.OutputFormatTable:
-			return listStacksTable(cliCtx, search, limit)
+			return listStacksTable(ctx, cliCmd, search, limit)
 		case cmd.OutputFormatJSON:
-			return listStacksJSON(cliCtx, search, limit)
+			return listStacksJSON(ctx, search, limit)
 		}
 
 		return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -56,7 +56,7 @@ func listStacks() cli.ActionFunc {
 }
 
 func listStacksJSON(
-	ctx *cli.Context,
+	ctx context.Context,
 	search *string,
 	limit *uint,
 ) error {
@@ -70,7 +70,7 @@ func listStacksJSON(
 		fullTextSearch = graphql.NewString(graphql.String(*search))
 	}
 
-	stacks, err := searchAllStacks(ctx.Context, structs.SearchInput{
+	stacks, err := searchAllStacks(ctx, structs.SearchInput{
 		First:          first,
 		FullTextSearch: fullTextSearch,
 	})
@@ -82,7 +82,8 @@ func listStacksJSON(
 }
 
 func listStacksTable(
-	ctx *cli.Context,
+	ctx context.Context,
+	cliCmd *cli.Command,
 	search *string,
 	limit *uint,
 ) error {
@@ -105,13 +106,13 @@ func listStacksTable(
 		},
 	}
 
-	stacks, err := searchAllStacks(ctx.Context, input)
+	stacks, err := searchAllStacks(ctx, input)
 	if err != nil {
 		return err
 	}
 
 	columns := []string{"Name", "ID", "Commit", "Author", "State", "Worker Pool", "Locked By"}
-	if ctx.Bool(cmd.FlagShowLabels.Name) {
+	if cliCmd.Bool(cmd.FlagShowLabels.Name) {
 		columns = append(columns, "Labels")
 	}
 
@@ -126,7 +127,7 @@ func listStacksTable(
 			s.WorkerPool.Name,
 			s.LockedBy,
 		}
-		if ctx.Bool(cmd.FlagShowLabels.Name) {
+		if cliCmd.Bool(cmd.FlagShowLabels.Name) {
 			row = append(row, strings.Join(s.Labels, ", "))
 		}
 

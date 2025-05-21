@@ -1,46 +1,48 @@
 package stack
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func resourcesList(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func resourcesList(ctx context.Context, cliCmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		if !errors.Is(err, errNoStackFound) {
 			return err
 		}
 
-		return resourcesListAllStacks(cliCtx)
+		return resourcesListAllStacks(ctx)
 	}
 
-	return resourcesListOneStack(cliCtx, stackID)
+	return resourcesListOneStack(ctx, stackID)
 }
 
-func resourcesListOneStack(cliCtx *cli.Context, id string) error {
+func resourcesListOneStack(ctx context.Context, id string) error {
 	var query struct {
 		Stack stackWithResources `graphql:"stack(id: $id)"`
 	}
 
 	variables := map[string]any{"id": graphql.ID(id)}
-	if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 		return errors.Wrap(err, "failed to query one stack")
 	}
 
 	return cmd.OutputJSON(query.Stack)
 }
 
-func resourcesListAllStacks(cliCtx *cli.Context) error {
+func resourcesListAllStacks(ctx context.Context) error {
 	var query struct {
 		Stacks []stackWithResources `graphql:"stacks" json:"stacks,omitempty"`
 	}
 
-	if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{}); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
 		return errors.Wrap(err, "failed to query list of stacks")
 	}
 

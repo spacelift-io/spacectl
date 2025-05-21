@@ -1,10 +1,11 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -12,8 +13,8 @@ import (
 )
 
 func listVersions() cli.ActionFunc {
-	return func(cliCtx *cli.Context) (err error) {
-		outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	return func(ctx context.Context, cliCmd *cli.Command) (err error) {
+		outputFormat, err := cmd.GetOutputFormat(cliCmd)
 		if err != nil {
 			return err
 		}
@@ -24,10 +25,10 @@ func listVersions() cli.ActionFunc {
 			} `graphql:"terraformProvider(id: $id)"`
 		}
 
-		providerType := cliCtx.String(flagProviderType.Name)
+		providerType := cliCmd.String(flagProviderType.Name)
 
 		variables := map[string]any{"id": graphql.ID(providerType)}
-		if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+		if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 			return fmt.Errorf("could not list Terraform provider versions: %w", err)
 		}
 

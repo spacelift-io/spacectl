@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
@@ -18,33 +18,33 @@ import (
 
 type listCommand struct{}
 
-func (c *listCommand) list(cliCtx *cli.Context) error {
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+func (c *listCommand) list(ctx context.Context, cliCmd *cli.Command) error {
+	outputFormat, err := cmd.GetOutputFormat(cliCmd)
 	if err != nil {
 		return err
 	}
 
 	var limit *uint
-	if cliCtx.IsSet(cmd.FlagLimit.Name) {
-		limit = internal.Ptr(cliCtx.Uint(cmd.FlagLimit.Name))
+	if cliCmd.IsSet(cmd.FlagLimit.Name) {
+		limit = internal.Ptr(cliCmd.Uint(cmd.FlagLimit.Name))
 	}
 
 	var search *string
-	if cliCtx.IsSet(cmd.FlagSearch.Name) {
-		search = internal.Ptr(cliCtx.String(cmd.FlagSearch.Name))
+	if cliCmd.IsSet(cmd.FlagSearch.Name) {
+		search = internal.Ptr(cliCmd.String(cmd.FlagSearch.Name))
 	}
 
 	switch outputFormat {
 	case cmd.OutputFormatTable:
-		return c.listTable(cliCtx, search, limit)
+		return c.listTable(ctx, cliCmd, search, limit)
 	case cmd.OutputFormatJSON:
-		return c.listJSON(cliCtx, search, limit)
+		return c.listJSON(ctx, search, limit)
 	}
 
 	return fmt.Errorf("unknown output format: %v", outputFormat)
 }
 
-func (c *listCommand) listTable(ctx *cli.Context, search *string, limit *uint) error {
+func (c *listCommand) listTable(ctx context.Context, cliCmd *cli.Command, search *string, limit *uint) error {
 	var first *graphql.Int
 	if limit != nil {
 		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
@@ -64,7 +64,7 @@ func (c *listCommand) listTable(ctx *cli.Context, search *string, limit *uint) e
 		},
 	}
 
-	policies, err := c.searchAllPolicies(ctx.Context, input)
+	policies, err := c.searchAllPolicies(ctx, input)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (c *listCommand) listTable(ctx *cli.Context, search *string, limit *uint) e
 			cmd.HumanizeUnixSeconds(b.UpdatedAt),
 			strings.Join(b.Labels, ", "),
 		}
-		if ctx.Bool(cmd.FlagShowLabels.Name) {
+		if cliCmd.Bool(cmd.FlagShowLabels.Name) {
 			row = append(row, strings.Join(b.Labels, ", "))
 		}
 
@@ -92,7 +92,7 @@ func (c *listCommand) listTable(ctx *cli.Context, search *string, limit *uint) e
 	return cmd.OutputTable(tableData, true)
 }
 
-func (c *listCommand) listJSON(ctx *cli.Context, search *string, limit *uint) error {
+func (c *listCommand) listJSON(ctx context.Context, search *string, limit *uint) error {
 	var first *graphql.Int
 	if limit != nil {
 		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
@@ -103,7 +103,7 @@ func (c *listCommand) listJSON(ctx *cli.Context, search *string, limit *uint) er
 		fullTextSearch = graphql.NewString(graphql.String(*search))
 	}
 
-	policies, err := c.searchAllPolicies(ctx.Context, structs.SearchInput{
+	policies, err := c.searchAllPolicies(ctx, structs.SearchInput{
 		First:          first,
 		FullTextSearch: fullTextSearch,
 	})

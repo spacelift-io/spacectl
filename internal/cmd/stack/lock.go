@@ -1,10 +1,11 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
@@ -26,14 +27,14 @@ var flagStackLockNote = &cli.StringFlag{
 	Required: false,
 }
 
-func lock(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func lock(ctx context.Context, cliCmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
-	note := cliCtx.String(flagStackLockNote.Name)
+	note := cliCmd.String(flagStackLockNote.Name)
 
-	if nArgs := cliCtx.NArg(); nArgs != 0 {
+	if nArgs := cliCmd.NArg(); nArgs != 0 {
 		return fmt.Errorf("expected zero arguments but got %d", nArgs)
 	}
 
@@ -43,16 +44,16 @@ func lock(cliCtx *cli.Context) error {
 		"note":  graphql.String(note),
 	}
 
-	return authenticated.Client.Mutate(cliCtx.Context, &mutation, variables)
+	return authenticated.Client.Mutate(ctx, &mutation, variables)
 }
 
-func unlock(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func unlock(ctx context.Context, cliCmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
 
-	if nArgs := cliCtx.NArg(); nArgs != 0 {
+	if nArgs := cliCmd.NArg(); nArgs != 0 {
 		return fmt.Errorf("expected zero arguments but got %d", nArgs)
 	}
 
@@ -61,5 +62,5 @@ func unlock(cliCtx *cli.Context) error {
 		"stack": graphql.ID(stackID),
 	}
 
-	return authenticated.Client.Mutate(cliCtx.Context, &mutation, variables)
+	return authenticated.Client.Mutate(ctx, &mutation, variables)
 }

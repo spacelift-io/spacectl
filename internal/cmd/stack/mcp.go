@@ -40,7 +40,7 @@ func registerListStacksTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a paginated list of Spacelift stacks. Use the pagination cursor to navigate through multiple pages of results.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Stacks",
-			ReadOnlyHint: true,
+			ReadOnlyHint: mcp.ToBoolPtr(true),
 		}),
 		mcp.WithNumber("limit", mcp.Description("The maximum number of stacks to return, default is 50")),
 		mcp.WithString("search", mcp.Description("Perform a full text search on stack name, description, and tags")),
@@ -49,18 +49,18 @@ func registerListStacksTool(s *server.MCPServer) {
 
 	s.AddTool(stacksTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		limit := 50
-		if request.Params.Arguments["limit"] != nil {
-			limit = int(request.Params.Arguments["limit"].(float64))
+		if request.GetArguments()["limit"] != nil {
+			limit = int(request.GetArguments()["limit"].(float64))
 		}
 		var fullTextSearch *graphql.String
-		if request.Params.Arguments["search"] != nil {
-			search := request.Params.Arguments["search"].(string)
+		if request.GetArguments()["search"] != nil {
+			search := request.GetArguments()["search"].(string)
 			fullTextSearch = graphql.NewString(graphql.String(search))
 		}
 
 		var nextPageCursor *graphql.String
-		if request.Params.Arguments["next_page_cursor"] != nil {
-			cursor := request.Params.Arguments["next_page_cursor"].(string)
+		if request.GetArguments()["next_page_cursor"] != nil {
+			cursor := request.GetArguments()["next_page_cursor"].(string)
 			nextPageCursor = graphql.NewString(graphql.String(cursor))
 		}
 
@@ -103,18 +103,18 @@ func registerListStackRunsTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a paginated list of tracked runs (runs making changes in resources) for a specific Spacelift stack Use the pagination cursor to navigate through the run history. This tool does not include proposed (preview) runs`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Stack Runs",
-			ReadOnlyHint: true,
+			ReadOnlyHint: mcp.ToBoolPtr(true),
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack to list runs for"), mcp.Required()),
 		mcp.WithString("next_page_cursor", mcp.Description("The pagination cursor to use for fetching the next page of results")),
 	)
 
 	s.AddTool(stackRunsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.Params.Arguments["stack_id"].(string)
+		stackID := request.GetArguments()["stack_id"].(string)
 
 		var before *string
-		if request.Params.Arguments["next_page_cursor"] != nil {
-			cursor := request.Params.Arguments["next_page_cursor"].(string)
+		if request.GetArguments()["next_page_cursor"] != nil {
+			cursor := request.GetArguments()["next_page_cursor"].(string)
 			before = &cursor
 		}
 
@@ -160,18 +160,18 @@ func registerListStackProposedRunsTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a paginated list of preview (including local preview) runs (runs showing preview of introduced changes) for a specific Spacelift stack Use the pagination cursor to navigate through the run history. This tools does not include tracked runs`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Stack Runs",
-			ReadOnlyHint: true,
+			ReadOnlyHint: mcp.ToBoolPtr(true),
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack to list runs for"), mcp.Required()),
 		mcp.WithString("next_page_cursor", mcp.Description("The pagination cursor to use for fetching the next page of results")),
 	)
 
 	s.AddTool(stackRunsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.Params.Arguments["stack_id"].(string)
+		stackID := request.GetArguments()["stack_id"].(string)
 
 		var before *string
-		if request.Params.Arguments["next_page_cursor"] != nil {
-			cursor := request.Params.Arguments["next_page_cursor"].(string)
+		if request.GetArguments()["next_page_cursor"] != nil {
+			cursor := request.GetArguments()["next_page_cursor"].(string)
 			before = &cursor
 		}
 
@@ -217,15 +217,15 @@ func registerGetStackRunTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a specific run for a Spacelift stack. Use the pagination cursor to navigate through the run history.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Stack Run",
-			ReadOnlyHint: true,
+			ReadOnlyHint: mcp.ToBoolPtr(true),
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack to list runs for"), mcp.Required()),
 		mcp.WithString("run_id", mcp.Description("The ID of the run to retrieve"), mcp.Required()),
 	)
 
 	s.AddTool(stackRunsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.Params.Arguments["stack_id"].(string)
-		runID := request.Params.Arguments["run_id"].(string)
+		stackID := request.GetArguments()["stack_id"].(string)
+		runID := request.GetArguments()["run_id"].(string)
 
 		var query struct {
 			Stack *struct {
@@ -261,7 +261,7 @@ func registerGetStackRunLogsTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve logs for a specific run of a Spacelift stack. Shows output generated during the run execution, including commands, errors, and results. You can use skip and limit parameters to retrieve specific line ranges.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Stack Run Logs",
-			ReadOnlyHint: true,
+			ReadOnlyHint: mcp.ToBoolPtr(true),
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack"), mcp.Required()),
 		mcp.WithString("run_id", mcp.Description("The ID of the run"), mcp.Required()),
@@ -270,19 +270,19 @@ func registerGetStackRunLogsTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunLogsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.Params.Arguments["stack_id"].(string)
-		runID := request.Params.Arguments["run_id"].(string)
+		stackID := request.GetArguments()["stack_id"].(string)
+		runID := request.GetArguments()["run_id"].(string)
 
 		var skip, limit *int
-		if request.Params.Arguments["skip"] != nil {
-			skipVal := int(request.Params.Arguments["skip"].(float64))
+		if request.GetArguments()["skip"] != nil {
+			skipVal := int(request.GetArguments()["skip"].(float64))
 			if skipVal >= 0 {
 				skip = &skipVal
 			}
 		}
 
-		if request.Params.Arguments["limit"] != nil {
-			limitVal := int(request.Params.Arguments["limit"].(float64))
+		if request.GetArguments()["limit"] != nil {
+			limitVal := int(request.GetArguments()["limit"].(float64))
 			if limitVal >= 0 {
 				limit = &limitVal
 			}
@@ -357,15 +357,15 @@ func registerGetStackRunChangesTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve the resource changes detected or applied during a specific Spacelift stack run.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Stack Run Changes",
-			ReadOnlyHint: true,
+			ReadOnlyHint: mcp.ToBoolPtr(true),
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack"), mcp.Required()),
 		mcp.WithString("run_id", mcp.Description("The ID of the run"), mcp.Required()),
 	)
 
 	s.AddTool(stackRunChangesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.Params.Arguments["stack_id"].(string)
-		runID := request.Params.Arguments["run_id"].(string)
+		stackID := request.GetArguments()["stack_id"].(string)
+		runID := request.GetArguments()["run_id"].(string)
 
 		changes, err := getRunChanges(ctx, stackID, runID)
 		if err != nil {
@@ -399,12 +399,12 @@ func registerTriggerStackRunTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunTriggerTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.Params.Arguments["stack_id"].(string)
+		stackID := request.GetArguments()["stack_id"].(string)
 
 		// Default run type is TRACKED
 		runType := "TRACKED"
-		if request.Params.Arguments["run_type"] != nil {
-			runType = request.Params.Arguments["run_type"].(string)
+		if request.GetArguments()["run_type"] != nil {
+			runType = request.GetArguments()["run_type"].(string)
 		}
 
 		var mutation struct {
@@ -419,8 +419,8 @@ func registerTriggerStackRunTool(s *server.MCPServer) {
 			"type":  structs.NewRunType(runType),
 		}
 
-		if request.Params.Arguments["commit_sha"] != nil {
-			commitSha := request.Params.Arguments["commit_sha"].(string)
+		if request.GetArguments()["commit_sha"] != nil {
+			commitSha := request.GetArguments()["commit_sha"].(string)
 			variables["sha"] = graphql.NewString(graphql.String(commitSha))
 		}
 
@@ -450,8 +450,8 @@ func registerDiscardStackRunTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunDiscardTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.Params.Arguments["stack_id"].(string)
-		runID := request.Params.Arguments["run_id"].(string)
+		stackID := request.GetArguments()["stack_id"].(string)
+		runID := request.GetArguments()["run_id"].(string)
 
 		var mutation struct {
 			RunDiscard struct {
@@ -490,8 +490,8 @@ func registerConfirmStackRunTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunConfirmTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.Params.Arguments["stack_id"].(string)
-		runID := request.Params.Arguments["run_id"].(string)
+		stackID := request.GetArguments()["stack_id"].(string)
+		runID := request.GetArguments()["run_id"].(string)
 
 		var mutation struct {
 			RunConfirm struct {
@@ -524,13 +524,13 @@ func registerListResourcesTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a list of infrastructure resources managed by all Spacelift stacks or a specific stack.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Resources",
-			ReadOnlyHint: true,
+			ReadOnlyHint: mcp.ToBoolPtr(true),
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack. If not provided, resources for all stacks will be listed")),
 	)
 
 	s.AddTool(resourcesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		if stackID, ok := request.Params.Arguments["stack_id"].(string); ok && stackID != "" {
+		if stackID, ok := request.GetArguments()["stack_id"].(string); ok && stackID != "" {
 			return listResourcesForOneStack(ctx, stackID)
 		}
 
@@ -557,7 +557,7 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 	)
 
 	s.AddTool(localPreviewTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		stackID := request.Params.Arguments["stack_id"].(string)
+		stackID := request.GetArguments()["stack_id"].(string)
 
 		stack, err := stackGetByID[stack](ctx, stackID)
 		if errors.Is(err, errNoStackFound) {
@@ -573,8 +573,8 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 		}
 
 		var envVars []EnvironmentVariable
-		if request.Params.Arguments["environment_variables"] != nil {
-			v := request.Params.Arguments["environment_variables"].(map[string]any)
+		if request.GetArguments()["environment_variables"] != nil {
+			v := request.GetArguments()["environment_variables"].(map[string]any)
 			for k, v := range v {
 				if o, ok := v.(string); ok {
 					envVars = append(envVars, EnvironmentVariable{
@@ -586,8 +586,8 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 		}
 
 		var targets []string
-		if request.Params.Arguments["targets"] != nil {
-			v := request.Params.Arguments["targets"].([]any)
+		if request.GetArguments()["targets"] != nil {
+			v := request.GetArguments()["targets"].([]any)
 			for _, t := range v {
 				if o, ok := t.(string); ok {
 					targets = append(targets, o)
@@ -596,12 +596,12 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 		}
 
 		var path *string
-		if p, ok := request.Params.Arguments["path"].(string); ok && p != "" {
+		if p, ok := request.GetArguments()["path"].(string); ok && p != "" {
 			path = &p
 		}
 
 		awaitForCompletion := true
-		if a, ok := request.Params.Arguments["await_for_completion"].(string); ok && a != "" {
+		if a, ok := request.GetArguments()["await_for_completion"].(string); ok && a != "" {
 			awaitForCompletion = a == "true"
 		}
 

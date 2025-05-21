@@ -1,23 +1,24 @@
 package stack
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func dependenciesOn(cliCtx *cli.Context) error {
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+func dependenciesOn(ctx context.Context, cliCmd *cli.Command) error {
+	outputFormat, err := cmd.GetOutputFormat(cliCmd)
 	if err != nil {
 		return err
 	}
 
-	got, err := dependenciesListOneStack(cliCtx)
+	got, err := dependenciesListOneStack(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
@@ -32,13 +33,13 @@ func dependenciesOn(cliCtx *cli.Context) error {
 	return fmt.Errorf("unknown output format: %v", outputFormat)
 }
 
-func dependenciesOff(cliCtx *cli.Context) error {
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+func dependenciesOff(ctx context.Context, cliCmd *cli.Command) error {
+	outputFormat, err := cmd.GetOutputFormat(cliCmd)
 	if err != nil {
 		return err
 	}
 
-	got, err := dependenciesListOneStack(cliCtx)
+	got, err := dependenciesListOneStack(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
@@ -53,8 +54,8 @@ func dependenciesOff(cliCtx *cli.Context) error {
 	return fmt.Errorf("unknown output format: %v", outputFormat)
 }
 
-func dependenciesListOneStack(cliCtx *cli.Context) (*stackWithDependencies, error) {
-	id, err := getStackID(cliCtx)
+func dependenciesListOneStack(ctx context.Context, cliCmd *cli.Command) (*stackWithDependencies, error) {
+	id, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +65,7 @@ func dependenciesListOneStack(cliCtx *cli.Context) (*stackWithDependencies, erro
 	}
 
 	variables := map[string]any{"id": graphql.ID(id)}
-	if err := authenticated.Client.Query(cliCtx.Context, &query, variables); err != nil {
+	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
 		return nil, errors.Wrap(err, "failed to query one stack")
 	}
 

@@ -7,36 +7,36 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/nullable"
 )
 
-func runList(cliCtx *cli.Context) error {
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+func runList(ctx context.Context, cliCmd *cli.Command) error {
+	outputFormat, err := cmd.GetOutputFormat(cliCmd)
 	if err != nil {
 		return err
 	}
 
-	stackID, err := getStackID(cliCtx)
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
-	maxResults := cliCtx.Int(flagMaxResults.Name)
-	showPreview := cliCtx.Bool(flagPreviewRuns.Name)
+	maxResults := cliCmd.Int(flagMaxResults.Name)
+	showPreview := cliCmd.Bool(flagPreviewRuns.Name)
 
 	switch outputFormat {
 	case cmd.OutputFormatTable:
-		return listRunsTable(cliCtx.Context, maxResults, func(ctx context.Context, before *string) ([]runsTableQuery, error) {
+		return listRunsTable(ctx, maxResults, func(ctx context.Context, before *string) ([]runsTableQuery, error) {
 			if showPreview {
 				return queryPreviewRuns[runsTableQuery](ctx, stackID, before)
 			}
 			return queryTrackedRuns[runsTableQuery](ctx, stackID, before)
 		})
 	case cmd.OutputFormatJSON:
-		return listRunsJSON(cliCtx.Context, maxResults, func(ctx context.Context, before *string) ([]runsJSONQuery, error) {
+		return listRunsJSON(ctx, maxResults, func(ctx context.Context, before *string) ([]runsJSONQuery, error) {
 			if showPreview {
 				return queryPreviewRuns[runsJSONQuery](ctx, stackID, before)
 			}

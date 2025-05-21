@@ -1,13 +1,14 @@
 package authenticated
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"net/http"
 	"os"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/client/session"
@@ -36,21 +37,21 @@ var Client client.Client
 
 // Ensure is a way of ensuring that the Client exists, and it meant to be used
 // as a Before action for commands that need it.
-func Ensure(_ *cli.Context) error {
-	ctx, httpClient := session.Defaults()
+func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
+	httpClient := client.GetHTTPClient()
 
 	if err := configureTLS(httpClient); err != nil {
-		return err
+		return ctx, err
 	}
 
 	session, err := session.New(ctx, httpClient)
 	if err != nil {
-		return err
+		return ctx, err
 	}
 
 	Client = client.New(httpClient, session)
 
-	return nil
+	return ctx, nil
 }
 
 // configureTLS configures client TLS from the environment.

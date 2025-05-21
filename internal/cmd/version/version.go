@@ -1,10 +1,11 @@
 package version
 
 import (
+	"context"
 	"fmt"
 	"os"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 )
@@ -14,7 +15,7 @@ func Command(spacectlVersion string, spaceliftVersion cmd.SpaceliftInstanceVersi
 	return &cli.Command{
 		Name:  "version",
 		Usage: "Print out CLI version",
-		Action: func(*cli.Context) error {
+		Action: func(_ context.Context, _ *cli.Command) error {
 			_, err := fmt.Fprintf(os.Stdout, "spacectl version: %s, Spacelift version: %s\n", spacectlVersion, spaceliftVersion.String())
 			return err
 		},

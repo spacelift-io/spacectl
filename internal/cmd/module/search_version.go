@@ -1,12 +1,13 @@
 package module
 
 import (
+	"context"
 	"fmt"
 	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd"
@@ -20,22 +21,22 @@ const (
 )
 
 func listVersions() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	return func(ctx context.Context, cliCmd *cli.Command) error {
+		outputFormat, err := cmd.GetOutputFormat(cliCmd)
 		if err != nil {
 			return err
 		}
 
 		switch outputFormat {
 		case cmd.OutputFormatTable:
-			versions, err := getModuleVersions(cliCtx, moduleVersionsTableLimit)
+			versions, err := getModuleVersions(ctx, cliCmd, moduleVersionsTableLimit)
 			if err != nil {
 				return err
 			}
 
 			return formatModuleVersionsTable(versions)
 		case cmd.OutputFormatJSON:
-			versions, err := getModuleVersions(cliCtx, moduleVersionsJSONLimit)
+			versions, err := getModuleVersions(ctx, cliCmd, moduleVersionsJSONLimit)
 			if err != nil {
 				return err
 			}
@@ -47,7 +48,7 @@ func listVersions() cli.ActionFunc {
 	}
 }
 
-func getModuleVersions(cliCtx *cli.Context, limit int) ([]version, error) {
+func getModuleVersions(ctx context.Context, cliCmd *cli.Command, limit int) ([]version, error) {
 	if limit < 0 {
 		return nil, errors.New("limit must be greater or equal to 0")
 	}
@@ -66,7 +67,7 @@ func getModuleVersions(cliCtx *cli.Context, limit int) ([]version, error) {
 			pageSize = slices.Min([]int{maxSearchModuleVersionsPageSize, limit - len(versions)})
 		}
 
-		result, err := getSearchModuleVersions(cliCtx, cursor, pageSize)
+		result, err := getSearchModuleVersions(ctx, cliCmd, cursor, pageSize)
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +86,7 @@ func getModuleVersions(cliCtx *cli.Context, limit int) ([]version, error) {
 	return versions, nil
 }
 
-func getSearchModuleVersions(cliCtx *cli.Context, cursor string, limit int) (searchModuleVersions, error) {
+func getSearchModuleVersions(ctx context.Context, cliCmd *cli.Command, cursor string, limit int) (searchModuleVersions, error) {
 	if limit <= 0 || limit > maxSearchModuleVersionsPageSize {
 		return searchModuleVersions{}, errors.New("limit must be between 1 and 50")
 	}
@@ -101,8 +102,8 @@ func getSearchModuleVersions(cliCtx *cli.Context, cursor string, limit int) (sea
 		after = graphql.NewString(graphql.String(cursor))
 	}
 
-	if err := authenticated.Client.Query(cliCtx.Context, &query, map[string]interface{}{
-		"id": cliCtx.String(flagModuleID.Name),
+	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{
+		"id": cliCmd.String(flagModuleID.Name),
 		"input": structs.SearchInput{
 			First: graphql.NewInt(graphql.Int(int32(limit))), //nolint: gosec
 			After: after,

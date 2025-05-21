@@ -5,20 +5,20 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func runChanges(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func runChanges(ctx context.Context, cliCmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
-	run := cliCtx.String(flagRequiredRun.Name)
+	run := cliCmd.String(flagRequiredRun.Name)
 
-	result, err := getRunChanges(cliCtx.Context, stackID, run)
+	result, err := getRunChanges(ctx, stackID, run)
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
@@ -22,35 +22,35 @@ var defaultOrder = structs.QueryOrder{
 }
 
 func listAuditTrails() cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	return func(ctx context.Context, cliCmd *cli.Command) error {
+		outputFormat, err := cmd.GetOutputFormat(cliCmd)
 		if err != nil {
 			return err
 		}
 
 		var limit *uint
-		if cliCtx.IsSet(cmd.FlagLimit.Name) {
-			if cliCtx.Uint(cmd.FlagLimit.Name) >= math.MaxInt32 {
+		if cliCmd.IsSet(cmd.FlagLimit.Name) {
+			if cliCmd.Uint(cmd.FlagLimit.Name) >= math.MaxInt32 {
 				return fmt.Errorf("limit must be less than %d", math.MaxInt32)
 			}
 
-			limit = internal.Ptr(cliCtx.Uint(cmd.FlagLimit.Name))
+			limit = internal.Ptr(cliCmd.Uint(cmd.FlagLimit.Name))
 		}
 
 		var search *string
-		if cliCtx.IsSet(cmd.FlagSearch.Name) {
-			if cliCtx.String(cmd.FlagSearch.Name) == "" {
+		if cliCmd.IsSet(cmd.FlagSearch.Name) {
+			if cliCmd.String(cmd.FlagSearch.Name) == "" {
 				return fmt.Errorf("search must be non-empty")
 			}
 
-			search = internal.Ptr(cliCtx.String(cmd.FlagSearch.Name))
+			search = internal.Ptr(cliCmd.String(cmd.FlagSearch.Name))
 		}
 
 		switch outputFormat {
 		case cmd.OutputFormatTable:
-			return listAuditTrailEntriesTable(cliCtx, search, limit)
+			return listAuditTrailEntriesTable(ctx, search, limit)
 		case cmd.OutputFormatJSON:
-			return listAuditTrailEntriesJSON(cliCtx, search, limit)
+			return listAuditTrailEntriesJSON(ctx, search, limit)
 		}
 
 		return fmt.Errorf("unknown output format: %v", outputFormat)
@@ -58,7 +58,7 @@ func listAuditTrails() cli.ActionFunc {
 }
 
 func listAuditTrailEntriesTable(
-	ctx *cli.Context,
+	ctx context.Context,
 	search *string,
 	limit *uint,
 ) error {
@@ -78,7 +78,7 @@ func listAuditTrailEntriesTable(
 		OrderBy:        &defaultOrder,
 	}
 
-	entries, err := searchAllAuditTrailEntries(ctx.Context, input)
+	entries, err := searchAllAuditTrailEntries(ctx, input)
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func listAuditTrailEntriesTable(
 }
 
 func listAuditTrailEntriesJSON(
-	ctx *cli.Context,
+	ctx context.Context,
 	search *string,
 	limit *uint,
 ) error {
@@ -118,7 +118,7 @@ func listAuditTrailEntriesJSON(
 		fullTextSearch = graphql.NewString(graphql.String(*search))
 	}
 
-	auditTrailEntries, err := searchAllAuditTrailEntries(ctx.Context, structs.SearchInput{
+	auditTrailEntries, err := searchAllAuditTrailEntries(ctx, structs.SearchInput{
 		First:          first,
 		FullTextSearch: fullTextSearch,
 		OrderBy:        &defaultOrder,

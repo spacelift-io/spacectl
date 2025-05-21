@@ -5,19 +5,19 @@ import (
 	"fmt"
 
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func runPrioritize(cliCtx *cli.Context) error {
-	stackID, err := getStackID(cliCtx)
+func runPrioritize(ctx context.Context, cliCmd *cli.Command) error {
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
-	runID := cliCtx.String(flagRequiredRun.Name)
+	runID := cliCmd.String(flagRequiredRun.Name)
 
-	mutation, err := setRunPriority(cliCtx.Context, stackID, runID, true)
+	mutation, err := setRunPriority(ctx, stackID, runID, true)
 	if err != nil {
 		return err
 	}
@@ -29,11 +29,11 @@ func runPrioritize(cliCtx *cli.Context) error {
 		mutation.SetRunPriority.ID,
 	))
 
-	if !cliCtx.Bool(flagTail.Name) {
+	if !cliCmd.Bool(flagTail.Name) {
 		return nil
 	}
 
-	terminal, err := runLogsWithAction(cliCtx.Context, stackID, mutation.SetRunPriority.ID, nil)
+	terminal, err := runLogsWithAction(ctx, stackID, mutation.SetRunPriority.ID, nil)
 	if err != nil {
 		return err
 	}

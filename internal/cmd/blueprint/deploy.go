@@ -1,6 +1,7 @@
 package blueprint
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"strconv"
@@ -8,17 +9,17 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 type deployCommand struct{}
 
-func (c *deployCommand) deploy(cliCtx *cli.Context) error {
-	blueprintID := cliCtx.String(flagRequiredBlueprintID.Name)
+func (c *deployCommand) deploy(ctx context.Context, cliCmd *cli.Command) error {
+	blueprintID := cliCmd.String(flagRequiredBlueprintID.Name)
 
-	b, found, err := getBlueprintByID(cliCtx.Context, blueprintID)
+	b, found, err := getBlueprintByID(ctx, blueprintID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to query for blueprint ID %q", blueprintID)
 	}
@@ -77,7 +78,7 @@ func (c *deployCommand) deploy(cliCtx *cli.Context) error {
 	}
 
 	err = authenticated.Client.Mutate(
-		cliCtx.Context,
+		ctx,
 		&mutation,
 		map[string]any{
 			"id": blueprintID,

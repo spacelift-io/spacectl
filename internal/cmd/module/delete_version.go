@@ -1,17 +1,18 @@
 package module
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func deleteVersion(cliCtx *cli.Context) error {
-	moduleID := cliCtx.String(flagModuleID.Name)
-	versionID := cliCtx.String(flagVersionID.Name)
+func deleteVersion(ctx context.Context, cliCmd *cli.Command) error {
+	moduleID := cliCmd.String(flagModuleID.Name)
+	versionID := cliCmd.String(flagVersionID.Name)
 
 	var mutation struct {
 		DeleteModuleVersion struct {
@@ -24,7 +25,7 @@ func deleteVersion(cliCtx *cli.Context) error {
 		"module": graphql.ID(moduleID),
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 

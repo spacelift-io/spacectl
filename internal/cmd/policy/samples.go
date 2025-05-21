@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -23,15 +23,15 @@ type policyEvaluation struct {
 
 type samplesCommand struct{}
 
-func (c *samplesCommand) list(cliCtx *cli.Context) error {
-	policyID := cliCtx.String(flagRequiredPolicyID.Name)
+func (c *samplesCommand) list(ctx context.Context, cliCmd *cli.Command) error {
+	policyID := cliCmd.String(flagRequiredPolicyID.Name)
 
-	outputFormat, err := cmd.GetOutputFormat(cliCtx)
+	outputFormat, err := cmd.GetOutputFormat(cliCmd)
 	if err != nil {
 		return err
 	}
 
-	b, found, err := c.getSamplesPolicyByID(cliCtx.Context, policyID)
+	b, found, err := c.getSamplesPolicyByID(ctx, policyID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to query for policyEvaluation ID %q", policyID)
 	}

@@ -14,7 +14,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mholt/archiver/v3"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/spacelift-io/spacectl/client/structs"
@@ -22,12 +22,11 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func localPreview(useHeaders bool) cli.ActionFunc {
-	return func(cliCtx *cli.Context) error {
-		moduleID := cliCtx.String(flagModuleID.Name)
-		ctx := context.Background()
+func localPreviewFunc(useHeaders bool) cli.ActionFunc {
+	return func(ctx context.Context, cliCmd *cli.Command) error {
+		moduleID := cliCmd.String(flagModuleID.Name)
 
-		if !cliCtx.Bool(flagNoFindRepositoryRoot.Name) {
+		if !cliCmd.Bool(flagNoFindRepositoryRoot.Name) {
 			if err := internal.MoveToRepositoryRoot(); err != nil {
 				return fmt.Errorf("couldn't move to repository root: %w", err)
 			}
@@ -88,7 +87,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 		fp := filepath.Join(os.TempDir(), "spacectl", "local-workspace", fmt.Sprintf("%s.tar.gz", workspaceID))
 
 		ignoreFiles := []string{".terraformignore"}
-		if !cliCtx.IsSet(flagDisregardGitignore.Name) {
+		if !cliCmd.IsSet(flagDisregardGitignore.Name) {
 			ignoreFiles = append(ignoreFiles, ".gitignore")
 		}
 
@@ -105,7 +104,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 			return fmt.Errorf("couldn't archive local directory: %w", err)
 		}
 
-		if cliCtx.Bool(flagNoUpload.Name) {
+		if cliCmd.Bool(flagNoUpload.Name) {
 			fmt.Println("No upload flag was provided, will not create run, saved archive at:", fp)
 			return nil
 		}
@@ -123,7 +122,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 		}
 
 		tests := []graphql.String{}
-		for _, test := range cliCtx.StringSlice(flagTests.Name) {
+		for _, test := range cliCmd.StringSlice(flagTests.Name) {
 			tests = append(tests, graphql.String(test))
 		}
 		triggerVariables := map[string]interface{}{
@@ -133,8 +132,8 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 		}
 
 		var requestOpts []graphql.RequestOption
-		if cliCtx.IsSet(flagRunMetadata.Name) {
-			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCtx.String(flagRunMetadata.Name)))
+		if cliCmd.IsSet(flagRunMetadata.Name) {
+			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCmd.String(flagRunMetadata.Name)))
 		}
 
 		if err := authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {

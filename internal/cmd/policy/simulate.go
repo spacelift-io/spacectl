@@ -1,13 +1,14 @@
 package policy
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -15,16 +16,16 @@ import (
 
 type simulateCommand struct{}
 
-func (c *simulateCommand) simulate(cliCtx *cli.Context) error {
-	policyID := cliCtx.String(flagRequiredPolicyID.Name)
-	input := cliCtx.String(flagSimulationInput.Name)
+func (c *simulateCommand) simulate(ctx context.Context, cliCmd *cli.Command) error {
+	policyID := cliCmd.String(flagRequiredPolicyID.Name)
+	input := cliCmd.String(flagSimulationInput.Name)
 
 	parsedInput, err := parseInput(input)
 	if err != nil {
 		return err
 	}
 
-	b, found, err := getPolicyByID(cliCtx.Context, policyID)
+	b, found, err := getPolicyByID(ctx, policyID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to query for policy ID %q", policyID)
 	}
@@ -43,7 +44,7 @@ func (c *simulateCommand) simulate(cliCtx *cli.Context) error {
 		"type":  b.Type,
 	}
 
-	if err := authenticated.Client.Mutate(cliCtx.Context, &mutation, variables); err != nil {
+	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 

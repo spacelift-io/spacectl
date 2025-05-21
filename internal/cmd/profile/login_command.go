@@ -13,10 +13,11 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/term"
 
 	"github.com/spacelift-io/spacectl/browserauth"
+	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
@@ -36,7 +37,7 @@ func loginCommand() *cli.Command {
 	}
 }
 
-func loginAction(ctx *cli.Context) error {
+func loginAction(ctx context.Context, cliCmd *cli.Command) error {
 	var storedCredentials session.StoredCredentials
 
 	// Let's try to re-authenticate user.
@@ -45,18 +46,18 @@ func loginAction(ctx *cli.Context) error {
 		storedCredentials.Type = apiTokenProfile.Credentials.Type
 		profileAlias = apiTokenProfile.Alias
 
-		return loginUsingWebBrowser(ctx, &storedCredentials)
+		return loginUsingWebBrowser(ctx, cliCmd, &storedCredentials)
 	}
 
 	reader := bufio.NewReader(os.Stdin)
 
-	endpoint, err := readEndpoint(ctx, reader)
+	endpoint, err := readEndpoint(cliCmd, reader)
 	if err != nil {
 		return err
 	}
 	storedCredentials.Endpoint = endpoint
 
-	credentialsType, err := getCredentialsType(ctx)
+	credentialsType, err := getCredentialsType(cliCmd)
 	if err != nil {
 		return err
 	}
@@ -72,22 +73,22 @@ func loginAction(ctx *cli.Context) error {
 			return err
 		}
 	case session.CredentialsTypeAPIToken:
-		return loginUsingWebBrowser(ctx, &storedCredentials)
+		return loginUsingWebBrowser(ctx, cliCmd, &storedCredentials)
 	default:
 		return fmt.Errorf("invalid selection (%s), please try again", storedCredentials.Type)
 	}
 
 	// Check if the credentials are valid before we try persisting them.
-	if _, err := storedCredentials.Session(session.Defaults()); err != nil {
+	if _, err := storedCredentials.Session(ctx, client.GetHTTPClient()); err != nil {
 		return fmt.Errorf("credentials look invalid: %w", err)
 	}
 
 	return persistAccessCredentials(&storedCredentials)
 }
 
-func getCredentialsType(ctx *cli.Context) (session.CredentialsType, error) {
-	if ctx.IsSet(flagMethod.Name) {
-		got := methodToCredentialsType[ctx.String(flagMethod.Name)]
+func getCredentialsType(cliCmd *cli.Command) (session.CredentialsType, error) {
+	if cliCmd.IsSet(flagMethod.Name) {
+		got := methodToCredentialsType[cliCmd.String(flagMethod.Name)]
 		return got, nil
 	}
 
@@ -104,10 +105,10 @@ func getCredentialsType(ctx *cli.Context) (session.CredentialsType, error) {
 	return session.CredentialsType(result + 1), nil //nolint: gosec
 }
 
-func readEndpoint(ctx *cli.Context, reader *bufio.Reader) (string, error) {
+func readEndpoint(cliCmd *cli.Command, reader *bufio.Reader) (string, error) {
 	var endpoint string
-	if ctx.IsSet(flagEndpoint.Name) {
-		endpoint = ctx.String(flagEndpoint.Name)
+	if cliCmd.IsSet(flagEndpoint.Name) {
+		endpoint = cliCmd.String(flagEndpoint.Name)
 	} else {
 		fmt.Print("Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/): ")
 
@@ -168,7 +169,7 @@ func loginUsingGitHubAccessToken(creds *session.StoredCredentials) error {
 	return nil
 }
 
-func loginUsingWebBrowser(_ *cli.Context, creds *session.StoredCredentials) error {
+func loginUsingWebBrowser(ctx context.Context, _ *cli.Command, creds *session.StoredCredentials) error {
 	// Begin the interactive browser auth flow
 	handler, err := browserauth.BeginWithBindAddress(creds, bindHost, bindPort)
 	if err != nil {
@@ -186,7 +187,7 @@ func loginUsingWebBrowser(_ *cli.Context, creds *session.StoredCredentials) erro
 	fmt.Println("Waiting for login...")
 
 	// Create a context that will timeout after 2 minutes while we wait for auth completion
-	waitCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	waitCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
 	// Wait for the timeout or an auth callback

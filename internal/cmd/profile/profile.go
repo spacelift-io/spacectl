@@ -1,9 +1,10 @@
 package profile
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/session"
 )
@@ -17,14 +18,14 @@ func Command() *cli.Command {
 	return &cli.Command{
 		Name:  "profile",
 		Usage: "Manage Spacelift profiles",
-		Before: func(cliCtx *cli.Context) error {
+		Before: func(ctx context.Context, cliCmd *cli.Command) (context.Context, error) {
 			var err error
 			if manager, err = session.UserProfileManager(); err != nil {
-				return fmt.Errorf("could not initialize profile manager: %w", err)
+				return ctx, fmt.Errorf("could not initialize profile manager: %w", err)
 			}
-			return nil
+			return ctx, nil
 		},
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			currentCommand(),
 			exportTokenCommand(),
 			usageViewCSVCommand(),

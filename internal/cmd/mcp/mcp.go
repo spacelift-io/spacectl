@@ -1,8 +1,10 @@
 package mcp
 
 import (
+	"context"
+
 	"github.com/mark3labs/mcp-go/server"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
@@ -29,7 +31,7 @@ func Command() cmd.Command {
 						EarliestVersion: cmd.SupportedVersionAll,
 						Command: &cli.Command{
 							ArgsUsage: cmd.EmptyArgsUsage,
-							Action: func(cliCtx *cli.Context) error {
+							Action: func(_ context.Context, _ *cli.Command) error {
 								s := mcpServer()
 
 								stack.RegisterMCPTools(s, stack.McpOptions{
@@ -45,7 +47,7 @@ func Command() cmd.Command {
 						EarliestVersion: cmd.SupportedVersion("2.5.0"),
 						Command: &cli.Command{
 							ArgsUsage: cmd.EmptyArgsUsage,
-							Action: func(cliCtx *cli.Context) error {
+							Action: func(_ context.Context, _ *cli.Command) error {
 								s := mcpServer()
 
 								stack.RegisterMCPTools(s, stack.McpOptions{
