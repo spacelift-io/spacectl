@@ -12,7 +12,7 @@ import (
 )
 
 func setCurrentCommit(ctx context.Context, cliCmd *cli.Command) error {
-	stackID, err := getStackID(cliCmd)
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}

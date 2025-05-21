@@ -48,7 +48,7 @@ var flagMethod = &cli.StringFlag{
 	Usage:    fmt.Sprintf("[Optional] the method to use for logging in to Spacelift: %s", strings.Join([]string{methodBrowser, methodAPI, methodGithub}, ", ")),
 	Required: false,
 	Sources:  cli.EnvVars("SPACECTL_LOGIN_METHOD"),
-	Action: func(ctx context.Context, cliCmd *cli.Command, v string) error {
+	Action: func(_ context.Context, _ *cli.Command, v string) error {
 		if v == "" {
 			return nil
 		}
@@ -80,7 +80,7 @@ var flagUsageViewCSVSince = &cli.StringFlag{
 	Required: false,
 	Sources:  cli.EnvVars("SPACECTL_USAGE_VIEW_CSV_SINCE"),
 	Value:    time.Now().Add(usageViewCSVDefaultRange).Format(usageViewCSVTimeFormat),
-	Action: func(ctx context.Context, cliCmd *cli.Command, s string) error {
+	Action: func(_ context.Context, _ *cli.Command, s string) error {
 		_, err := time.Parse(usageViewCSVTimeFormat, s)
 		if err != nil {
 			return err
@@ -95,7 +95,7 @@ var flagUsageViewCSVUntil = &cli.StringFlag{
 	Required: false,
 	Sources:  cli.EnvVars("SPACECTL_USAGE_VIEW_CSV_UNTIL"),
 	Value:    time.Now().Format(usageViewCSVTimeFormat),
-	Action: func(ctx context.Context, cliCmd *cli.Command, s string) error {
+	Action: func(_ context.Context, _ *cli.Command, s string) error {
 		_, err := time.Parse(usageViewCSVTimeFormat, s)
 		if err != nil {
 			return err
@@ -120,7 +120,7 @@ var flagUsageViewCSVAspect = &cli.StringFlag{
 	Required: false,
 	Sources:  cli.EnvVars("SPACECTL_USAGE_VIEW_CSV_ASPECT"),
 	Value:    aspectWorkerCount,
-	Action: func(ctx context.Context, cliCmd *cli.Command, s string) error {
+	Action: func(_ context.Context, _ *cli.Command, s string) error {
 		if _, isValidAspect := aspects[s]; !isValidAspect {
 			return fmt.Errorf("invalid aspect: %s", s)
 		}
@@ -144,7 +144,7 @@ var flagUsageViewCSVGroupBy = &cli.StringFlag{
 	Required: false,
 	Sources:  cli.EnvVars("SPACECTL_USAGE_VIEW_CSV_GROUP_BY"),
 	Value:    groupByRunType,
-	Action: func(ctx context.Context, cliCmd *cli.Command, s string) error {
+	Action: func(_ context.Context, _ *cli.Command, s string) error {
 		if _, isValidGroupBy := groupBys[s]; !isValidGroupBy {
 			return fmt.Errorf("invalid group-by: %s", s)
 		}

@@ -17,7 +17,7 @@ func exportTokenCommand() *cli.Command {
 		Usage: "Prints the current token to stdout. In order not to leak, " +
 			"we suggest piping it to your OS pastebin",
 		ArgsUsage: cmd.EmptyArgsUsage,
-		Action: func(ctx context.Context, cliCmd *cli.Command) error {
+		Action: func(ctx context.Context, _ *cli.Command) error {
 			currentProfile := manager.Current()
 			if currentProfile == nil {
 				return errors.New("no account is currently selected")

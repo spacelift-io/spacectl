@@ -31,7 +31,7 @@ func Command() cmd.Command {
 						EarliestVersion: cmd.SupportedVersionAll,
 						Command: &cli.Command{
 							ArgsUsage: cmd.EmptyArgsUsage,
-							Action: func(ctx context.Context, cliCmd *cli.Command) error {
+							Action: func(_ context.Context, _ *cli.Command) error {
 								s := mcpServer()
 
 								stack.RegisterMCPTools(s, stack.McpOptions{
@@ -47,7 +47,7 @@ func Command() cmd.Command {
 						EarliestVersion: cmd.SupportedVersion("2.5.0"),
 						Command: &cli.Command{
 							ArgsUsage: cmd.EmptyArgsUsage,
-							Action: func(ctx context.Context, cliCmd *cli.Command) error {
+							Action: func(_ context.Context, _ *cli.Command) error {
 								s := mcpServer()
 
 								stack.RegisterMCPTools(s, stack.McpOptions{

@@ -90,7 +90,7 @@ func setVar(ctx context.Context, cliCmd *cli.Command) error {
 	envName := cliCmd.Args().Get(0)
 	envValue := cliCmd.Args().Get(1)
 
-	stackID, err := getStackID(cliCmd)
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (e *listEnvCommand) listEnv(ctx context.Context, cliCmd *cli.Command) error
 		return err
 	}
 
-	stackID, err := getStackID(cliCmd)
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
@@ -285,7 +285,7 @@ func mountFile(ctx context.Context, cliCmd *cli.Command) error {
 	nArgs := cliCmd.NArg()
 
 	envName := cliCmd.Args().Get(0)
-	stackID, err := getStackID(cliCmd)
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
@@ -338,7 +338,7 @@ func mountFile(ctx context.Context, cliCmd *cli.Command) error {
 }
 
 func deleteEnvironment(ctx context.Context, cliCmd *cli.Command) error {
-	stackID, err := getStackID(cliCmd)
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}

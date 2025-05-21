@@ -28,8 +28,8 @@ const (
 // 1. Check the --id flag, if set, use that value.
 // 2. Check the --run flag, if set, try to get the stack associated with the run.
 // 2. Check the current directory to determine repository and subdirectory and search for a stack.
-func getStackID(cliCmd *cli.Command) (string, error) {
-	stack, err := getStack[stackID](cliCmd)
+func getStackID(ctx context.Context, cliCmd *cli.Command) (string, error) {
+	stack, err := getStack[stackID](ctx, cliCmd)
 	if err != nil {
 		return "", err
 	}
@@ -37,9 +37,7 @@ func getStackID(cliCmd *cli.Command) (string, error) {
 	return stack.ID, nil
 }
 
-func getStack[T hasIDAndName](cliCmd *cli.Command) (*T, error) {
-	ctx := context.Background()
-
+func getStack[T hasIDAndName](ctx context.Context, cliCmd *cli.Command) (*T, error) {
 	if cliCmd.IsSet(flagStackID.Name) {
 		stackID := cliCmd.String(flagStackID.Name)
 		stack, err := stackGetByID[T](ctx, stackID)

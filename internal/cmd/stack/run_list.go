@@ -20,7 +20,7 @@ func runList(ctx context.Context, cliCmd *cli.Command) error {
 		return err
 	}
 
-	stackID, err := getStackID(cliCmd)
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}

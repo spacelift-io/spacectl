@@ -15,7 +15,7 @@ func currentCommand() *cli.Command {
 		Name:      "current",
 		Usage:     "Outputs your currently selected profile",
 		ArgsUsage: cmd.EmptyArgsUsage,
-		Action: func(ctx context.Context, cliCmd *cli.Command) error {
+		Action: func(_ context.Context, _ *cli.Command) error {
 			currentProfile := manager.Current()
 
 			if currentProfile == nil {

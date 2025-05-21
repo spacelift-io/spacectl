@@ -13,7 +13,6 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/audittrail"
 	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
-	"github.com/spacelift-io/spacectl/internal/cmd/completion"
 	"github.com/spacelift-io/spacectl/internal/cmd/mcp"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/policy"
@@ -35,16 +34,16 @@ type debugInfoQuery struct {
 	} `graphql:"debugInfo"`
 }
 
-func getSpaceliftInstanceVersion() cmd.SpaceliftInstanceVersion {
+func getSpaceliftInstanceVersion(ctx context.Context) cmd.SpaceliftInstanceVersion {
 	instanceVersion := cmd.SpaceliftInstanceVersion{
 		InstanceType: cmd.SpaceliftInstanceTypeUnknown,
 	}
 
-	httpClient := session.Defaults()
+	httpClient := client.GetHTTPClient()
 
 	// Create a new session - this may fail if the user doesn't have valid credentials.
 	// In that case we just treat the version as unknown.
-	sess, err := session.New(context.Background(), httpClient)
+	sess, err := session.New(ctx, httpClient)
 	if err != nil {
 		return instanceVersion
 	}
@@ -79,7 +78,8 @@ func getSpaceliftInstanceVersion() cmd.SpaceliftInstanceVersion {
 }
 
 func main() {
-	instanceVersion := getSpaceliftInstanceVersion()
+	ctx := context.Background()
+	instanceVersion := getSpaceliftInstanceVersion(ctx)
 
 	if instanceVersion.InstanceType == cmd.SpaceliftInstanceTypeUnknown {
 		log.Println("Warning: Unable to determine Spacelift instance type. Some commands may be unavailable until you authenticate with Spacelift.")
@@ -94,7 +94,6 @@ func main() {
 			profile.Command(),
 			whoami.Command(),
 			versioncmd.Command(version, instanceVersion),
-			completion.Command(),
 		}, cmd.ResolveCommands(instanceVersion, []cmd.Command{
 			module.Command(),
 			stack.Command(),
@@ -108,7 +107,7 @@ func main() {
 		})...),
 	}
 
-	if err := app.Run(context.Background(), os.Args); err != nil {
+	if err := app.Run(ctx, os.Args); err != nil {
 		log.Fatal(err)
 	}
 }

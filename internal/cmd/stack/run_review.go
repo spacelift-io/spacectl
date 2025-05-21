@@ -24,7 +24,7 @@ var flagRunReviewNote = &cli.StringFlag{
 }
 
 func runApprove(ctx context.Context, cliCmd *cli.Command) error {
-	stackID, err := getStackID(cliCmd)
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func runApprove(ctx context.Context, cliCmd *cli.Command) error {
 }
 
 func runReject(ctx context.Context, cliCmd *cli.Command) error {
-	stackID, err := getStackID(cliCmd)
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}

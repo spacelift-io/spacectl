@@ -2,12 +2,6 @@ package runexternaldependency
 
 import "github.com/urfave/cli/v3"
 
-var flagRunID = &cli.StringFlag{
-	Name:     "run-id",
-	Usage:    "[Required] ID of the run",
-	Required: true,
-}
-
 var flagRunExternalDependencyID = &cli.StringFlag{
 	Name:     "id",
 	Usage:    "[Required] ID of the external dependency",

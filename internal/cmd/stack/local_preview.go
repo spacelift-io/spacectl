@@ -25,7 +25,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 			return err
 		}
 
-		stack, err := getStack[stack](cliCmd)
+		stack, err := getStack[stack](ctx, cliCmd)
 		if err != nil {
 			return err
 		}

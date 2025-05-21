@@ -17,6 +17,7 @@ import (
 	"golang.org/x/term"
 
 	"github.com/spacelift-io/spacectl/browserauth"
+	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
@@ -78,7 +79,7 @@ func loginAction(ctx context.Context, cliCmd *cli.Command) error {
 	}
 
 	// Check if the credentials are valid before we try persisting them.
-	if _, err := storedCredentials.Session(ctx, session.Defaults()); err != nil {
+	if _, err := storedCredentials.Session(ctx, client.GetHTTPClient()); err != nil {
 		return fmt.Errorf("credentials look invalid: %w", err)
 	}
 

@@ -28,7 +28,7 @@ var flagStackLockNote = &cli.StringFlag{
 }
 
 func lock(ctx context.Context, cliCmd *cli.Command) error {
-	stackID, err := getStackID(cliCmd)
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func lock(ctx context.Context, cliCmd *cli.Command) error {
 }
 
 func unlock(ctx context.Context, cliCmd *cli.Command) error {
-	stackID, err := getStackID(cliCmd)
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}

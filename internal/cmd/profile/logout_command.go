@@ -15,7 +15,7 @@ func logoutCommand() *cli.Command {
 			_, err := setGlobalProfileAlias(cliCmd)
 			return ctx, err
 		},
-		Action: func(ctx context.Context, cliCmd *cli.Command) error {
+		Action: func(_ context.Context, _ *cli.Command) error {
 			return manager.Delete(profileAlias)
 		},
 	}

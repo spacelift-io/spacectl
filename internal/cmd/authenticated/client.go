@@ -38,7 +38,7 @@ var Client client.Client
 // Ensure is a way of ensuring that the Client exists, and it meant to be used
 // as a Before action for commands that need it.
 func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
-	httpClient := session.Defaults()
+	httpClient := client.GetHTTPClient()
 
 	if err := configureTLS(httpClient); err != nil {
 		return ctx, err

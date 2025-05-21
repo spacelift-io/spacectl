@@ -55,7 +55,7 @@ func dependenciesOff(ctx context.Context, cliCmd *cli.Command) error {
 }
 
 func dependenciesListOneStack(ctx context.Context, cliCmd *cli.Command) (*stackWithDependencies, error) {
-	id, err := getStackID(cliCmd)
+	id, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return nil, err
 	}

@@ -28,7 +28,7 @@ func listCommand() *cli.Command {
 		},
 		ArgsUsage: cmd.EmptyArgsUsage,
 		Before:    cmd.HandleNoColor,
-		Action: func(ctx context.Context, cliCmd *cli.Command) error {
+		Action: func(_ context.Context, cliCmd *cli.Command) error {
 			profiles := manager.GetAll()
 
 			currentProfile := manager.Current()

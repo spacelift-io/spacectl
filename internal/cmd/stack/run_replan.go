@@ -15,7 +15,7 @@ import (
 const rocketEmoji = "\U0001F680"
 
 func runReplan(ctx context.Context, cliCmd *cli.Command) error {
-	stackID, err := getStackID(cliCmd)
+	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
 	}

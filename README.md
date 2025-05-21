@@ -130,20 +130,24 @@ NAME:
    spacectl - Programmatic access to Spacelift GraphQL API.
 
 USAGE:
-   spacectl [global options] command [command options] [arguments...]
+   spacectl [global options] [command [command options]]
 
 VERSION:
-   0.26.0
+   1.13.0
 
 COMMANDS:
-   module                   Manage a Spacelift module
    profile                  Manage Spacelift profiles
+   whoami                   Print out logged-in user's information
+   version                  Print out CLI version
+   module                   Manage a Spacelift module
+   stack                    Manage a Spacelift stack
    provider                 Manage a Terraform provider
    run-external-dependency  Manage Spacelift Run external dependencies
-   stack                    Manage a Spacelift stack
-   whoami                   Print out logged-in users information
-   version                  Print out CLI version
-   workerpool               Manages workerpools and their workers
+   workerpool               Manages workerpools and their workers.
+   blueprint                Manage Spacelift blueprints
+   policy                   Manage Spacelift policies
+   audit-trail              Manage Spacelift audit trail entries
+   mcp                      Manage MCP server
    help, h                  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
@@ -159,19 +163,19 @@ NAME:
    spacectl profile - Manage Spacelift profiles
 
 USAGE:
-   spacectl profile command [command options] [arguments...]
+   spacectl profile [command [command options]] 
 
 COMMANDS:
-     current       Outputs your currently selected profile
-     export-token  Prints the current token to stdout. In order not to leak, we suggest piping it to your OS pastebin
-     list          List all your Spacelift account profiles
-     login         Create a profile for a Spacelift account
-     logout        Remove Spacelift credentials for an existing profile
-     select        Select one of your Spacelift account profiles
-     help, h       Shows a list of commands or help for one command
+   current       Outputs your currently selected profile
+   export-token  Prints the current token to stdout. In order not to leak, we suggest piping it to your OS pastebin
+   usage-csv     Prints CSV with usage data for the current account
+   list          List all your Spacelift account profiles
+   login         Create a profile for a Spacelift account
+   logout        Remove Spacelift credentials for an existing profile
+   select        Select one of your Spacelift account profiles
 
 OPTIONS:
-   --help, -h  show help (default: false)
+   --help, -h  show help
 ```
 
 ## Example
