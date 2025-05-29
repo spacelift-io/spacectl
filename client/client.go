@@ -30,12 +30,7 @@ func (c *client) Mutate(ctx context.Context, mutation interface{}, variables map
 	}
 
 	err = apiClient.Mutate(ctx, mutation, variables, opts...)
-
-	if err != nil && err.Error() == "unauthorized" {
-		return fmt.Errorf("unauthorized: you can re-login using `spacectl profile login`")
-	}
-
-	return err
+	return c.determineClientError(ctx, apiClient, opts, err)
 }
 
 func (c *client) Query(ctx context.Context, query interface{}, variables map[string]interface{}, opts ...graphql.RequestOption) error {
@@ -45,12 +40,29 @@ func (c *client) Query(ctx context.Context, query interface{}, variables map[str
 	}
 
 	err = apiClient.Query(ctx, query, variables, opts...)
+	return c.determineClientError(ctx, apiClient, opts, err)
+}
 
-	if err != nil && err.Error() == "unauthorized" {
-		return fmt.Errorf("unauthorized: you can re-login using `spacectl profile login`")
+func (c *client) determineClientError(ctx context.Context, client *graphql.Client, opts []graphql.RequestOption, err error) error {
+	if err == nil {
+		return nil
 	}
 
-	return err
+	if !strings.Contains(err.Error(), "unauthorized") {
+		return err
+	}
+
+	var query struct {
+		Viewer *struct {
+			ID string `graphql:"id" json:"id"`
+		}
+	}
+	queryErr := client.Query(ctx, &query, map[string]interface{}{}, opts...)
+	if queryErr == nil && query.Viewer != nil {
+		return fmt.Errorf("unauthorized: You're logged in. Maybe you don't have access to the resource?")
+	}
+
+	return fmt.Errorf("unauthorized: You can re-login using `spacectl profile login`")
 }
 
 func (c *client) URL(format string, a ...interface{}) string {
