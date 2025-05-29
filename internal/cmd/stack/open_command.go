@@ -187,6 +187,13 @@ func searchStacks[T hasIDAndName](ctx context.Context, input structs.SearchInput
 		return searchStacksResult[T]{}, errors.Wrap(err, "failed search for stacks")
 	}
 
+	if len(query.SearchStacksOutput.Edges) == 0 {
+		_, err := authenticated.CurrentViewer(ctx)
+		if errors.Is(err, authenticated.ErrViewerUnknown) {
+			return searchStacksResult[T]{}, errors.New("You are not logged in, could not find stacks")
+		}
+	}
+
 	stacks := make([]T, 0)
 	for _, q := range query.SearchStacksOutput.Edges {
 		stacks = append(stacks, q.Node)
