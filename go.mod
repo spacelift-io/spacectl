@@ -43,7 +43,7 @@ require (
 	github.com/charmbracelet/x/cellbuf v0.0.13 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
-	github.com/cli/go-gh/v2 v2.12.0 // indirect
+	github.com/cli/go-gh/v2 v2.12.1 // indirect
 	github.com/cli/safeexec v1.0.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
