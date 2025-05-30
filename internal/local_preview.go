@@ -49,42 +49,112 @@ func MoveToRepositoryRoot() error {
 
 type IgnoreMatcherFn func(filePath string) bool
 
-// GetIgnoreMatcherFn creates an ignore-matcher for archiving purposes
-// This function respects gitignore and terraformignore, and
-// optionally if a projectRoot is provided it only include files from this root
 func GetIgnoreMatcherFn(ctx context.Context, projectRoot *string, ignoreFiles []string) (IgnoreMatcherFn, error) {
-	ignoreList := make([]*ignore.GitIgnore, 0)
-	for _, f := range ignoreFiles {
-		ignoreFile, err := ignore.CompileIgnoreFile(f)
-		if err != nil && !os.IsNotExist(err) {
-			return nil, fmt.Errorf("couldn't compile %s file: %w", f, err)
-		}
-
-		ignoreList = append(ignoreList, ignoreFile)
+	baseDir := "."
+	if projectRoot != nil {
+		baseDir = *projectRoot
 	}
 
-	customignore := ignore.CompileIgnoreLines(".git", ".terraform")
+	ignoreFilesByDir, err := discoverIgnoreFiles(baseDir, ignoreFiles)
+	if err != nil {
+		return nil, err
+	}
+
+	customIgnore := ignore.CompileIgnoreLines(".git", ".terraform")
+
 	return func(filePath string) bool {
-		if customignore.MatchesPath(filePath) {
+		cleanPath := filepath.Clean(filePath)
+
+		if customIgnore.MatchesPath(cleanPath) {
 			return false
 		}
 
-		for _, v := range ignoreList {
-			if v != nil && v.MatchesPath(filePath) {
-				return false
-			}
+		if isIgnoredByAnyFile(ignoreFilesByDir, cleanPath) {
+			return false
 		}
 
-		if projectRoot != nil {
-			// ensure the root only matches the directory and not all other files
-			root := strings.TrimSuffix(*projectRoot, "/") + "/"
-			if !strings.HasPrefix(filePath, root) {
-				return false
-			}
+		if projectRoot != nil && !isWithinProjectRoot(*projectRoot, cleanPath) {
+			return false
 		}
 
 		return true
 	}, nil
+}
+
+type ignoreFileInfo struct {
+	ignoreFile *ignore.GitIgnore
+	directory  string
+}
+
+func discoverIgnoreFiles(baseDir string, ignoreFiles []string) ([]ignoreFileInfo, error) {
+	var allIgnoreFiles []ignoreFileInfo
+
+	err := filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return err
+		}
+
+		for _, ignoreFileName := range ignoreFiles {
+			if info.Name() == ignoreFileName {
+				ignoreFile, compileErr := ignore.CompileIgnoreFile(path)
+				if compileErr != nil && !os.IsNotExist(compileErr) {
+					return fmt.Errorf("couldn't compile %s file at %s: %w", ignoreFileName, path, compileErr)
+				}
+				if ignoreFile != nil {
+					directory := filepath.Dir(path)
+					allIgnoreFiles = append(allIgnoreFiles, ignoreFileInfo{
+						ignoreFile: ignoreFile,
+						directory:  directory,
+					})
+				}
+				break
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("couldn't walk directory tree to find ignore files: %w", err)
+	}
+
+	return allIgnoreFiles, nil
+}
+
+func isIgnoredByAnyFile(ignoreFiles []ignoreFileInfo, filePath string) bool {
+	for _, info := range ignoreFiles {
+		if isWithinDirectory(info.directory, filePath) {
+			relPath, err := filepath.Rel(info.directory, filePath)
+			if err == nil && info.ignoreFile.MatchesPath(relPath) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func isWithinDirectory(directory, filePath string) bool {
+	cleanDir := filepath.Clean(directory)
+	cleanFile := filepath.Clean(filePath)
+
+	if cleanDir == "." {
+		return true
+	}
+
+	return cleanFile == cleanDir || strings.HasPrefix(cleanFile, cleanDir+string(filepath.Separator))
+}
+
+func isWithinProjectRoot(projectRoot, filePath string) bool {
+	rootPath := filepath.Clean(projectRoot)
+
+	if filepath.IsAbs(filePath) {
+		absRoot, err := filepath.Abs(rootPath)
+		if err != nil {
+			return false
+		}
+		return filePath == absRoot || strings.HasPrefix(filePath, absRoot+string(filepath.Separator))
+	}
+
+	return filePath == rootPath || strings.HasPrefix(filePath, rootPath+string(filepath.Separator))
 }
 
 // UploadArchive uploads a tarball to the target endpoint and displays a fancy progress bar.
