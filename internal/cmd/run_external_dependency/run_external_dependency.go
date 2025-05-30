@@ -10,8 +10,9 @@ import (
 // Command encapsulates the run external dependency command subtree.
 func Command() cmd.Command {
 	return cmd.Command{
-		Name:  "run-external-dependency",
-		Usage: "Manage Spacelift Run external dependencies",
+		Name:   "run-external-dependency",
+		Usage:  "Manage Spacelift Run external dependencies",
+		Before: authenticated.AttemptAutoLogin,
 		Versions: []cmd.VersionedCommand{
 			{
 				EarliestVersion: cmd.SupportedVersionAll,

@@ -32,6 +32,8 @@ type Command struct {
 
 	// Subcommands gets the list of subcommands that support the specified version.
 	Subcommands []Command
+
+	Before cli.BeforeFunc
 }
 
 type VersionedCommand struct {
@@ -105,6 +107,7 @@ func ResolveCommands(instanceVersion SpaceliftInstanceVersion, allCommands []Com
 			latestVersion.Command.Name = command.Name
 			latestVersion.Command.Usage = command.Usage
 			latestVersion.Command.Category = command.Category
+			latestVersion.Command.Before = command.Before
 
 			// Recursively resolve subcommands
 			latestVersion.Command.Commands = resolveSubcommands(instanceVersion, command.Subcommands)

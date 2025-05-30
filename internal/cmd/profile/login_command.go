@@ -7,18 +7,14 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"syscall"
-	"time"
 
 	"github.com/manifoldco/promptui"
-	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v3"
-	"golang.org/x/term"
 
-	"github.com/spacelift-io/spacectl/browserauth"
 	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/client/session"
+	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 func loginCommand() *cli.Command {
@@ -40,13 +36,21 @@ func loginCommand() *cli.Command {
 func loginAction(ctx context.Context, cliCmd *cli.Command) error {
 	var storedCredentials session.StoredCredentials
 
+	browserCfg := &authenticated.BrowserConfig{
+		BindHost: &bindHost,
+		BindPort: &bindPort,
+	}
 	// Let's try to re-authenticate user.
 	if apiTokenProfile != nil {
 		storedCredentials.Endpoint = apiTokenProfile.Credentials.Endpoint
 		storedCredentials.Type = apiTokenProfile.Credentials.Type
 		profileAlias = apiTokenProfile.Alias
 
-		return loginUsingWebBrowser(ctx, cliCmd, &storedCredentials)
+		if err := authenticated.LoginUsingWebBrowser(ctx, &storedCredentials, browserCfg); err != nil {
+			return err
+		}
+
+		return persistAccessCredentials(&storedCredentials)
 	}
 
 	reader := bufio.NewReader(os.Stdin)
@@ -63,19 +67,8 @@ func loginAction(ctx context.Context, cliCmd *cli.Command) error {
 	}
 	storedCredentials.Type = credentialsType
 
-	switch storedCredentials.Type {
-	case session.CredentialsTypeAPIKey:
-		if err := loginUsingAPIKey(reader, &storedCredentials); err != nil {
-			return err
-		}
-	case session.CredentialsTypeGitHubToken:
-		if err := loginUsingGitHubAccessToken(&storedCredentials); err != nil {
-			return err
-		}
-	case session.CredentialsTypeAPIToken:
-		return loginUsingWebBrowser(ctx, cliCmd, &storedCredentials)
-	default:
-		return fmt.Errorf("invalid selection (%s), please try again", storedCredentials.Type)
+	if err := authenticated.LoginByType(ctx, &storedCredentials, browserCfg); err != nil {
+		return fmt.Errorf("could not login: %w", err)
 	}
 
 	// Check if the credentials are valid before we try persisting them.
@@ -83,6 +76,7 @@ func loginAction(ctx context.Context, cliCmd *cli.Command) error {
 		return fmt.Errorf("credentials look invalid: %w", err)
 	}
 
+	fmt.Println("Consider setting SPACELIFT_AUTO_LOGIN=true for automatic login in the future")
 	return persistAccessCredentials(&storedCredentials)
 }
 
@@ -133,76 +127,6 @@ func readEndpoint(cliCmd *cli.Command, reader *bufio.Reader) (string, error) {
 	}
 
 	return endpoint, nil
-}
-
-func loginUsingAPIKey(reader *bufio.Reader, creds *session.StoredCredentials) error {
-	fmt.Print("Enter API key ID: ")
-	keyID, err := reader.ReadString('\n')
-	if err != nil {
-		return err
-	}
-	creds.KeyID = strings.TrimSpace(keyID)
-
-	fmt.Print("Enter API key secret: ")
-	keySecret, err := term.ReadPassword(int(syscall.Stdin)) //nolint: unconvert
-	if err != nil {
-		return err
-	}
-	creds.KeySecret = strings.TrimSpace(string(keySecret))
-
-	fmt.Println()
-
-	return nil
-}
-
-func loginUsingGitHubAccessToken(creds *session.StoredCredentials) error {
-	fmt.Print("Enter GitHub access token: ")
-
-	accessToken, err := term.ReadPassword(int(syscall.Stdin)) //nolint: unconvert
-	if err != nil {
-		return err
-	}
-	creds.AccessToken = strings.TrimSpace(string(accessToken))
-
-	fmt.Println()
-
-	return nil
-}
-
-func loginUsingWebBrowser(ctx context.Context, _ *cli.Command, creds *session.StoredCredentials) error {
-	// Begin the interactive browser auth flow
-	handler, err := browserauth.BeginWithBindAddress(creds, bindHost, bindPort)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Waiting for login responses at %s:%d\n", handler.Host, handler.Port)
-	fmt.Printf("\nOpening browser to %s\n\n", handler.AuthenticationURL)
-
-	// Attempt to automatically open the URL in the user's browser
-	if err := browser.OpenURL(handler.AuthenticationURL); err != nil {
-		fmt.Printf("Failed to open the browser: %s\nPlease open the URL manually\n\n", err.Error())
-	}
-
-	fmt.Println("Waiting for login...")
-
-	// Create a context that will timeout after 2 minutes while we wait for auth completion
-	waitCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
-	defer cancel()
-
-	// Wait for the timeout or an auth callback
-	if err := handler.Wait(waitCtx); err != nil {
-		return err
-	}
-
-	// Save the shiny new token
-	if err := persistAccessCredentials(creds); err != nil {
-		return err
-	}
-
-	fmt.Println("Done!")
-
-	return nil
 }
 
 func persistAccessCredentials(creds *session.StoredCredentials) error {

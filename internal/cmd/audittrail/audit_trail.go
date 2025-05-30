@@ -10,8 +10,9 @@ import (
 // Command returns the audit-trail command subtree.
 func Command() cmd.Command {
 	return cmd.Command{
-		Name:  "audit-trail",
-		Usage: "Manage Spacelift audit trail entries",
+		Name:   "audit-trail",
+		Usage:  "Manage Spacelift audit trail entries",
+		Before: authenticated.AttemptAutoLogin,
 		Versions: []cmd.VersionedCommand{
 			{
 				EarliestVersion: cmd.SupportedVersionAll,

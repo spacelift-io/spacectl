@@ -10,8 +10,9 @@ import (
 // Command returns the versioned policy command subtree.
 func Command() cmd.Command {
 	return cmd.Command{
-		Name:  "policy",
-		Usage: "Manage Spacelift policies",
+		Name:   "policy",
+		Usage:  "Manage Spacelift policies",
+		Before: authenticated.AttemptAutoLogin,
 		Versions: []cmd.VersionedCommand{
 			{
 				EarliestVersion: cmd.SupportedVersionAll,

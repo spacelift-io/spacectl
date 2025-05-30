@@ -62,7 +62,7 @@ func (c *client) determineClientError(ctx context.Context, client *graphql.Clien
 		return fmt.Errorf("unauthorized: You're logged in. Maybe you don't have access to the resource?")
 	}
 
-	return fmt.Errorf("unauthorized: You can re-login using `spacectl profile login`")
+	return fmt.Errorf("unauthorized: You can re-login using `spacectl profile login`, set `SPACELIFT_AUTO_LOGIN=true` for auto-login")
 }
 
 func (c *client) URL(format string, a ...interface{}) string {

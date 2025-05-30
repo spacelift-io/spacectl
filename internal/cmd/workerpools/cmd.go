@@ -10,8 +10,9 @@ import (
 // Command encapsulates the workerpool command subtree.
 func Command() cmd.Command {
 	return cmd.Command{
-		Name:  "workerpool",
-		Usage: "Manages workerpools and their workers.",
+		Name:   "workerpool",
+		Usage:  "Manages workerpools and their workers.",
+		Before: authenticated.AttemptAutoLogin,
 		Versions: []cmd.VersionedCommand{
 			{
 				EarliestVersion: cmd.SupportedVersionAll,
