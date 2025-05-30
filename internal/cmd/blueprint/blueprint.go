@@ -14,8 +14,9 @@ import (
 // Command returns the blueprint command subtree.
 func Command() cmd.Command {
 	return cmd.Command{
-		Name:  "blueprint",
-		Usage: "Manage Spacelift blueprints",
+		Name:   "blueprint",
+		Usage:  "Manage Spacelift blueprints",
+		Before: authenticated.AttemptAutoLogin,
 		Versions: []cmd.VersionedCommand{
 			{
 				EarliestVersion: cmd.SupportedVersionAll,

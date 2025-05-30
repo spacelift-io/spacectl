@@ -14,8 +14,9 @@ import (
 // Command returns the MCP command subtree.
 func Command() cmd.Command {
 	return cmd.Command{
-		Name:  "mcp",
-		Usage: "Manage MCP server",
+		Name:   "mcp",
+		Usage:  "Manage MCP server",
+		Before: authenticated.AttemptAutoLogin,
 		Versions: []cmd.VersionedCommand{
 			{
 				EarliestVersion: cmd.SupportedVersionAll,

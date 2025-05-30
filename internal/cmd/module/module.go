@@ -17,6 +17,7 @@ func Command() cmd.Command {
 				Command:         &cli.Command{},
 			},
 		},
+		Before: authenticated.AttemptAutoLogin,
 		Subcommands: []cmd.Command{
 			{
 				Category: "Module management",
