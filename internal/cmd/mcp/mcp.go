@@ -8,6 +8,7 @@ import (
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
 )
 
@@ -37,6 +38,7 @@ func Command() cmd.Command {
 								stack.RegisterMCPTools(s, stack.McpOptions{
 									UseHeadersForLocalPreview: false,
 								})
+								module.RegisterMCPTools(s)
 
 								return server.ServeStdio(s)
 							},
@@ -53,6 +55,7 @@ func Command() cmd.Command {
 								stack.RegisterMCPTools(s, stack.McpOptions{
 									UseHeadersForLocalPreview: true,
 								})
+								module.RegisterMCPTools(s)
 
 								return server.ServeStdio(s)
 							},
