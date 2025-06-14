@@ -20,3 +20,4 @@ completions
 
 *.csv
 .idea
+.claude/

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "spacectl": {
+      "type": "stdio",
+      "command": "./spacectl",
+      "args": [
+        "mcp",
+        "server"
+      ]
+    }
+  }
+}
