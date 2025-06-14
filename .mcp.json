@@ -1,25 +1,12 @@
 {
   "mcpServers": {
-    "mcp-gopls": {
+    "spacectl": {
       "type": "stdio",
-      "command": "mcp-gopls"
-    },
-    "context7": {
-      "type": "stdio", 
-      "command": "npx",
+      "command": "./spacectl",
       "args": [
-        "@context7/mcp-server"
+        "mcp",
+        "server"
       ]
-    },
-    "graphql": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "mcp-graphql"
-      ],
-      "env": {
-        "ENDPOINT": "https://demo.app.spacelift.io/graphql"
-      }
     }
   }
 }

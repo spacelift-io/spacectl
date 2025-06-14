@@ -8,6 +8,7 @@ import (
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/cmd/graphql"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
 )
@@ -39,6 +40,7 @@ func Command() cmd.Command {
 									UseHeadersForLocalPreview: false,
 								})
 								module.RegisterMCPTools(s)
+								graphql.RegisterMCPTools(s)
 
 								return server.ServeStdio(s)
 							},
@@ -56,6 +58,7 @@ func Command() cmd.Command {
 									UseHeadersForLocalPreview: true,
 								})
 								module.RegisterMCPTools(s)
+								graphql.RegisterMCPTools(s)
 
 								return server.ServeStdio(s)
 							},

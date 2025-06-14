@@ -58,8 +58,24 @@ Includes Model Context Protocol server (`mcp.Command()`) for AI model interactio
 
 When working with this Go codebase, make liberal use of available MCP servers:
 
-- **mcp-gopls**: For Go language server features including code navigation, symbol search, diagnostics, formatting, and refactoring
-- **context7**: For accessing up-to-date documentation and examples for Go packages and frameworks used in this project
-- **mcp-graphql**: For interacting with Spacelift's GraphQL schema at <https://demo.app.spacelift.io/graphql> - use this to introspect the schema and execute GraphQL queries for development assistance
+- **mcp-gopls**: Essential for spacectl Go development, providing:
+  - **Navigate CLI Architecture**: Use `GoToDefinition` and `FindReferences` to trace command implementations from `internal/cmd/` through to GraphQL client calls
+  - **Debug Authentication Flow**: Search symbols like "session", "profile", "token" to understand the multi-method auth system in `client/session/`
+  - **Explore GraphQL Integration**: Find implementers of GraphQL query structs and trace data flow from API responses to CLI output
+  - **Maintain Code Quality**: `GetDiagnostics` catches Go compilation errors, `FormatCode` ensures gofmt compliance, `OrganizeImports` manages the extensive import dependencies
+  - **Refactor Safely**: `RenameSymbol` for renaming across the modular command structure without breaking CLI interface compatibility
+  - **Understand Command Versioning**: Search for `VersionedCommand` usage to see how commands support different Spacelift instance versions
+- **context7**: Essential for accessing current documentation for spacectl's key dependencies:
+  - **CLI Framework**: Get latest `github.com/urfave/cli/v3` patterns for command structure, flags, and subcommands used throughout `internal/cmd/`
+  - **GraphQL Client**: Access `github.com/shurcooL/graphql` (forked as `spacelift-io/graphql`) documentation for query building and response handling
+  - **Terminal UI**: Find examples for `github.com/charmbracelet/bubbletea`, `bubbles`, and `lipgloss` used in interactive features like local preview and worker pool management
+  - **Authentication Libraries**: Get guidance on `golang.org/x/oauth2` and `github.com/golang-jwt/jwt/v4` for the multi-method auth system
+  - **Utility Libraries**: Access docs for `github.com/manifoldco/promptui` (user prompts), `github.com/pkg/browser` (opening URLs), `github.com/mholt/archiver/v3` (file handling)
+  - **Testing Frameworks**: Get current patterns for `github.com/stretchr/testify` and `github.com/onsi/gomega` used in the test suite
+- **spacectl**: For working with Spacelift's GraphQL schema and API operations. Use this MCP server to:
+  - Introspect the GraphQL schema (`mcp__spacectl__introspect_graphql_schema`)
+  - Search for specific GraphQL fields and types (`mcp__spacectl__search_graphql_schema_fields`)
+  - Get detailed information about GraphQL types (`mcp__spacectl__get_graphql_type_details`)
+  - Get comprehensive authentication guidance (`mcp__spacectl__get_authentication_guide`)
 
-These tools provide enhanced Go development capabilities including real-time code analysis, intelligent code completion, comprehensive documentation access, and direct GraphQL API interaction.
+These tools provide enhanced Go development capabilities including real-time code analysis, intelligent code completion, comprehensive documentation access, and direct Spacelift API interaction.
