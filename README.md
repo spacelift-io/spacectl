@@ -328,19 +328,34 @@ Or if you prefer using Docker:
 
 ### Available Tools
 
-The MCP server provides several tools for AI assistants to interact with Spacelift:
+#### Stack Management
 
-- **list_stacks**: Browse and search through your Spacelift stacks
-- **list_stack_runs**: View the run history for a specific stack
-- **get_stack_run_logs**: Access detailed logs for a specific run
+- **list_stacks**: Browse and search stacks with pagination
+- **list_stack_runs**: View tracked runs for a stack
+- **list_stack_proposed_runs**: View preview runs for a stack
+- **get_stack_run**: Get run details
+- **get_stack_run_logs**: Access run logs with pagination
 - **get_stack_run_changes**: See infrastructure changes from a run
-- **trigger_stack_run**: Start a new run for a stack
-- **confirm_stack_run**: Approve a run that is waiting for confirmation
-- **discard_stack_run**: Cancel a pending or in-progress run
-- **list_resources**: View infrastructure resources managed by your stacks
-- **local_preview**: Create a preview run using local workspace files
+- **trigger_stack_run**: Start new runs (PROPOSED or TRACKED)
+- **confirm_stack_run**: Approve runs waiting for confirmation
+- **discard_stack_run**: Cancel pending or in-progress runs
+- **list_resources**: View infrastructure resources managed by stacks
+- **local_preview**: Create preview runs using local workspace files
 
-With these tools, AI assistants can securely access your Spacelift infrastructure data and perform operations on your behalf.
+#### Module Registry
+
+- **list_modules**: Browse modules in your private registry
+- **get_module**: Get module information including metadata, inputs, outputs
+- **list_module_versions**: List all versions for a module
+- **get_module_version**: Get version information including dependencies and consumers
+- **search_modules**: Search with filtering by provider, labels, space, public/private status
+
+#### GraphQL Schema
+
+- **introspect_graphql_schema**: Complete schema introspection
+- **get_graphql_type_details**: Information about specific GraphQL types
+- **search_graphql_schema_fields**: Search for fields, types, or operations
+- **get_authentication_guide**: Authentication guidance with examples
 
 ## Contributing
 
