@@ -161,10 +161,12 @@ func createLocalPreviewRun(
 		val = strings.Join([]string{val, "-target=" + v}, " ")
 	}
 
-	envVars = append(envVars, EnvironmentVariable{
-		Key:   "TF_CLI_ARGS_plan",
-		Value: graphql.String(strings.TrimSpace(val)),
-	})
+	if len(options.Targets) > 0 {
+		envVars = append(envVars, EnvironmentVariable{
+			Key:   "TF_CLI_ARGS_plan",
+			Value: graphql.String(strings.TrimSpace(val)),
+		})
+	}
 
 	packagePath := options.Path
 	if options.FindRepositoryRoot {
