@@ -61,6 +61,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 				UseHeaders:         useHeaders,
 				NoUpload:           cliCmd.Bool(flagNoUpload.Name),
 				RunMetadata:        runMetadata,
+				PrioritizeRun:      cliCmd.Bool(flagPrioritizeRun.Name),
 				ShowUploadProgress: true,
 			},
 			os.Stdout,
