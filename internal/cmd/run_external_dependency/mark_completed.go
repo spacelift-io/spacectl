@@ -21,8 +21,8 @@ func markRunExternalDependencyAsCompleted(ctx context.Context, cliCmd *cli.Comma
 		} `graphql:"runExternalDependencyMarkAsCompleted(dependency: $dependency, status: $status)"`
 	}
 
-	if !slices.Contains([]string{"finished", "failed"}, status) {
-		return fmt.Errorf("status must be one of: finished, failed")
+	if !slices.Contains([]string{"finished", "failed", "skipped"}, status) {
+		return fmt.Errorf("status must be one of: finished, failed, skipped")
 	}
 
 	type RunExternalDependencyStatus string
