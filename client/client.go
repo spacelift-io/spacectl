@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strings"
 
 	"github.com/shurcooL/graphql"
@@ -86,6 +87,7 @@ func (c *client) apiClient(ctx context.Context) (*graphql.Client, error) {
 
 	requestOptions := []graphql.RequestOption{
 		graphql.WithHeader("Spacelift-Client-Type", "spacectl"),
+		graphql.WithHeader("Spacelift-Client-OS", runtime.GOOS),
 	}
 
 	return graphql.NewClient(c.session.Endpoint(), httpC, requestOptions...), nil
