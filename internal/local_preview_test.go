@@ -111,7 +111,7 @@ temp.*
 	ctx := context.Background()
 	ignoreFileNames := []string{".gitignore", ".terraformignore"}
 
-	matchFn, err := GetIgnoreMatcherFn(ctx, nil, ignoreFileNames)
+	matchFn, err := GetIgnoreMatcherFn(ctx, nil, ignoreFileNames, false)
 	require.NoError(t, err)
 
 	testCases := map[string]bool{
@@ -189,7 +189,7 @@ func TestGetIgnoreMatcherFnWithArchiver(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	matchFn, err := GetIgnoreMatcherFn(ctx, nil, []string{".gitignore"})
+	matchFn, err := GetIgnoreMatcherFn(ctx, nil, []string{".gitignore"}, false)
 	require.NoError(t, err)
 
 	archivePath := filepath.Join(tempDir, "test.tar.gz")
@@ -260,7 +260,7 @@ func TestGetIgnoreMatcherFnWithProjectRoot(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	matchFn, err := GetIgnoreMatcherFn(ctx, &projectRoot, []string{".gitignore"})
+	matchFn, err := GetIgnoreMatcherFn(ctx, &projectRoot, []string{".gitignore"}, false)
 	require.NoError(t, err)
 
 	testCases := map[string]bool{

@@ -49,7 +49,7 @@ func MoveToRepositoryRoot() error {
 
 type IgnoreMatcherFn func(filePath string) bool
 
-func GetIgnoreMatcherFn(ctx context.Context, projectRoot *string, ignoreFiles []string) (IgnoreMatcherFn, error) {
+func GetIgnoreMatcherFn(ctx context.Context, projectRoot *string, ignoreFiles []string, withGitDir bool) (IgnoreMatcherFn, error) {
 	baseDir := "."
 	if projectRoot != nil {
 		baseDir = *projectRoot
@@ -61,6 +61,9 @@ func GetIgnoreMatcherFn(ctx context.Context, projectRoot *string, ignoreFiles []
 	}
 
 	customIgnore := ignore.CompileIgnoreLines(".git", ".terraform")
+	if withGitDir {
+		customIgnore = ignore.CompileIgnoreLines(".terraform")
+	}
 
 	return func(filePath string) bool {
 		cleanPath := filepath.Clean(filePath)

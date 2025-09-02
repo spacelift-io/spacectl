@@ -91,7 +91,7 @@ func localPreviewFunc(useHeaders bool) cli.ActionFunc {
 			ignoreFiles = append(ignoreFiles, ".gitignore")
 		}
 
-		matchFn, err := internal.GetIgnoreMatcherFn(ctx, nil, ignoreFiles)
+		matchFn, err := internal.GetIgnoreMatcherFn(ctx, nil, ignoreFiles, cliCmd.Bool(flagWithGitDir.Name))
 		if err != nil {
 			return fmt.Errorf("couldn't analyze .gitignore and .terraformignore files")
 		}

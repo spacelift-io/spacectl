@@ -167,3 +167,8 @@ var flagInteractive = &cli.BoolFlag{
 	Aliases: []string{"i"},
 	Usage:   "[Optional] Whether to run the command in interactive mode",
 }
+
+var flagWithGitDir = &cli.BoolFlag{
+	Name:  "with-git-dir",
+	Usage: "[Optional] Add the .git to the archive, useful when you define custom behavior inside the repository",
+}
