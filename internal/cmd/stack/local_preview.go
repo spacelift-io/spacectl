@@ -63,6 +63,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 				RunMetadata:        runMetadata,
 				PrioritizeRun:      cliCmd.Bool(flagPrioritizeRun.Name),
 				ShowUploadProgress: true,
+				IncludeGitDir:      cliCmd.Bool(flagWithGitDir.Name),
 			},
 			os.Stdout,
 		)
@@ -148,6 +149,7 @@ type LocalPreviewOptions struct {
 	RunMetadata        *string
 	PrioritizeRun      bool
 	ShowUploadProgress bool
+	IncludeGitDir      bool
 }
 
 func createLocalPreviewRun(
@@ -237,7 +239,7 @@ func createLocalPreviewRun(
 		ignoreFiles = append(ignoreFiles, ".gitignore")
 	}
 
-	matchFn, err := internal.GetIgnoreMatcherFn(ctx, packagePath, ignoreFiles)
+	matchFn, err := internal.GetIgnoreMatcherFn(ctx, packagePath, ignoreFiles, options.IncludeGitDir)
 	if err != nil {
 		return "", fmt.Errorf("couldn't analyze .gitignore and .terraformignore files")
 	}
