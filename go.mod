@@ -83,6 +83,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/mholt/archiver/v3 => github.com/spacelift-io/archiver/v3 v3.3.1-0.20221117135619-d7d90ab08987
+replace github.com/mholt/archiver/v3 => github.com/spacelift-io/archiver/v3 v3.3.1-0.20250918123935-a6c3c9cbc657
 
 replace github.com/shurcooL/graphql => github.com/spacelift-io/graphql v1.2.0

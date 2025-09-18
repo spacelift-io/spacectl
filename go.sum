@@ -182,8 +182,8 @@ github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 h1:OkMGxebDj
 github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06/go.mod h1:+ePHsJ1keEjQtpvf9HHw0f4ZeJ0TLRsxhunSI2hYJSs=
 github.com/sergi/go-diff v1.2.0 h1:XU+rvMAioB0UC3q1MFrIQy4Vo5/4VsRDQQXHsEya6xQ=
 github.com/sergi/go-diff v1.2.0/go.mod h1:STckp+ISIX8hZLjrqAeVduY0gWCT9IjLuqbuNXdaHfM=
-github.com/spacelift-io/archiver/v3 v3.3.1-0.20221117135619-d7d90ab08987 h1:L8buChChTRSHaGHco2ptAFivZUDYHhr7+OG5haf5FJI=
-github.com/spacelift-io/archiver/v3 v3.3.1-0.20221117135619-d7d90ab08987/go.mod h1:YnQtqsp+94Rwd0D/rk5cnLrxusUBUXg+08Ebtr1Mqao=
+github.com/spacelift-io/archiver/v3 v3.3.1-0.20250918123935-a6c3c9cbc657 h1:9t+uEwwlpa4d5MZUOIdMuojvQwoDHDOkLZuXPLk7w8Q=
+github.com/spacelift-io/archiver/v3 v3.3.1-0.20250918123935-a6c3c9cbc657/go.mod h1:YnQtqsp+94Rwd0D/rk5cnLrxusUBUXg+08Ebtr1Mqao=
 github.com/spacelift-io/graphql v1.2.0 h1:oUS1fyO4cqMGOcydu26BVbZkTf/pdDnLWVal6lYv49Q=
 github.com/spacelift-io/graphql v1.2.0/go.mod h1:Q/JMkvFWF8uXZQkDn8i9Nc3aXucbgTFeuFZ6WQMt0Wg=
 github.com/spf13/cast v1.7.1 h1:cuNEagBQEHWN1FnbGEjCXL2szYEXqfJPbP2HNUaca9Y=
