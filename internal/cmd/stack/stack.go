@@ -82,6 +82,26 @@ func Command() cmd.Command {
 			},
 			{
 				Category: "Run management",
+				Name:     "stop",
+				Usage:    "Stop a running run",
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRequiredRun,
+								flagTail,
+							},
+							Action:    runStop(),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
+				},
+			},
+			{
+				Category: "Run management",
 				Name:     "approve",
 				Usage:    "Approves a run or task. If no run is specified, the approval will be added to the current stack blocker.",
 				Versions: []cmd.VersionedCommand{
