@@ -111,6 +111,7 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string, acFn 
 		}
 
 		history := query.Stack.Run.History
+		processedNewState := false
 
 		for index := range history {
 			// Unlike the GUI, we go earliest first.
@@ -120,6 +121,7 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string, acFn 
 				continue
 			}
 			backoff = 0
+			processedNewState = true
 			reportedStates[transition.State] = struct{}{}
 
 			sink <- fmt.Sprintf(`
@@ -144,6 +146,10 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string, acFn 
 			if transition.Terminal {
 				return &transition, nil
 			}
+		}
+
+		if !processedNewState && backoff > 0 {
+			return nil, nil
 		}
 
 		time.Sleep(backoff * time.Second)
