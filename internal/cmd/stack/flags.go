@@ -172,3 +172,8 @@ var flagWithGitDir = &cli.BoolFlag{
 	Name:  "with-git-dir",
 	Usage: "[Optional] Add the .git to the archive, useful when you define custom behavior inside the repository",
 }
+
+var flagPhase = &cli.StringFlag{
+	Name:  "phase",
+	Usage: "[Optional] Only show logs for a specific `PHASE` (e.g., QUEUED, PREPARING, PLANNING, APPLYING, FINISHED)",
+}
