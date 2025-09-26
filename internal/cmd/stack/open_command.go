@@ -41,14 +41,14 @@ func openCommandInBrowser(ctx context.Context, cliCmd *cli.Command) error {
 
 	var branch *string
 	if getCurrentBranch {
-		got, err := getGitCurrentBranch()
+		got, err := getGitCurrentBranch(ctx)
 		if err != nil {
 			return err
 		}
 		branch = &got
 	}
 
-	name, err := getRepositoryName()
+	name, err := getRepositoryName(ctx)
 	if err != nil {
 		return err
 	}
@@ -76,11 +76,11 @@ func findAndOpenStackInBrowser(ctx context.Context, p *stackSearchParams) error 
 // getRepositoryName calls a git command to return a url
 // for current repository origin which it parses and returnes
 // a name/repository combo. Example result: spacelift/onboarding
-func getRepositoryName() (string, error) {
+func getRepositoryName(ctx context.Context) (string, error) {
 	// In future we could just parse this from .git/config
 	// but it's not that simple with submodules, this is much easier
 	// but requires `git` to be installed on users machine.
-	cmd := exec.Command("git", "remote", "get-url", "origin")
+	cmd := exec.CommandContext(ctx, "git", "remote", "get-url", "origin")
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err
@@ -104,8 +104,8 @@ func cleanupRepositoryString(s string) (string, error) {
 	return path, nil
 }
 
-func getGitCurrentBranch() (string, error) {
-	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+func getGitCurrentBranch(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD")
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err

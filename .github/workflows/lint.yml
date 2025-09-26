@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Mark source directory as safe.
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
@@ -24,7 +24,7 @@ jobs:
         run: cat .env >> $GITHUB_ENV
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with: { go-version-file: go.mod }
 
       - name: Check formatting using gofmt
@@ -37,4 +37,4 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           args: --verbose
-          version: v2.1.6
+          version: v2.5

@@ -17,18 +17,18 @@ jobs:
 
     steps:
       - name: Generate winget token
+        uses: actions/create-github-app-token@v2
         id: winget_token
-        uses: tibdex/github-app-token@v2
         with:
-          app_id: ${{ secrets.WINGET_APP_ID }}
-          private_key: ${{ secrets.WINGET_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.WINGET_APP_ID }}
+          private-key: ${{ secrets.WINGET_APP_PRIVATE_KEY }}
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with: { fetch-depth: 0 }
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with: { go-version-file: go.mod }
 
       - name: Set up Docker Buildx
