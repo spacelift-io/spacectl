@@ -46,11 +46,7 @@ type Handler struct {
 	callbackChannel   chan error                 // Channel used to return success or failure after a callback
 }
 
-func Begin(credentials *session.StoredCredentials) (*Handler, error) {
-	return BeginWithBindAddress(credentials, "localhost", 0)
-}
-
-func BeginWithBindAddress(credentials *session.StoredCredentials, host string, port int) (*Handler, error) {
+func BeginWithBindAddress(ctx context.Context, credentials *session.StoredCredentials, host string, port int) (*Handler, error) {
 	// Only API token credentials can be updated w/ browser based authentication
 	if credentials == nil || credentials.Type != session.CredentialsTypeAPIToken {
 		return nil, errors.New("can only use browser authentication with API token profiles")
@@ -104,7 +100,8 @@ func BeginWithBindAddress(credentials *session.StoredCredentials, host string, p
 	handler.server.Handler = mux
 
 	// Start our listening socket
-	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", host, port))
+	listenCfg := net.ListenConfig{}
+	listener, err := listenCfg.Listen(ctx, "tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not start callback server")
 	}

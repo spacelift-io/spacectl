@@ -180,12 +180,11 @@ func UploadArchive(ctx context.Context, uploadURL, path string, uploadHeaders ma
 		defer bar.Finish()
 	}
 
-	req, err := http.NewRequest(http.MethodPut, uploadURL, reader)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, uploadURL, reader)
 	if err != nil {
 		return fmt.Errorf("couldn't create upload request: %w", err)
 	}
 	req.ContentLength = stat.Size()
-	req = req.WithContext(ctx)
 
 	for k, v := range uploadHeaders {
 		req.Header.Set(k, v)

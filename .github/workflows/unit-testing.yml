@@ -17,10 +17,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with: { go-version-file: go.mod }
 
       - name: Run unit tests

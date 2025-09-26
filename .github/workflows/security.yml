@@ -17,10 +17,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with: { go-version-file: go.mod }
 
       - name: Initialize CodeQL
@@ -33,21 +33,3 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
-
-  gosec:
-    name: GoSec
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run GoSec Security Scanner
-        uses: securego/gosec@v2.22.3
-        with:
-          args: "-severity=medium -no-fail -fmt sarif -out gosec-results.sarif ./..."
-
-      - name: Upload GoSec scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: "gosec-results.sarif"

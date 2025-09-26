@@ -171,7 +171,7 @@ func loginUsingGitHubAccessToken(creds *session.StoredCredentials) error {
 
 func loginUsingWebBrowser(ctx context.Context, _ *cli.Command, creds *session.StoredCredentials) error {
 	// Begin the interactive browser auth flow
-	handler, err := browserauth.BeginWithBindAddress(creds, bindHost, bindPort)
+	handler, err := browserauth.BeginWithBindAddress(ctx, creds, bindHost, bindPort)
 	if err != nil {
 		return err
 	}

@@ -67,7 +67,7 @@ func getStack[T hasIDAndName](ctx context.Context, cliCmd *cli.Command) (*T, err
 		return nil, err
 	}
 
-	name, err := getRepositoryName()
+	name, err := getRepositoryName(ctx)
 	if err != nil {
 		return nil, err
 	}
