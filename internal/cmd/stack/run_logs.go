@@ -3,6 +3,7 @@ package stack
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -60,15 +61,25 @@ func runLogs(ctx context.Context, cliCmd *cli.Command) error {
 		fmt.Println("Using latest run", runID)
 	}
 
-	_, err = runLogsWithAction(ctx, stackID, runID, nil)
+	var targetPhase *structs.RunState
+	if cliCmd.IsSet(flagPhase.Name) {
+		phase := structs.RunState(strings.ToUpper(cliCmd.String(flagPhase.Name)))
+		targetPhase = &phase
+	}
+
+	_, err = runFilteredLogsWithAction(ctx, stackID, runID, nil, targetPhase)
 	return err
 }
 
 func runLogsWithAction(ctx context.Context, stack, run string, acFn actionOnRunState) (terminal *structs.RunStateTransition, err error) {
+	return runFilteredLogsWithAction(ctx, stack, run, acFn, nil)
+}
+
+func runFilteredLogsWithAction(ctx context.Context, stack, run string, acFn actionOnRunState, targetPhase *structs.RunState) (terminal *structs.RunStateTransition, err error) {
 	lines := make(chan string)
 
 	go func() {
-		terminal, err = runStates(ctx, stack, run, lines, acFn)
+		terminal, err = runFilteredStates(ctx, stack, run, lines, acFn, targetPhase)
 		close(lines)
 	}()
 
@@ -80,6 +91,10 @@ func runLogsWithAction(ctx context.Context, stack, run string, acFn actionOnRunS
 }
 
 func runStates(ctx context.Context, stack, run string, sink chan<- string, acFn actionOnRunState) (*structs.RunStateTransition, error) {
+	return runFilteredStates(ctx, stack, run, sink, acFn, nil)
+}
+
+func runFilteredStates(ctx context.Context, stack, run string, sink chan<- string, acFn actionOnRunState, targetPhase *structs.RunState) (*structs.RunStateTransition, error) {
 	var query struct {
 		Stack *struct {
 			Run *struct {
@@ -94,6 +109,7 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string, acFn 
 	}
 
 	reportedStates := make(map[structs.RunState]struct{})
+	targetPhaseReached := false
 
 	var backoff = time.Duration(0)
 
@@ -122,12 +138,31 @@ func runStates(ctx context.Context, stack, run string, sink chan<- string, acFn 
 			backoff = 0
 			reportedStates[transition.State] = struct{}{}
 
-			sink <- fmt.Sprintf(`
+			if targetPhase != nil && transition.State == *targetPhase {
+				targetPhaseReached = true
+			}
+
+			if targetPhase != nil {
+				if transition.State != *targetPhase {
+					if transition.Terminal && !targetPhaseReached {
+						sink <- fmt.Sprintf("Run completed without reaching phase %s\n", *targetPhase)
+						return nil, errors.New("filtering failed")
+					}
+					if transition.Terminal {
+						return &transition, nil
+					}
+					continue
+				}
+			}
+
+			if targetPhase == nil {
+				sink <- fmt.Sprintf(`
 -----------------
 %s
 -----------------
 
 `, transition.About())
+			}
 
 			if transition.HasLogs {
 				if err := runStateLogs(ctx, stack, run, transition.State, transition.StateVersion, sink, transition.Terminal); err != nil {

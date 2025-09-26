@@ -308,6 +308,7 @@ func Command() cmd.Command {
 								flagStackID,
 								flagRun,
 								flagRunLatest,
+								flagPhase,
 							},
 							Action:    runLogs,
 							Before:    authenticated.Ensure,
