@@ -15,6 +15,7 @@ import (
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/logs"
 	"github.com/spacelift-io/spacectl/internal/nullable"
 )
 
@@ -83,7 +84,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := runLogsWithAction(ctx, stack.ID, runID, nil)
+		terminal, err := logs.NewExplorer(stack.ID, runID).RunFilteredLogs(ctx)
 		if err != nil {
 			return err
 		}

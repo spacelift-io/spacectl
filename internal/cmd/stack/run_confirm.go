@@ -9,6 +9,7 @@ import (
 
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/logs"
 )
 
 func runConfirm() cli.ActionFunc {
@@ -50,7 +51,7 @@ func runConfirm() cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := runLogsWithAction(ctx, stackID, mutation.RunConfirm.ID, nil)
+		terminal, err := logs.NewExplorer(stackID, mutation.RunConfirm.ID).RunFilteredLogs(ctx)
 		if err != nil {
 			return err
 		}

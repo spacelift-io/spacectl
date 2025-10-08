@@ -10,6 +10,7 @@ import (
 
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/logs"
 )
 
 func taskCommand(ctx context.Context, cliCmd *cli.Command) error {
@@ -51,7 +52,7 @@ func taskCommand(ctx context.Context, cliCmd *cli.Command) error {
 		return nil
 	}
 
-	terminal, err := runLogsWithAction(ctx, stackID, mutation.TaskCreate.ID, nil)
+	terminal, err := logs.NewExplorer(stackID, mutation.TaskCreate.ID).RunFilteredLogs(ctx)
 	if err != nil {
 		return err
 	}

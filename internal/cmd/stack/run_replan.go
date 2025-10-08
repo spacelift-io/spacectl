@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/logs"
 )
 
 const rocketEmoji = "\U0001F680"
@@ -69,7 +70,7 @@ func runReplan(ctx context.Context, cliCmd *cli.Command) error {
 		return nil
 	}
 
-	terminal, err := runLogsWithAction(ctx, stackID, mutation.RunTargetedReplan.ID, nil)
+	terminal, err := logs.NewExplorer(stackID, mutation.RunTargetedReplan.ID).RunFilteredLogs(ctx)
 	if err != nil {
 		return err
 	}

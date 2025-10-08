@@ -11,6 +11,7 @@ import (
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/logs"
 )
 
 func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
@@ -106,7 +107,7 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := runLogsWithAction(ctx, stackID, mutation.RunTrigger.ID, actionFn)
+		terminal, err := logs.NewExplorer(stackID, mutation.RunTrigger.ID, logs.WithActionOnRunState(actionFn)).RunFilteredLogs(ctx)
 		if err != nil {
 			return err
 		}

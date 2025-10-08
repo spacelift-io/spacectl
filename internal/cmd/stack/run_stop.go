@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/logs"
 )
 
 func runStop() cli.ActionFunc {
@@ -45,7 +46,7 @@ func runStop() cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := runLogsWithAction(ctx, stackID, mutation.RunStop.ID, nil)
+		terminal, err := logs.NewExplorer(stackID, mutation.RunStop.ID).RunFilteredLogs(ctx)
 		if err != nil {
 			return err
 		}

@@ -7,6 +7,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/logs"
 )
 
 func runDeprioritize(ctx context.Context, cliCmd *cli.Command) error {
@@ -32,7 +33,7 @@ func runDeprioritize(ctx context.Context, cliCmd *cli.Command) error {
 		return nil
 	}
 
-	terminal, err := runLogsWithAction(ctx, stackID, mutation.SetRunPriority.ID, nil)
+	terminal, err := logs.NewExplorer(stackID, mutation.SetRunPriority.ID).RunFilteredLogs(ctx)
 	if err != nil {
 		return err
 	}

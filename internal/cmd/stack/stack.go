@@ -309,6 +309,7 @@ func Command() cmd.Command {
 								flagRun,
 								flagRunLatest,
 								flagPhase,
+								flagTail,
 							},
 							Action:    runLogs,
 							Before:    authenticated.Ensure,

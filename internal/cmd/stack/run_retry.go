@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/logs"
 )
 
 func runRetry(ctx context.Context, cliCmd *cli.Command) error {
@@ -43,7 +44,7 @@ func runRetry(ctx context.Context, cliCmd *cli.Command) error {
 		return nil
 	}
 
-	terminal, err := runLogsWithAction(ctx, stackID, mutation.RunRetry.ID, nil)
+	terminal, err := logs.NewExplorer(stackID, mutation.RunRetry.ID).RunFilteredLogs(ctx)
 	if err != nil {
 		return err
 	}
