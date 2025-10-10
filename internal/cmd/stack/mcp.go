@@ -13,6 +13,7 @@ import (
 
 	"github.com/spacelift-io/spacectl/client/structs"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/logs"
 )
 
 const maxLocalPreviewRunLogLines = 1000
@@ -306,7 +307,7 @@ func registerGetStackRunLogsTool(s *server.MCPServer) {
 			}
 		}()
 
-		terminal, err = runStates(ctx, stackID, runID, logLines, nil)
+		terminal, err = logs.NewExplorer(stackID, runID).RunFilteredStates(ctx, logLines)
 		close(logLines)
 
 		if err != nil {
@@ -671,7 +672,7 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 			}
 		}()
 
-		terminal, err := runStates(ctx, stackID, runID, logLines, nil)
+		terminal, err := logs.NewExplorer(stackID, runID).RunFilteredStates(ctx, logLines)
 		close(logLines)
 
 		if err != nil {
