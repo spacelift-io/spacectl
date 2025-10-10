@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/shurcooL/graphql"
@@ -120,10 +121,7 @@ func (e *Explorer) getHistory(ctx context.Context) ([]structs.RunStateTransition
 func (e *Explorer) processHistory(ctx context.Context, sink chan<- string, history []structs.RunStateTransition, reportedStates map[structs.RunState]struct{}) (*structs.RunStateTransition, bool, error) {
 	var transition structs.RunStateTransition
 
-	for index := range history {
-		// Unlike the GUI, we go earliest first.
-		transition = history[len(history)-index-1]
-
+	for _, transition = range slices.Backward(history) {
 		if _, ok := reportedStates[transition.State]; ok {
 			continue
 		}
