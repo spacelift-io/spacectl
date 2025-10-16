@@ -19,3 +19,8 @@ var flagSimulationInput = &cli.StringFlag{
 	Usage:    "[Required] JSON Input of the data provided for policy simlation. Will Attempt to detect if a file is provided",
 	Required: true,
 }
+
+var flagOutcomeFilter = &cli.StringFlag{
+	Name:  "outcome",
+	Usage: "[Optional] Filter evaluation records by outcome (e.g., 'allow', 'deny', 'undecided')",
+}
