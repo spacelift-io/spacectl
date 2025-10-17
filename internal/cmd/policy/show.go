@@ -70,7 +70,7 @@ func getPolicyByID(ctx context.Context, policyID string) (policy, bool, error) {
 		"policyId": graphql.ID(policyID),
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return policy{}, false, errors.Wrapf(err, "failed to query for policy ID %q", policyID)
 	}
 

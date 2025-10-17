@@ -34,7 +34,7 @@ func watch(ctx context.Context, _ *cli.Command) error {
 // If public worker pool is selected and empty string is returned.
 func findAndSelectWorkerPool(ctx context.Context) (string, error) {
 	var query listPoolsQuery
-	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{}); err != nil {
 		return "", err
 	}
 

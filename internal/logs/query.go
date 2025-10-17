@@ -40,7 +40,7 @@ func runStateLogs(ctx context.Context, stack, run string, state structs.RunState
 	var backOff time.Duration
 
 	for {
-		if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 			return err
 		}
 

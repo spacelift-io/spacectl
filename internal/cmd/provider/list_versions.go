@@ -28,7 +28,7 @@ func listVersions() cli.ActionFunc {
 		providerType := cliCmd.String(flagProviderType.Name)
 
 		variables := map[string]any{"id": graphql.ID(providerType)}
-		if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 			return fmt.Errorf("could not list Terraform provider versions: %w", err)
 		}
 

@@ -21,7 +21,7 @@ type WorkerPool struct {
 
 // Selected opens the selected worker pool in the browser.
 func (q *WorkerPool) Selected(row table.Row) error {
-	return browser.OpenURL(authenticated.Client.URL("/stack/%s/run/%s", row[1], row[2]))
+	return browser.OpenURL(authenticated.Client().URL("/stack/%s/run/%s", row[1], row[2]))
 }
 
 // Columns returns the columns of the worker pool table.
@@ -73,7 +73,7 @@ func (q *WorkerPool) getPublicPoolRuns(ctx context.Context) ([]runsEdge, error) 
 		} `graphql:"publicWorkerPool"`
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, q.baseSearchParams()); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, q.baseSearchParams()); err != nil {
 		return nil, errors.Wrap(err, "failed to query run list")
 	}
 
@@ -90,7 +90,7 @@ func (q *WorkerPool) getPrivatePoolRuns(ctx context.Context) ([]runsEdge, error)
 	vars := q.baseSearchParams()
 	vars["id"] = q.WokerPoolID
 
-	if err := authenticated.Client.Query(ctx, &query, vars); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, vars); err != nil {
 		return nil, errors.Wrap(err, "failed to query run list")
 	}
 

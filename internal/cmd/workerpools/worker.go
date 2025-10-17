@@ -63,7 +63,7 @@ func (c *listWorkersCommand) listWorkers(ctx context.Context, cliCmd *cli.Comman
 		"workerPool": workerPoolID,
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return err
 	}
 
@@ -126,7 +126,7 @@ func (c *drainWorkerCommand) drainWorker(ctx context.Context, cliCmd *cli.Comman
 		"drain":      graphql.Boolean(true),
 	}
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+	if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 
@@ -180,7 +180,7 @@ func (c *drainWorkerCommand) drainedWorkerIsIdle(ctx context.Context, workerID s
 		"workerPool": graphql.ID(workerPoolID),
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return false, err
 	}
 
@@ -215,7 +215,7 @@ func (c *undrainWorkerCommand) undrainWorker(ctx context.Context, cliCmd *cli.Co
 		"drain":      graphql.Boolean(false),
 	}
 
-	err := authenticated.Client.Mutate(ctx, &mutation, variables)
+	err := authenticated.Client().Mutate(ctx, &mutation, variables)
 
 	if err != nil {
 		return err
@@ -232,7 +232,7 @@ func (c *cycleWorkersCommand) cycleWorkers(ctx context.Context, cliCmd *cli.Comm
 		"workerPoolId": graphql.ID(cliCmd.String(flagPoolIDNamed.Name)),
 	}
 
-	err := authenticated.Client.Mutate(ctx, &mutation, variables)
+	err := authenticated.Client().Mutate(ctx, &mutation, variables)
 
 	if err != nil {
 		return err

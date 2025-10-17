@@ -212,7 +212,7 @@ func searchModules(ctx context.Context, input structs.SearchInput) (searchModule
 		} `graphql:"searchModules(input: $input)"`
 	}
 
-	if err := authenticated.Client.Query(
+	if err := authenticated.Client().Query(
 		ctx,
 		&query,
 		map[string]interface{}{"input": input},

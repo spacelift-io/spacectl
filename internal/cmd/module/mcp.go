@@ -39,6 +39,7 @@ func registerModuleGuideTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(moduleGuideTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		topic := request.GetString("topic", "all")
 
 		var guide strings.Builder
@@ -174,6 +175,7 @@ func registerListModulesTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(modulesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		limit := request.GetInt("limit", 50)
 
 		var fullTextSearch *graphql.String
@@ -231,6 +233,7 @@ func registerGetModuleTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(moduleTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		moduleID, err := request.RequireString("module_id")
 		if err != nil {
 			return nil, err
@@ -240,7 +243,7 @@ func registerGetModuleTool(s *server.MCPServer) {
 			Module *moduleDetailQuery `graphql:"module(id: $moduleId)"`
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, map[string]any{"moduleId": moduleID}); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, map[string]any{"moduleId": moduleID}); err != nil {
 			return nil, errors.Wrap(err, "failed to query module")
 		}
 
@@ -270,6 +273,7 @@ func registerListModuleVersionsTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(moduleVersionsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		moduleID, err := request.RequireString("module_id")
 		if err != nil {
 			return nil, err
@@ -290,7 +294,7 @@ func registerListModuleVersionsTool(s *server.MCPServer) {
 			"includeFailed": includeFailed,
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 			return nil, errors.Wrap(err, "failed to query module versions")
 		}
 
@@ -345,7 +349,7 @@ func registerGetModuleVersionTool(s *server.MCPServer) {
 			"versionId": versionID,
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 			return nil, errors.Wrap(err, "failed to query module version")
 		}
 
@@ -596,7 +600,7 @@ func searchModulesMCP(ctx context.Context, input structs.SearchInput) (*mcpSearc
 
 	variables := map[string]any{"input": input}
 
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return nil, errors.Wrap(err, "failed to execute modules search query")
 	}
 

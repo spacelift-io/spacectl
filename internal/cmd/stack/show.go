@@ -133,7 +133,7 @@ func (c *showStackCommand) showStack(ctx context.Context, cliCmd *cli.Command) e
 		"stackId": graphql.ID(stackID),
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return errors.Wrapf(err, "failed to query for stack ID %q", stackID)
 	}
 

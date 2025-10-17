@@ -49,6 +49,7 @@ func registerListStacksTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stacksTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		limit := request.GetInt("limit", 50)
 
 		var fullTextSearch *graphql.String
@@ -107,6 +108,7 @@ func registerListStackRunsTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		stackID, err := request.RequireString("stack_id")
 		if err != nil {
 			return nil, err
@@ -123,7 +125,7 @@ func registerListStackRunsTool(s *server.MCPServer) {
 			} `graphql:"stack(id: $stackId)"`
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
 			return nil, errors.Wrap(err, "failed to query run list")
 		}
 		if query.Stack == nil {
@@ -166,6 +168,7 @@ func registerListStackProposedRunsTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		stackID, err := request.RequireString("stack_id")
 		if err != nil {
 			return nil, err
@@ -182,7 +185,7 @@ func registerListStackProposedRunsTool(s *server.MCPServer) {
 			} `graphql:"stack(id: $stackId)"`
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, map[string]any{"stackId": stackID, "before": before}); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, map[string]any{"stackId": stackID, "before": before}); err != nil {
 			return nil, errors.Wrap(err, "failed to query run list")
 		}
 		if query.Stack == nil {
@@ -225,6 +228,7 @@ func registerGetStackRunTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		stackID, err := request.RequireString("stack_id")
 		if err != nil {
 			return nil, err
@@ -241,7 +245,7 @@ func registerGetStackRunTool(s *server.MCPServer) {
 			} `graphql:"stack(id: $stackId)"`
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, map[string]any{"stackId": stackID, "runId": runID}); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, map[string]any{"stackId": stackID, "runId": runID}); err != nil {
 			return nil, errors.Wrap(err, "failed to query run list")
 		}
 		if query.Stack == nil {
@@ -278,6 +282,7 @@ func registerGetStackRunLogsTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunLogsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		stackID, err := request.RequireString("stack_id")
 		if err != nil {
 			return nil, err
@@ -372,6 +377,7 @@ func registerGetStackRunChangesTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunChangesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		stackID, err := request.RequireString("stack_id")
 		if err != nil {
 			return nil, err
@@ -414,6 +420,7 @@ func registerTriggerStackRunTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunTriggerTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		stackID, err := request.RequireString("stack_id")
 		if err != nil {
 			return nil, err
@@ -438,12 +445,12 @@ func registerTriggerStackRunTool(s *server.MCPServer) {
 			variables["sha"] = graphql.NewString(graphql.String(commitSha))
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 			return nil, errors.Wrap(err, "failed to trigger run")
 		}
 
 		output := fmt.Sprintf("Successfully created a %s\n", runType)
-		output += fmt.Sprintf("The live run can be visited at %s", authenticated.Client.URL(
+		output += fmt.Sprintf("The live run can be visited at %s", authenticated.Client().URL(
 			"/stack/%s/run/%s",
 			stackID,
 			mutation.RunTrigger.ID,
@@ -464,6 +471,7 @@ func registerDiscardStackRunTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunDiscardTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		stackID, err := request.RequireString("stack_id")
 		if err != nil {
 			return nil, err
@@ -485,12 +493,12 @@ func registerDiscardStackRunTool(s *server.MCPServer) {
 			"run":   graphql.ID(runID),
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 			return nil, errors.Wrap(err, "failed to discard run")
 		}
 
 		output := "You have successfully discarded a deployment\n"
-		output += fmt.Sprintf("The run can be visited at %s", authenticated.Client.URL(
+		output += fmt.Sprintf("The run can be visited at %s", authenticated.Client().URL(
 			"/stack/%s/run/%s",
 			stackID,
 			mutation.RunDiscard.ID,
@@ -511,6 +519,7 @@ func registerConfirmStackRunTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(stackRunConfirmTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		stackID, err := request.RequireString("stack_id")
 		if err != nil {
 			return nil, err
@@ -532,12 +541,12 @@ func registerConfirmStackRunTool(s *server.MCPServer) {
 			"run":   graphql.ID(runID),
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 			return nil, errors.Wrap(err, "failed to confirm run")
 		}
 
 		output := "You have successfully confirmed a deployment\n"
-		output += fmt.Sprintf("The live run can be visited at %s", authenticated.Client.URL(
+		output += fmt.Sprintf("The live run can be visited at %s", authenticated.Client().URL(
 			"/stack/%s/run/%s",
 			stackID,
 			mutation.RunConfirm.ID,
@@ -558,6 +567,7 @@ func registerListResourcesTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(resourcesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		if stackID := request.GetString("stack_id", ""); stackID != "" {
 			return listResourcesForOneStack(ctx, stackID)
 		}
@@ -585,6 +595,7 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 	)
 
 	s.AddTool(localPreviewTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		stackID, err := request.RequireString("stack_id")
 		if err != nil {
 			return nil, err
@@ -599,7 +610,7 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 		}
 
 		if !stack.LocalPreviewEnabled {
-			linkToStack := authenticated.Client.URL("/stack/%s", stack.ID)
+			linkToStack := authenticated.Client().URL("/stack/%s", stack.ID)
 			return mcp.NewToolResultText(fmt.Sprintf("Local preview has not been enabled for this stack, please enable local preview in the stack settings: %s", linkToStack)), nil
 		}
 
@@ -652,7 +663,7 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 		output := outputBuilder.String()
 
 		// Add run URL to the output
-		linkToRun := authenticated.Client.URL(
+		linkToRun := authenticated.Client().URL(
 			"/stack/%s/run/%s",
 			stackID,
 			runID,
@@ -710,7 +721,7 @@ func listResourcesForOneStack(ctx context.Context, id string) (*mcp.CallToolResu
 	}
 
 	variables := map[string]any{"id": graphql.ID(id)}
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return nil, fmt.Errorf("failed to query stack resources: %w", err)
 	}
 
@@ -732,7 +743,7 @@ func listResourcesForAllStacks(ctx context.Context) (*mcp.CallToolResult, error)
 		Stacks []stackWithResources `graphql:"stacks" json:"stacks,omitempty"`
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, map[string]any{}); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, map[string]any{}); err != nil {
 		return nil, fmt.Errorf("failed to query all stacks resources: %w", err)
 	}
 

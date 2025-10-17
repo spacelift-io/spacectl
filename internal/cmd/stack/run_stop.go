@@ -30,13 +30,13 @@ func runStop() cli.ActionFunc {
 			"note":  graphql.String("Stopped by spacectl"),
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 			return err
 		}
 
 		fmt.Println("You have successfully attempted to stop the run")
 
-		fmt.Println("The run can be visited at", authenticated.Client.URL(
+		fmt.Println("The run can be visited at", authenticated.Client().URL(
 			"/stack/%s/run/%s",
 			stackID,
 			mutation.RunStop.ID,

@@ -48,5 +48,5 @@ func enableDisable[T any](ctx context.Context, cliCmd *cli.Command) error {
 		"stack": graphql.ID(stackID),
 	}
 
-	return authenticated.Client.Mutate(ctx, &mutation, variables)
+	return authenticated.Client().Mutate(ctx, &mutation, variables)
 }

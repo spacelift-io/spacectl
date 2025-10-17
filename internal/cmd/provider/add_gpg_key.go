@@ -47,7 +47,7 @@ func addGPGKey() cli.ActionFunc {
 			"asciiArmor": graphql.String(asciiArmor),
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 			return err
 		}
 

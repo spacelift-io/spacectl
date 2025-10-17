@@ -113,7 +113,7 @@ func setVar(ctx context.Context, cliCmd *cli.Command) error {
 		},
 	}
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+	if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 
@@ -144,7 +144,7 @@ func (e *listEnvCommand) listEnv(ctx context.Context, cliCmd *cli.Command) error
 		"stack": graphql.ID(stackID),
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return err
 	}
 
@@ -327,7 +327,7 @@ func mountFile(ctx context.Context, cliCmd *cli.Command) error {
 		},
 	}
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+	if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 
@@ -360,7 +360,7 @@ func deleteEnvironment(ctx context.Context, cliCmd *cli.Command) error {
 		"id":    graphql.ID(envName),
 	}
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+	if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 

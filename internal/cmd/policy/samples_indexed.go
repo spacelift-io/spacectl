@@ -209,7 +209,7 @@ func searchEvaluationRecords(ctx context.Context, policyID string, input structs
 		"input": input,
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return searchEvaluationRecordsResult{}, errors.Wrap(err, "failed to search evaluation records")
 	}
 

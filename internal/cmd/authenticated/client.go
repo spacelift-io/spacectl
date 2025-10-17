@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/urfave/cli/v3"
 
@@ -33,11 +34,30 @@ var (
 )
 
 // Client is the authenticated client that can be used by all CLI commands.
-var Client client.Client
+var (
+	auth client.Client
+	m    sync.Mutex
+)
+
+// Client returns the authenticated client.
+//
+// This is an unfortunate global which we have to lock for MCP.
+// TODO: Refactor this to not use a global.
+func Client() client.Client {
+	m.Lock()
+	defer m.Unlock()
+
+	return auth
+}
 
 // Ensure is a way of ensuring that the Client exists, and it meant to be used
 // as a Before action for commands that need it.
+//
+// You can also use it diretly to refresh the client.
 func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
+	m.Lock()
+	defer m.Unlock()
+
 	httpClient := client.GetHTTPClient()
 
 	if err := configureTLS(httpClient); err != nil {
@@ -49,7 +69,7 @@ func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
 		return ctx, err
 	}
 
-	Client = client.New(httpClient, session)
+	auth = client.New(httpClient, session)
 
 	return ctx, nil
 }

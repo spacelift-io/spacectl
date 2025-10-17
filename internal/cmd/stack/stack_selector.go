@@ -99,7 +99,7 @@ func stackGetByID[T hasIDAndName](ctx context.Context, stackID string) (*T, erro
 		"id": graphql.ID(stackID),
 	}
 
-	err := authenticated.Client.Query(ctx, &query, variables)
+	err := authenticated.Client().Query(ctx, &query, variables)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query GraphQL API when checking if a stack exists: %w", err)
 	}
@@ -120,7 +120,7 @@ func stackGetByRunID[T hasIDAndName](ctx context.Context, runID string) (*T, err
 		"runId": graphql.ID(runID),
 	}
 
-	err := authenticated.Client.Query(ctx, &query, variables)
+	err := authenticated.Client().Query(ctx, &query, variables)
 	if err != nil {
 		if err.Error() == "not found" {
 			return nil, errNoStackFound

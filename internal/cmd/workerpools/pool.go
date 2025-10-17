@@ -47,7 +47,7 @@ func (c *listPoolsCommand) listPools(ctx context.Context, cliCmd *cli.Command) e
 
 	var query listPoolsQuery
 
-	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{}); err != nil {
 		return err
 	}
 

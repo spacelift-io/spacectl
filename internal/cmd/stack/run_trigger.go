@@ -63,13 +63,13 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCmd.String(flagRunMetadata.Name)))
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
 			return err
 		}
 
 		fmt.Println("You have successfully created a", humanType)
 
-		fmt.Println("The live run can be visited at", authenticated.Client.URL(
+		fmt.Println("The live run can be visited at", authenticated.Client().URL(
 			"/stack/%s/run/%s",
 			stackID,
 			mutation.RunTrigger.ID,
@@ -99,7 +99,7 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 				"run":   graphql.ID(runID),
 			}
 
-			if err := authenticated.Client.Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
+			if err := authenticated.Client().Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
 				return err
 			}
 

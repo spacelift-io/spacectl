@@ -29,12 +29,12 @@ func runRetry(ctx context.Context, cliCmd *cli.Command) error {
 		"run":   graphql.ID(runID),
 	}
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+	if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 
 	fmt.Printf("Run ID %q has been successfully retried\n", runID)
-	fmt.Println("The live run can be visited at", authenticated.Client.URL(
+	fmt.Println("The live run can be visited at", authenticated.Client().URL(
 		"/stack/%s/run/%s",
 		stackID,
 		mutation.RunRetry.ID,

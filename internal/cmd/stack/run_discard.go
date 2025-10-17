@@ -29,13 +29,13 @@ func runDiscard() cli.ActionFunc {
 			"run":   graphql.ID(cliCmd.String(flagRequiredRun.Name)),
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 			return err
 		}
 
 		fmt.Println("You have successfully discarded a deployment")
 
-		fmt.Println("The run can be visited at", authenticated.Client.URL(
+		fmt.Println("The run can be visited at", authenticated.Client().URL(
 			"/stack/%s/run/%s",
 			stackID,
 			mutation.RunDiscard.ID,

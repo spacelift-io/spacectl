@@ -65,7 +65,7 @@ func deleteStack() cli.ActionFunc {
 			"destroyResources": graphql.Boolean(destroyResources),
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 			return err
 		}
 

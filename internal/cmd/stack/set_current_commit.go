@@ -31,7 +31,7 @@ func setCurrentCommit(ctx context.Context, cliCmd *cli.Command) error {
 		"stack": graphql.ID(stackID),
 	}
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+	if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 

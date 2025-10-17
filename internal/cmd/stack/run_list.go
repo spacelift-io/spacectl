@@ -92,7 +92,7 @@ func queryTrackedRuns[T any](ctx context.Context, stackID string, before *string
 		} `graphql:"stack(id: $stackId)"`
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
 		return nil, errors.Wrap(err, "failed to query run list")
 	}
 
@@ -110,7 +110,7 @@ func queryPreviewRuns[T any](ctx context.Context, stackID string, before *string
 		} `graphql:"stack(id: $stackId)"`
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
 		return nil, errors.Wrap(err, "failed to query run list")
 	}
 

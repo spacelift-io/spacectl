@@ -47,7 +47,7 @@ func (c *showOutputsStackCommand) showOutputs(ctx context.Context, cliCmd *cli.C
 		"stackId": graphql.ID(stackID),
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return errors.Wrapf(err, "failed to query for stack ID %q", stackID)
 	}
 

@@ -42,7 +42,7 @@ func (c *sampleCommand) getSamplesPolicyByID(ctx context.Context, policyID, key 
 		"key":      graphql.String(key),
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return policyEvaluationSample{}, errors.Wrapf(err, "failed to query for policyEvaluation ID %q", policyID)
 	}
 

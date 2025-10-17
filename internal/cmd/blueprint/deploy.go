@@ -77,7 +77,7 @@ func (c *deployCommand) deploy(ctx context.Context, cliCmd *cli.Command) error {
 		} `graphql:"blueprintCreateStack(id: $id, input: $input)"`
 	}
 
-	err = authenticated.Client.Mutate(
+	err = authenticated.Client().Mutate(
 		ctx,
 		&mutation,
 		map[string]any{
@@ -91,7 +91,7 @@ func (c *deployCommand) deploy(ctx context.Context, cliCmd *cli.Command) error {
 		return fmt.Errorf("failed to deploy stack from the blueprint: %w", err)
 	}
 
-	url := authenticated.Client.URL("/stack/%s", mutation.BlueprintCreateStack.StackID)
+	url := authenticated.Client().URL("/stack/%s", mutation.BlueprintCreateStack.StackID)
 	fmt.Printf("\nCreated stack: %q", url)
 
 	return nil

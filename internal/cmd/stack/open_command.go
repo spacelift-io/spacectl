@@ -20,7 +20,7 @@ import (
 
 func openCommandInBrowser(ctx context.Context, cliCmd *cli.Command) error {
 	if stackID := cliCmd.String(flagStackID.Name); stackID != "" {
-		return browser.OpenURL(authenticated.Client.URL(
+		return browser.OpenURL(authenticated.Client().URL(
 			"/stack/%s",
 			stackID,
 		))
@@ -67,7 +67,7 @@ func findAndOpenStackInBrowser(ctx context.Context, p *stackSearchParams) error 
 		return errors.New("No stacks using the provided search parameters, maybe it's in a different subdir?")
 	}
 
-	return browser.OpenURL(authenticated.Client.URL(
+	return browser.OpenURL(authenticated.Client().URL(
 		"/stack/%s",
 		got.ID,
 	))
@@ -178,7 +178,7 @@ func searchStacks[T hasIDAndName](ctx context.Context, input structs.SearchInput
 		} `graphql:"searchStacks(input: $input)"`
 	}
 
-	if err := authenticated.Client.Query(
+	if err := authenticated.Client().Query(
 		ctx,
 		&query,
 		map[string]interface{}{"input": input},
