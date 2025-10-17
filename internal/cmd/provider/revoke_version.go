@@ -21,7 +21,7 @@ func revokeVersion() cli.ActionFunc {
 
 		variables := map[string]any{"version": graphql.ID(versionID)}
 
-		if err := authenticated.Client.Mutate(ctx, &revokeMutation, variables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &revokeMutation, variables); err != nil {
 			return fmt.Errorf("could not revoke Terraform provider version: %w", err)
 		}
 

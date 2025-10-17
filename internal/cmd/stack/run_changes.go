@@ -39,7 +39,7 @@ func getRunChanges(ctx context.Context, stackID, runID string) ([]runChangesData
 		"stack": graphql.ID(stackID),
 		"run":   graphql.ID(runID),
 	}
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return nil, errors.Wrap(err, "failed to query one stack")
 	}
 

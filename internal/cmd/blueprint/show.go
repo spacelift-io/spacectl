@@ -164,7 +164,7 @@ func getBlueprintByID(ctx context.Context, blueprintID string) (blueprint, bool,
 		"blueprintId": graphql.ID(blueprintID),
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return blueprint{}, false, errors.Wrapf(err, "failed to query for blueprint ID %q", blueprintID)
 	}
 

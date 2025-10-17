@@ -102,7 +102,7 @@ func getSearchModuleVersions(ctx context.Context, cliCmd *cli.Command, cursor st
 		after = graphql.NewString(graphql.String(cursor))
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{
+	if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{
 		"id": cliCmd.String(flagModuleID.Name),
 		"input": structs.SearchInput{
 			First: graphql.NewInt(graphql.Int(int32(limit))), //nolint: gosec

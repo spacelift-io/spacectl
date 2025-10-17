@@ -25,7 +25,7 @@ func deleteVersion(ctx context.Context, cliCmd *cli.Command) error {
 		"module": graphql.ID(moduleID),
 	}
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+	if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 

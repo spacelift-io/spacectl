@@ -44,7 +44,7 @@ func (c *simulateCommand) simulate(ctx context.Context, cliCmd *cli.Command) err
 		"type":  b.Type,
 	}
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+	if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 

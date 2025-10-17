@@ -20,7 +20,7 @@ func revokeGPGKey() cli.ActionFunc {
 
 		variables := map[string]any{"id": keyID}
 
-		if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 			return err
 		}
 

@@ -23,7 +23,7 @@ func runDeprioritize(ctx context.Context, cliCmd *cli.Command) error {
 	}
 
 	fmt.Printf("Run ID %q has been successfully deprioritized\n", runID)
-	fmt.Println("The live run can be visited at", authenticated.Client.URL(
+	fmt.Println("The live run can be visited at", authenticated.Client().URL(
 		"/stack/%s/run/%s",
 		stackID,
 		mutation.SetRunPriority.ID,

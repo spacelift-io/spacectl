@@ -38,6 +38,7 @@ func registerIntrospectSchemaTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(introspectTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		format := request.GetString("format", "summary")
 
 		var query struct {
@@ -120,7 +121,7 @@ func registerIntrospectSchemaTool(s *server.MCPServer) {
 			} `graphql:"__schema"`
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, map[string]any{}); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, map[string]any{}); err != nil {
 			return nil, errors.Wrap(err, "failed to introspect GraphQL schema")
 		}
 
@@ -144,6 +145,7 @@ func registerGetTypeDetailsTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(typeDetailsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		typeName, err := request.RequireString("type_name")
 		if err != nil {
 			return nil, err
@@ -191,7 +193,7 @@ func registerGetTypeDetailsTool(s *server.MCPServer) {
 			} `graphql:"__type(name: $name)"`
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, map[string]any{"name": graphql.String(typeName)}); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, map[string]any{"name": graphql.String(typeName)}); err != nil {
 			return nil, errors.Wrap(err, "failed to get type details")
 		}
 
@@ -223,6 +225,7 @@ func registerSearchSchemaFieldsTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(searchTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		searchTerm, err := request.RequireString("search_term")
 		if err != nil {
 			return nil, err
@@ -271,7 +274,7 @@ func registerSearchSchemaFieldsTool(s *server.MCPServer) {
 			} `graphql:"__schema"`
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, map[string]any{}); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, map[string]any{}); err != nil {
 			return nil, errors.Wrap(err, "failed to introspect GraphQL schema")
 		}
 
@@ -505,6 +508,7 @@ func registerAuthenticationGuideTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(authTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		authMethod := request.GetString("auth_method", "all")
 
 		var guide strings.Builder

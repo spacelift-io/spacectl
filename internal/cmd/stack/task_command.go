@@ -36,13 +36,13 @@ func taskCommand(ctx context.Context, cliCmd *cli.Command) error {
 		requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCmd.String(flagRunMetadata.Name)))
 	}
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
+	if err := authenticated.Client().Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
 		return err
 	}
 
 	fmt.Println("You have successfully started a task")
 
-	fmt.Println("The live task can be visited at", authenticated.Client.URL(
+	fmt.Println("The live task can be visited at", authenticated.Client().URL(
 		"/stack/%s/run/%s",
 		stackID,
 		mutation.TaskCreate.ID,

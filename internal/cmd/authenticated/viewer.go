@@ -17,7 +17,7 @@ func CurrentViewer(ctx context.Context) (*Viewer, error) {
 	var query struct {
 		Viewer *Viewer
 	}
-	if err := Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
+	if err := Client().Query(ctx, &query, map[string]interface{}{}); err != nil {
 		return nil, errors.Wrap(err, "failed to query user information")
 	}
 	if query.Viewer == nil {

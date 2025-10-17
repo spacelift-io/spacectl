@@ -30,7 +30,7 @@ func resourcesListOneStack(ctx context.Context, id string) error {
 	}
 
 	variables := map[string]any{"id": graphql.ID(id)}
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return errors.Wrap(err, "failed to query one stack")
 	}
 
@@ -42,7 +42,7 @@ func resourcesListAllStacks(ctx context.Context) error {
 		Stacks []stackWithResources `graphql:"stacks" json:"stacks,omitempty"`
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{}); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{}); err != nil {
 		return errors.Wrap(err, "failed to query list of stacks")
 	}
 

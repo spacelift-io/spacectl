@@ -43,7 +43,7 @@ func runLogs(ctx context.Context, cliCmd *cli.Command) error {
 		}
 
 		var before *string
-		if err := authenticated.Client.Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
 			return errors.Wrap(err, "failed to query run list")
 		}
 

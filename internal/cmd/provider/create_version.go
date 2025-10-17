@@ -81,7 +81,7 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 				} `graphql:"terraformProviderVersionCreate(provider: $provider, input: $input)"`
 			}
 
-			if err := authenticated.Client.Mutate(ctx, &createMutation, variables); err != nil {
+			if err := authenticated.Client().Mutate(ctx, &createMutation, variables); err != nil {
 				return err
 			}
 
@@ -103,7 +103,7 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 				} `graphql:"terraformProviderVersionCreate(provider: $provider, input: $input)"`
 			}
 
-			if err := authenticated.Client.Mutate(ctx, &createMutation, variables); err != nil {
+			if err := authenticated.Client().Mutate(ctx, &createMutation, variables); err != nil {
 				return err
 			}
 
@@ -161,7 +161,7 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 
 		fmt.Println("Uploading the changelog")
 
-		if err := authenticated.Client.Mutate(ctx, &changelogMutation, variables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &changelogMutation, variables); err != nil {
 			return errors.Wrap(err, "could not update changelog")
 		}
 
@@ -192,7 +192,7 @@ func registerPlatform(ctx context.Context, dir string, versionID string, artifac
 		},
 	}
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+	if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 
@@ -233,7 +233,7 @@ func registerPlatformV2(ctx context.Context, dir string, versionID string, artif
 		},
 	}
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+	if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 

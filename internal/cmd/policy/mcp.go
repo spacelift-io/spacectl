@@ -36,6 +36,7 @@ func registerListPoliciesTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(policiesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		limit := request.GetInt("limit", 50)
 
 		var fullTextSearch *graphql.String
@@ -93,6 +94,7 @@ func registerGetPolicyTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(policyTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		policyID, err := request.RequireString("policy_id")
 		if err != nil {
 			return nil, err
@@ -127,6 +129,7 @@ func registerListPolicySamplesTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(samplesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		policyID, err := request.RequireString("policy_id")
 		if err != nil {
 			return nil, err
@@ -140,7 +143,7 @@ func registerListPolicySamplesTool(s *server.MCPServer) {
 			"policyId": graphql.ID(policyID),
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 			return nil, errors.Wrapf(err, "failed to query for policy ID %q", policyID)
 		}
 
@@ -174,6 +177,7 @@ func registerGetPolicySampleTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(sampleTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		policyID, err := request.RequireString("policy_id")
 		if err != nil {
 			return nil, err
@@ -195,7 +199,7 @@ func registerGetPolicySampleTool(s *server.MCPServer) {
 			"key":      graphql.String(sampleKey),
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 			return nil, errors.Wrapf(err, "failed to query for policy sample")
 		}
 
@@ -227,6 +231,7 @@ func registerListPolicySamplesIndexedTool(s *server.MCPServer) {
 	)
 
 	s.AddTool(samplesIndexedTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		authenticated.Ensure(ctx, nil)
 		policyID, err := request.RequireString("policy_id")
 		if err != nil {
 			return nil, err

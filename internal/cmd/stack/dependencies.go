@@ -65,7 +65,7 @@ func dependenciesListOneStack(ctx context.Context, cliCmd *cli.Command) (*stackW
 	}
 
 	variables := map[string]any{"id": graphql.ID(id)}
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return nil, errors.Wrap(err, "failed to query one stack")
 	}
 

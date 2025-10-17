@@ -32,7 +32,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 		}
 
 		if !stack.LocalPreviewEnabled {
-			linkToStack := authenticated.Client.URL("/stack/%s", stack.ID)
+			linkToStack := authenticated.Client().URL("/stack/%s", stack.ID)
 			return fmt.Errorf("local preview has not been enabled for this stack, please enable local preview in the stack settings: %s", linkToStack)
 		}
 
@@ -73,7 +73,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 			return fmt.Errorf("failed to create local preview run: %w", err)
 		}
 
-		linkToRun := authenticated.Client.URL(
+		linkToRun := authenticated.Client().URL(
 			"/stack/%s/run/%s",
 			stack.ID,
 			runID,
@@ -211,7 +211,7 @@ func createLocalPreviewRun(
 			UploadLocalWorkspace headersResponse `graphql:"uploadLocalWorkspace(stack: $stack)"`
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &headersMutation, uploadVariables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &headersMutation, uploadVariables); err != nil {
 			return "", fmt.Errorf("failed to upload local workspace: %w", err)
 		}
 
@@ -224,7 +224,7 @@ func createLocalPreviewRun(
 			UploadLocalWorkspace basicResponse `graphql:"uploadLocalWorkspace(stack: $stack)"`
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &basicMutation, uploadVariables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &basicMutation, uploadVariables); err != nil {
 			return "", fmt.Errorf("failed to upload local workspace: %w", err)
 		}
 
@@ -284,7 +284,7 @@ func createLocalPreviewRun(
 	}
 
 	fmt.Fprintln(writer, "Creating local preview run...")
-	if err = authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {
+	if err = authenticated.Client().Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {
 		return "", err
 	}
 

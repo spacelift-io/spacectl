@@ -62,7 +62,7 @@ func localPreviewFunc(useHeaders bool) cli.ActionFunc {
 				UploadLocalWorkspace headersResponse `graphql:"uploadLocalWorkspace(stack: $stack)"`
 			}
 
-			if err := authenticated.Client.Mutate(ctx, &headersMutation, uploadVariables); err != nil {
+			if err := authenticated.Client().Mutate(ctx, &headersMutation, uploadVariables); err != nil {
 				return err
 			}
 
@@ -75,7 +75,7 @@ func localPreviewFunc(useHeaders bool) cli.ActionFunc {
 				UploadLocalWorkspace basicResponse `graphql:"uploadLocalWorkspace(stack: $stack)"`
 			}
 
-			if err := authenticated.Client.Mutate(ctx, &basicMutation, uploadVariables); err != nil {
+			if err := authenticated.Client().Mutate(ctx, &basicMutation, uploadVariables); err != nil {
 				return err
 			}
 
@@ -136,7 +136,7 @@ func localPreviewFunc(useHeaders bool) cli.ActionFunc {
 			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCmd.String(flagRunMetadata.Name)))
 		}
 
-		if err := authenticated.Client.Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &triggerMutation, triggerVariables, requestOpts...); err != nil {
 			return err
 		}
 
@@ -158,7 +158,7 @@ func localPreviewFunc(useHeaders bool) cli.ActionFunc {
 							} `graphql:"module(id: $module)"`
 						}
 
-						if err := authenticated.Client.Query(ctx, &getRun, map[string]interface{}{
+						if err := authenticated.Client().Query(ctx, &getRun, map[string]interface{}{
 							"module": graphql.ID(moduleID),
 							"run":    graphql.ID(triggerMutation.VersionProposeLocalWorkspace[index].ID),
 						}); err != nil {
@@ -306,7 +306,7 @@ func (m *moduleLocalPreviewModel) View() (s string) {
 		if m.Runs[i].Finished {
 			spinnerView = "⠿"
 		}
-		s += fmt.Sprintf(" %s %s • %s • %s\n", spinnerView, styledState(m.Runs[i].State), m.Runs[i].Title, authenticated.Client.URL(
+		s += fmt.Sprintf(" %s %s • %s • %s\n", spinnerView, styledState(m.Runs[i].State), m.Runs[i].Title, authenticated.Client().URL(
 			"/module/%s/run/%s",
 			m.ModuleID,
 			m.Runs[i].ID,

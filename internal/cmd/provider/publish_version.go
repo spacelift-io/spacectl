@@ -21,7 +21,7 @@ func publishVersion() cli.ActionFunc {
 
 		variables := map[string]any{"version": graphql.ID(versionID)}
 
-		if err := authenticated.Client.Mutate(ctx, &publishMutation, variables); err != nil {
+		if err := authenticated.Client().Mutate(ctx, &publishMutation, variables); err != nil {
 			return fmt.Errorf("could not publish Terraform provider version: %w", err)
 		}
 

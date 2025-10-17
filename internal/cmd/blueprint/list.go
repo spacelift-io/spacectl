@@ -207,7 +207,7 @@ func searchBlueprints(ctx context.Context, input structs.SearchInput) (searchBlu
 		} `graphql:"searchBlueprints(input: $input)"`
 	}
 
-	if err := authenticated.Client.Query(
+	if err := authenticated.Client().Query(
 		ctx,
 		&query,
 		map[string]interface{}{"input": input},

@@ -103,7 +103,7 @@ func (e *Explorer) getHistory(ctx context.Context) ([]structs.RunStateTransition
 		"run":   graphql.ID(e.run),
 	}
 
-	if err := authenticated.Client.Query(ctx, &query, variables); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return nil, err
 	}
 

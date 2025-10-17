@@ -22,7 +22,7 @@ func listGPGKeys() cli.ActionFunc {
 			GPGKeys internal.GPGKeys `graphql:"gpgKeys"`
 		}
 
-		if err := authenticated.Client.Query(ctx, &query, nil); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, nil); err != nil {
 			return err
 		}
 

@@ -44,7 +44,7 @@ func lock(ctx context.Context, cliCmd *cli.Command) error {
 		"note":  graphql.String(note),
 	}
 
-	return authenticated.Client.Mutate(ctx, &mutation, variables)
+	return authenticated.Client().Mutate(ctx, &mutation, variables)
 }
 
 func unlock(ctx context.Context, cliCmd *cli.Command) error {
@@ -62,5 +62,5 @@ func unlock(ctx context.Context, cliCmd *cli.Command) error {
 		"stack": graphql.ID(stackID),
 	}
 
-	return authenticated.Client.Mutate(ctx, &mutation, variables)
+	return authenticated.Client().Mutate(ctx, &mutation, variables)
 }

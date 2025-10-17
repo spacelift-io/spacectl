@@ -37,7 +37,7 @@ func createVersion(ctx context.Context, cliCmd *cli.Command) error {
 		"version":   version,
 	}
 
-	if err := authenticated.Client.Mutate(ctx, &mutation, variables); err != nil {
+	if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
 		return err
 	}
 

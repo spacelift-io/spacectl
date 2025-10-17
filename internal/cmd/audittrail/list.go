@@ -182,7 +182,7 @@ func searchAuditTrailEntries(ctx context.Context, input structs.SearchInput) (se
 		} `graphql:"searchAuditTrailEntries(input: $input)"`
 	}
 
-	if err := authenticated.Client.Query(
+	if err := authenticated.Client().Query(
 		ctx,
 		&query,
 		map[string]interface{}{"input": input},

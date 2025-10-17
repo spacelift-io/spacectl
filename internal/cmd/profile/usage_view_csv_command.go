@@ -47,7 +47,7 @@ func usageViewCsv(ctx context.Context, cliCmd *cli.Command) error {
 
 	// execute http query
 	fmt.Fprint(os.Stderr, "Querying Spacelift for usage data...\n")
-	resp, err := authenticated.Client.Do(req)
+	resp, err := authenticated.Client().Do(req)
 	if err != nil {
 		return err
 	}
