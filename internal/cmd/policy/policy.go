@@ -116,6 +116,27 @@ func Command() cmd.Command {
 					},
 				},
 			},
+			{
+				Name:  "samples-indexed",
+				Usage: "Show indexed policy evaluation samples (searchable)",
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								cmd.FlagOutputFormat,
+								cmd.FlagNoColor,
+								flagRequiredPolicyID,
+								cmd.FlagLimit,
+								flagOutcomeFilter,
+							},
+							Action:    samplesIndexed(),
+							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
+				},
+			},
 		},
 	}
 }
