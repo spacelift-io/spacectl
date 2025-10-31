@@ -38,6 +38,8 @@ func loginCommand() *cli.Command {
 }
 
 func loginAction(ctx context.Context, cliCmd *cli.Command) error {
+	defer printEnvWarning()
+
 	var storedCredentials session.StoredCredentials
 
 	// Let's try to re-authenticate user.
@@ -210,4 +212,40 @@ func persistAccessCredentials(creds *session.StoredCredentials) error {
 		Alias:       profileAlias,
 		Credentials: creds,
 	})
+}
+
+func printEnvWarning() {
+	envVars := checkEnvironmentVariables()
+	if len(envVars) == 0 {
+		return
+	}
+
+	fmt.Println("WARNING: The following Spacelift environment variables are set:")
+	for _, envVar := range envVars {
+		fmt.Printf("   - %s\n", envVar)
+	}
+	fmt.Println("\nEnvironment variables take precedence over profile credentials.")
+	fmt.Println("If these credentials are expired or invalid, commands will fail even after successful login.")
+}
+
+// checkEnvironmentVariables checks for Spacelift environment variables and returns a list of those that are set.
+func checkEnvironmentVariables() []string {
+	var envVars []string
+
+	checkVars := []string{
+		session.EnvSpaceliftAPIToken,
+		session.EnvSpaceliftAPIKeyEndpoint,
+		session.EnvSpaceliftAPIEndpoint,
+		session.EnvSpaceliftAPIGitHubToken,
+		session.EnvSpaceliftAPIKeyID,
+		session.EnvSpaceliftAPIKeySecret,
+	}
+
+	for _, envVar := range checkVars {
+		if value := os.Getenv(envVar); value != "" {
+			envVars = append(envVars, envVar)
+		}
+	}
+
+	return envVars
 }
