@@ -604,6 +604,13 @@ func searchModulesMCP(ctx context.Context, input structs.SearchInput) (*mcpSearc
 		return nil, errors.Wrap(err, "failed to execute modules search query")
 	}
 
+	if len(query.SearchModulesOutput.Edges) == 0 {
+		_, err := authenticated.CurrentViewer(ctx)
+		if errors.Is(err, authenticated.ErrViewerUnknown) {
+			return nil, errors.New("You are not logged in, could not find modules")
+		}
+	}
+
 	nodes := make([]module, 0)
 	for _, q := range query.SearchModulesOutput.Edges {
 		nodes = append(nodes, q.Node)

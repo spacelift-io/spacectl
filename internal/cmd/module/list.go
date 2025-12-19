@@ -220,6 +220,13 @@ func searchModules(ctx context.Context, input structs.SearchInput) (searchModule
 		return searchModulesResult{}, errors.Wrap(err, "failed search for modules")
 	}
 
+	if len(query.SearchModulesOutput.Edges) == 0 {
+		_, err := authenticated.CurrentViewer(ctx)
+		if errors.Is(err, authenticated.ErrViewerUnknown) {
+			return searchModulesResult{}, errors.New("You are not logged in, could not find modules")
+		}
+	}
+
 	nodes := make([]module, 0)
 	for _, q := range query.SearchModulesOutput.Edges {
 		nodes = append(nodes, q.Node)
