@@ -20,7 +20,7 @@ import (
 type actionOnRunState func(state structs.RunState, stackID, runID string) error
 
 func runLogs(ctx context.Context, cliCmd *cli.Command) error {
-	stackID, err := getStackID(ctx, cliCmd)
+	stackID, err := getStackID(ctx, cliCmd, nil)
 	if err != nil {
 		return err
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 func resourcesList(ctx context.Context, cliCmd *cli.Command) error {
-	stackID, err := getStackID(ctx, cliCmd)
+	stackID, err := getStackID(ctx, cliCmd, nil)
 	if err != nil {
 		if !errors.Is(err, errNoStackFound) {
 			return err

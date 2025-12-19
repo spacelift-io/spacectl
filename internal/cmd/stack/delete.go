@@ -27,7 +27,7 @@ var flagSkipConfirmation = &cli.BoolFlag{
 
 func deleteStack() cli.ActionFunc {
 	return func(ctx context.Context, cliCmd *cli.Command) error {
-		stackID, err := getStackID(ctx, cliCmd)
+		stackID, err := getStackID(ctx, cliCmd, nil)
 		if err != nil {
 			return err
 		}

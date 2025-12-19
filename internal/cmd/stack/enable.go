@@ -34,7 +34,7 @@ func disable(ctx context.Context, cliCmd *cli.Command) error {
 }
 
 func enableDisable[T any](ctx context.Context, cliCmd *cli.Command) error {
-	stackID, err := getStackID(ctx, cliCmd)
+	stackID, err := getStackID(ctx, cliCmd, nil)
 	if err != nil {
 		return err
 	}

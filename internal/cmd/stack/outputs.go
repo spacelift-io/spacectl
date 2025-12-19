@@ -31,7 +31,7 @@ type showOutputsQuery struct {
 type showOutputsStackCommand struct{}
 
 func (c *showOutputsStackCommand) showOutputs(ctx context.Context, cliCmd *cli.Command) error {
-	stackID, err := getStackID(ctx, cliCmd)
+	stackID, err := getStackID(ctx, cliCmd, nil)
 	if err != nil {
 		return err
 	}

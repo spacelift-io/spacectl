@@ -28,8 +28,8 @@ const (
 // 1. Check the --id flag, if set, use that value.
 // 2. Check the --run flag, if set, try to get the stack associated with the run.
 // 2. Check the current directory to determine repository and subdirectory and search for a stack.
-func getStackID(ctx context.Context, cliCmd *cli.Command) (string, error) {
-	stack, err := getStack[stackID](ctx, cliCmd)
+func getStackID(ctx context.Context, cliCmd *cli.Command, extraConditions []structs.QueryPredicate) (string, error) {
+	stack, err := getStack[stackID](ctx, cliCmd, extraConditions)
 	if err != nil {
 		return "", err
 	}
@@ -37,7 +37,7 @@ func getStackID(ctx context.Context, cliCmd *cli.Command) (string, error) {
 	return stack.ID, nil
 }
 
-func getStack[T hasIDAndName](ctx context.Context, cliCmd *cli.Command) (*T, error) {
+func getStack[T hasIDAndName](ctx context.Context, cliCmd *cli.Command, extraConditions []structs.QueryPredicate) (*T, error) {
 	if cliCmd.IsSet(flagStackID.Name) {
 		stackID := cliCmd.String(flagStackID.Name)
 		stack, err := stackGetByID[T](ctx, stackID)
@@ -78,7 +78,7 @@ func getStack[T hasIDAndName](ctx context.Context, cliCmd *cli.Command) (*T, err
 		count:          50,
 		projectRoot:    &subdir,
 		repositoryName: name,
-	}, !skip)
+	}, !skip, extraConditions)
 	if err != nil {
 		if errors.Is(err, errNoStackFound) {
 			return nil, fmt.Errorf("%w: no --id flag was provided and stack could not be found by searching the current directory", err)
@@ -132,7 +132,7 @@ func stackGetByRunID[T hasIDAndName](ctx context.Context, runID string) (*T, err
 	return &query.RunStack, nil
 }
 
-func findAndSelectStack[T hasIDAndName](ctx context.Context, p *stackSearchParams, forcePrompt bool) (*T, error) {
+func findAndSelectStack[T hasIDAndName](ctx context.Context, p *stackSearchParams, forcePrompt bool, extraConditions []structs.QueryPredicate) (*T, error) {
 	conditions := []structs.QueryPredicate{
 		{
 			Field: graphql.String("repository"),
@@ -159,6 +159,10 @@ func findAndSelectStack[T hasIDAndName](ctx context.Context, p *stackSearchParam
 				StringMatches: &[]graphql.String{graphql.String(*p.branch)},
 			},
 		})
+	}
+
+	if len(extraConditions) > 0 {
+		conditions = append(conditions, extraConditions...)
 	}
 
 	input := structs.SearchInput{

@@ -26,14 +26,19 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 			return err
 		}
 
-		stack, err := getStack[stack](ctx, cliCmd)
-		if err != nil {
-			return err
+		// Only find stacks where local preview is enabled
+		extraConditions := []structs.QueryPredicate{
+			{
+				Field: "localPreviewEnabled",
+				Constraint: structs.QueryFieldConstraint{
+					BooleanEquals: &[]graphql.Boolean{true},
+				},
+			},
 		}
 
-		if !stack.LocalPreviewEnabled {
-			linkToStack := authenticated.Client().URL("/stack/%s", stack.ID)
-			return fmt.Errorf("local preview has not been enabled for this stack, please enable local preview in the stack settings: %s", linkToStack)
+		stack, err := getStack[stack](ctx, cliCmd, extraConditions)
+		if err != nil {
+			return err
 		}
 
 		var packagePath *string
