@@ -280,18 +280,16 @@ func registerListModuleVersionsTool(s *server.MCPServer) {
 		}
 
 		includeFailed := request.GetBool("include_failed", false)
-		limit := request.GetInt("limit", 50)
 
 		var query struct {
 			Module *struct {
-				Versions []moduleVersionQuery `graphql:"versions(first: $limit, includeFailed: $includeFailed)"`
+				Versions []moduleVersionQuery `graphql:"versions(includeFailed: $includeFailed)"`
 			} `graphql:"module(id: $moduleId)"`
 		}
 
 		variables := map[string]any{
 			"moduleId":      moduleID,
-			"limit":         limit,
-			"includeFailed": includeFailed,
+			"includeFailed": graphql.Boolean(includeFailed),
 		}
 
 		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
