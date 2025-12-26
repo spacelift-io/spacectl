@@ -1,32 +1,32 @@
 module github.com/spacelift-io/spacectl
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/ProtonMail/gopenpgp/v2 v2.9.0
-	github.com/charmbracelet/bubbles v0.21.0
+	github.com/charmbracelet/bubbles v0.21.1-0.20250623103423-23b8fd6302d7
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834
 	github.com/cheggaaa/pb/v3 v3.1.7
-	github.com/cli/cli/v2 v2.80.0
+	github.com/cli/cli/v2 v2.83.2
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/manifoldco/promptui v0.9.0
-	github.com/mark3labs/mcp-go v0.40.0
+	github.com/mark3labs/mcp-go v0.43.2
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mholt/archiver/v3 v3.5.1
-	github.com/onsi/gomega v1.38.2
+	github.com/onsi/gomega v1.38.3
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
-	github.com/pterm/pterm v0.12.81
+	github.com/pterm/pterm v0.12.82
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/shurcooL/graphql v0.0.0-20230722043721-ed46e5a46466
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.4.1
-	golang.org/x/oauth2 v0.31.0
-	golang.org/x/sync v0.18.0
-	golang.org/x/term v0.37.0
+	github.com/urfave/cli/v3 v3.6.1
+	golang.org/x/oauth2 v0.34.0
+	golang.org/x/sync v0.19.0
+	golang.org/x/term v0.38.0
 )
 
 require (
@@ -45,7 +45,7 @@ require (
 	github.com/charmbracelet/x/cellbuf v0.0.13 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
-	github.com/cli/go-gh/v2 v2.12.2 // indirect
+	github.com/cli/go-gh/v2 v2.13.0 // indirect
 	github.com/cli/safeexec v1.0.1 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/containerd/console v1.0.5 // indirect
@@ -59,10 +59,10 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/invopop/jsonschema v0.13.0 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/klauspost/compress v1.18.1 // indirect
 	github.com/klauspost/pgzip v1.2.1 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
-	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
@@ -83,7 +83,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
