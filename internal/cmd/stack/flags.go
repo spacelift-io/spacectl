@@ -177,3 +177,9 @@ var flagPhase = &cli.StringFlag{
 	Name:  "phase",
 	Usage: "[Optional] Only show logs for a specific `PHASE` (e.g., QUEUED, PREPARING, PLANNING, APPLYING, FINISHED)",
 }
+
+var flagOnlyEnabled = &cli.BoolFlag{
+	Name:  "only-enabled",
+	Usage: "[Optional] Only show stacks with local preview enabled",
+	Value: false,
+}

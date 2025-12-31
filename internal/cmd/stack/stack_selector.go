@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
@@ -22,6 +23,9 @@ var (
 const (
 	envPromptSkipKey = "SPACECTL_SKIP_STACK_PROMPT"
 )
+
+// StackFilter is a function to filter stacks based on their properties.
+type StackFilter[T hasIDAndName] func(*T) bool
 
 // getStackID will try to retrieve a stack ID from multiple sources.
 // It will do so in the following order:
@@ -90,6 +94,34 @@ func getStack[T hasIDAndName](ctx context.Context, cliCmd *cli.Command) (*T, err
 	return got, nil
 }
 
+func getStackFiltered[T hasIDAndName](
+	ctx context.Context,
+	cliCmd *cli.Command,
+	filter StackFilter[T],
+) (*T, error) {
+	if cliCmd.IsSet(flagStackID.Name) || cliCmd.IsSet(flagRun.Name) {
+		return getStack[T](ctx, cliCmd)
+	}
+
+	subdir, err := getGitRepositorySubdir()
+	if err != nil {
+		return nil, err
+	}
+
+	name, err := getRepositoryName(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	skip := os.Getenv(envPromptSkipKey) == "true"
+
+	return findAndSelectStackFiltered(ctx, &stackSearchParams{
+		count:          50,
+		projectRoot:    &subdir,
+		repositoryName: name,
+	}, !skip, filter)
+}
+
 func stackGetByID[T hasIDAndName](ctx context.Context, stackID string) (*T, error) {
 	var query struct {
 		Stack T `graphql:"stack(id: $id)"`
@@ -132,7 +164,7 @@ func stackGetByRunID[T hasIDAndName](ctx context.Context, runID string) (*T, err
 	return &query.RunStack, nil
 }
 
-func findAndSelectStack[T hasIDAndName](ctx context.Context, p *stackSearchParams, forcePrompt bool) (*T, error) {
+func buildStackSearchPredicates(p *stackSearchParams) []structs.QueryPredicate {
 	conditions := []structs.QueryPredicate{
 		{
 			Field: graphql.String("repository"),
@@ -161,19 +193,13 @@ func findAndSelectStack[T hasIDAndName](ctx context.Context, p *stackSearchParam
 		})
 	}
 
-	input := structs.SearchInput{
-		First:      graphql.NewInt(graphql.Int(p.count)), //nolint: gosec
-		Predicates: &conditions,
-	}
+	return conditions
+}
 
-	result, err := searchStacks[T](ctx, input)
-	if err != nil {
-		return nil, err
-	}
-
+func selectStackFromList[T hasIDAndName](stacks []T, maxCount int, forcePrompt bool) (*T, error) {
 	items := []string{}
 	found := map[string]T{}
-	for _, s := range result.Stacks {
+	for _, s := range stacks {
 		items = append(items, s.GetName())
 		found[s.GetName()] = s
 	}
@@ -184,8 +210,8 @@ func findAndSelectStack[T hasIDAndName](ctx context.Context, p *stackSearchParam
 
 	selected := found[items[0]]
 	if len(items) > 1 || forcePrompt {
-		if len(items) == p.count {
-			fmt.Printf("Search results exceeded maximum capacity (%d) some stacks might be missing\n", p.count)
+		if maxCount > 0 && len(items) == maxCount {
+			fmt.Printf("Search results exceeded maximum capacity (%d) some stacks might be missing\n", maxCount)
 		}
 		if len(items) == 1 && forcePrompt {
 			fmt.Printf("Enable auto-selection by setting '%s=true'\n", envPromptSkipKey)
@@ -210,4 +236,79 @@ func findAndSelectStack[T hasIDAndName](ctx context.Context, p *stackSearchParam
 	}
 
 	return &selected, nil
+}
+
+func fetchStacks[T hasIDAndName](
+	ctx context.Context,
+	p *stackSearchParams,
+	paginateAll bool,
+	filter StackFilter[T],
+) ([]T, error) {
+	conditions := buildStackSearchPredicates(p)
+
+	input := structs.SearchInput{
+		First:      graphql.NewInt(graphql.Int(p.count)), //nolint: gosec
+		Predicates: &conditions,
+	}
+
+	stacks := []T{}
+
+	if paginateAll {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Second*15)
+		defer cancel()
+	}
+
+	for {
+		result, err := searchStacks[T](ctx, input)
+		if err != nil {
+			if paginateAll && errors.Is(err, context.DeadlineExceeded) {
+				return nil, fmt.Errorf("searching stacks took too long - try using --id to specify a stack directly")
+			}
+			return nil, err
+		}
+
+		stacks = append(stacks, result.Stacks...)
+
+		if paginateAll && result.PageInfo.HasNextPage {
+			input.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+		} else {
+			break
+		}
+	}
+
+	if filter != nil {
+		filteredStacks := []T{}
+		for _, s := range stacks {
+			if filter(&s) {
+				filteredStacks = append(filteredStacks, s)
+			}
+		}
+		return filteredStacks, nil
+	}
+
+	return stacks, nil
+}
+
+func findAndSelectStack[T hasIDAndName](ctx context.Context, p *stackSearchParams, forcePrompt bool) (*T, error) {
+	stacks, err := fetchStacks[T](ctx, p, false, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return selectStackFromList(stacks, p.count, forcePrompt)
+}
+
+func findAndSelectStackFiltered[T hasIDAndName](
+	ctx context.Context,
+	p *stackSearchParams,
+	forcePrompt bool,
+	filter StackFilter[T],
+) (*T, error) {
+	stacks, err := fetchStacks(ctx, p, true, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return selectStackFromList(stacks, 0, forcePrompt)
 }
