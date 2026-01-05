@@ -19,6 +19,30 @@ import (
 	"github.com/spacelift-io/spacectl/internal/nullable"
 )
 
+func getStackForLocalPreview(ctx context.Context, cliCmd *cli.Command) (*stack, error) {
+	if !cliCmd.Bool(flagOnlyEnabled.Name) {
+		s, err := getStack[stack](ctx, cliCmd)
+		if err != nil {
+			return nil, err
+		}
+		if !s.LocalPreviewEnabled {
+			linkToStack := authenticated.Client().URL("/stack/%s", s.ID)
+			return nil, fmt.Errorf("local preview has not been enabled for this stack, please enable local preview in the stack settings: %s", linkToStack)
+		}
+
+		return s, nil
+	}
+
+	s, err := getStackFiltered(ctx, cliCmd, func(s *stack) bool {
+		return s.LocalPreviewEnabled
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
+
 func localPreview(useHeaders bool) cli.ActionFunc {
 	return func(ctx context.Context, cliCmd *cli.Command) error {
 		envVars, err := parseEnvVariablesForLocalPreview(cliCmd)
@@ -26,14 +50,9 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 			return err
 		}
 
-		stack, err := getStack[stack](ctx, cliCmd)
+		s, err := getStackForLocalPreview(ctx, cliCmd)
 		if err != nil {
 			return err
-		}
-
-		if !stack.LocalPreviewEnabled {
-			linkToStack := authenticated.Client().URL("/stack/%s", stack.ID)
-			return fmt.Errorf("local preview has not been enabled for this stack, please enable local preview in the stack settings: %s", linkToStack)
 		}
 
 		var packagePath *string
@@ -53,7 +72,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 		runID, err := createLocalPreviewRun(
 			ctx,
 			LocalPreviewOptions{
-				StackID:            stack.ID,
+				StackID:            s.ID,
 				EnvironmentVars:    envVars,
 				Targets:            cliCmd.StringSlice(flagTarget.Name),
 				Path:               packagePath,
@@ -75,7 +94,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 
 		linkToRun := authenticated.Client().URL(
 			"/stack/%s/run/%s",
-			stack.ID,
+			s.ID,
 			runID,
 		)
 		fmt.Println("The live run can be visited at", linkToRun)
@@ -84,7 +103,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := logs.NewExplorer(stack.ID, runID).RunFilteredLogs(ctx)
+		terminal, err := logs.NewExplorer(s.ID, runID).RunFilteredLogs(ctx)
 		if err != nil {
 			return err
 		}
