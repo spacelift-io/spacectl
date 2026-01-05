@@ -66,6 +66,9 @@ func findAndOpenStackInBrowser(ctx context.Context, p *stackSearchParams) error 
 	if errors.Is(err, errNoStackFound) {
 		return errors.New("No stacks using the provided search parameters, maybe it's in a different subdir?")
 	}
+	if err != nil {
+		return err
+	}
 
 	return browser.OpenURL(authenticated.Client().URL(
 		"/stack/%s",
