@@ -133,7 +133,7 @@ func (e *Explorer) processHistory(ctx context.Context, sink chan<- string, histo
 			return nil, false, err
 		}
 
-		e.print(&transition)
+		e.print(&transition, sink)
 
 		terminal, err := e.processTransition(ctx, &transition, sink)
 		if err != nil {
@@ -183,12 +183,12 @@ func (e *Explorer) processTransition(ctx context.Context, transition *structs.Ru
 	return transition.Terminal, nil
 }
 
-func (e *Explorer) print(transition *structs.RunStateTransition) {
+func (e *Explorer) print(transition *structs.RunStateTransition, sink chan<- string) {
 	if e.targetPhase != nil {
 		return
 	}
 
-	fmt.Printf(`
+	sink <- fmt.Sprintf(`
 -----------------
 %s
 -----------------
