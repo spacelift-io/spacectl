@@ -85,7 +85,7 @@ release:
   draft: false
   extra_files:
     - glob: ./key.*
-  header: |
+  footer: |
     ## Artifacts
     ### Binaries
     
