@@ -344,6 +344,26 @@ func Command() cmd.Command {
 			},
 			{
 				Category: "Run management",
+				Name:     "promote",
+				Usage:    "Promote a proposed run to a tracked run",
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRequiredRun,
+								flagTail,
+							},
+							Action:    runPromote(),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
+				},
+			},
+			{
+				Category: "Run management",
 				Name:     "prioritize",
 				Usage:    "Prioritize a run",
 				Versions: []cmd.VersionedCommand{
