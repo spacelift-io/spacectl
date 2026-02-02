@@ -129,13 +129,13 @@ func (e *Explorer) processHistory(ctx context.Context, sink chan<- string, histo
 		e.backoff = 0
 		reportedStates[transition.State] = struct{}{}
 
-		skip, _, err := e.processTargetPhase(&transition, sink)
+		skip, terminal, err := e.processTargetPhase(&transition, sink)
 		if err != nil {
 			return nil, false, err
 		}
 
 		if skip {
-			if transition.Terminal {
+			if terminal {
 				return &transition, false, nil
 			}
 			continue
@@ -143,7 +143,7 @@ func (e *Explorer) processHistory(ctx context.Context, sink chan<- string, histo
 
 		e.print(&transition, sink)
 
-		terminal, err := e.processTransition(ctx, &transition, sink)
+		terminal, err = e.processTransition(ctx, &transition, sink)
 		if err != nil {
 			return nil, false, err
 		}
@@ -161,14 +161,14 @@ func (e *Explorer) processHistory(ctx context.Context, sink chan<- string, histo
 	return &transition, true, nil
 }
 
-func (e *Explorer) processTargetPhase(transition *structs.RunStateTransition, sink chan<- string) (skip bool, targetReached bool, err error) {
+func (e *Explorer) processTargetPhase(transition *structs.RunStateTransition, sink chan<- string) (skip bool, terminal bool, err error) {
 	if e.targetPhase == nil {
 		return false, false, nil
 	}
 
 	if transition.State == *e.targetPhase {
 		e.targetPhaseReached = true
-		return false, true, nil
+		return false, false, nil
 	}
 
 	if transition.Terminal && !e.targetPhaseReached {
@@ -176,7 +176,7 @@ func (e *Explorer) processTargetPhase(transition *structs.RunStateTransition, si
 		return false, false, errors.New("filtering failed")
 	}
 
-	return true, false, nil
+	return true, transition.Terminal, nil
 }
 
 func (e *Explorer) processTransition(ctx context.Context, transition *structs.RunStateTransition, sink chan<- string) (bool, error) {
