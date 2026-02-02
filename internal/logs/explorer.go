@@ -21,8 +21,9 @@ type Explorer struct {
 	run   string
 	tail  bool
 
-	acFn        ActionOnRunState
-	targetPhase *structs.RunState
+	acFn               ActionOnRunState
+	targetPhase        *structs.RunState
+	targetPhaseReached bool
 
 	backoff time.Duration
 }
@@ -128,21 +129,29 @@ func (e *Explorer) processHistory(ctx context.Context, sink chan<- string, histo
 		e.backoff = 0
 		reportedStates[transition.State] = struct{}{}
 
-		targetReached, err := e.processTargetPhase(&transition, sink)
+		skip, terminal, err := e.processTargetPhase(&transition, sink)
 		if err != nil {
 			return nil, false, err
+		}
+
+		if skip {
+			if terminal {
+				return &transition, false, nil
+			}
+			continue
 		}
 
 		e.print(&transition, sink)
 
-		terminal, err := e.processTransition(ctx, &transition, sink)
+		terminal, err = e.processTransition(ctx, &transition, sink)
 		if err != nil {
 			return nil, false, err
 		}
 
-		if terminal || targetReached {
+		if terminal {
 			return &transition, false, nil
 		}
+
 	}
 
 	if !e.tail {
@@ -152,21 +161,22 @@ func (e *Explorer) processHistory(ctx context.Context, sink chan<- string, histo
 	return &transition, true, nil
 }
 
-func (e *Explorer) processTargetPhase(transition *structs.RunStateTransition, sink chan<- string) (bool, error) {
+func (e *Explorer) processTargetPhase(transition *structs.RunStateTransition, sink chan<- string) (skip bool, terminal bool, err error) {
 	if e.targetPhase == nil {
-		return false, nil
+		return false, false, nil
 	}
 
-	if transition.State != *e.targetPhase {
-		return false, nil
+	if transition.State == *e.targetPhase {
+		e.targetPhaseReached = true
+		return false, false, nil
 	}
 
-	if transition.Terminal && transition.State != *e.targetPhase {
+	if transition.Terminal && !e.targetPhaseReached {
 		sink <- fmt.Sprintf("Run completed without reaching phase %s\n", *e.targetPhase)
-		return false, errors.New("filtering failed")
+		return false, false, errors.New("filtering failed")
 	}
 
-	return transition.State != *e.targetPhase, nil
+	return true, transition.Terminal, nil
 }
 
 func (e *Explorer) processTransition(ctx context.Context, transition *structs.RunStateTransition, sink chan<- string) (bool, error) {
