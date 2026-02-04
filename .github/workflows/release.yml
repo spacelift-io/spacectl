@@ -22,6 +22,9 @@ jobs:
         with:
           app-id: ${{ secrets.WINGET_APP_ID }}
           private-key: ${{ secrets.WINGET_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            winget-pkgs
 
       - name: Checkout
         uses: actions/checkout@v6
