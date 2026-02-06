@@ -614,9 +614,12 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 			return mcp.NewToolResultText(fmt.Sprintf("Local preview has not been enabled for this stack, please enable local preview in the stack settings: %s", linkToStack)), nil
 		}
 
-		var envVars []EnvironmentVariable
+		envVars := make([]EnvironmentVariable, 0)
 		if envVarParams := request.GetArguments()["environment_variables"]; envVarParams != nil {
-			v := envVarParams.(map[string]any)
+			v, ok := envVarParams.(map[string]any)
+			if !ok {
+				return nil, fmt.Errorf("environment_variables must be an object/map, got %T", envVarParams)
+			}
 			for k, v := range v {
 				if o, ok := v.(string); ok {
 					envVars = append(envVars, EnvironmentVariable{
