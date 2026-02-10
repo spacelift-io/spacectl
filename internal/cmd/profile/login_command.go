@@ -138,35 +138,46 @@ func readEndpoint(cliCmd *cli.Command, reader *bufio.Reader) (string, error) {
 }
 
 func loginUsingAPIKey(reader *bufio.Reader, creds *session.StoredCredentials) error {
-	fmt.Print("Enter API key ID: ")
-	keyID, err := reader.ReadString('\n')
-	if err != nil {
-		return err
+	if keyID := os.Getenv(session.EnvSpaceliftAPIKeyID); keyID != "" {
+		creds.KeyID = keyID
+	} else {
+		fmt.Print("Enter API key ID: ")
+		keyID, err := reader.ReadString('\n')
+		if err != nil {
+			return err
+		}
+		creds.KeyID = strings.TrimSpace(keyID)
 	}
-	creds.KeyID = strings.TrimSpace(keyID)
 
-	fmt.Print("Enter API key secret: ")
-	keySecret, err := term.ReadPassword(int(syscall.Stdin)) //nolint: unconvert
-	if err != nil {
-		return err
+	if keySecret := os.Getenv(session.EnvSpaceliftAPIKeySecret); keySecret != "" {
+		creds.KeySecret = keySecret
+	} else {
+		fmt.Print("Enter API key secret: ")
+		keySecret, err := term.ReadPassword(int(syscall.Stdin)) //nolint: unconvert
+		if err != nil {
+			return err
+		}
+		creds.KeySecret = strings.TrimSpace(string(keySecret))
+		fmt.Println()
 	}
-	creds.KeySecret = strings.TrimSpace(string(keySecret))
-
-	fmt.Println()
 
 	return nil
 }
 
 func loginUsingGitHubAccessToken(creds *session.StoredCredentials) error {
-	fmt.Print("Enter GitHub access token: ")
+	if accessToken := os.Getenv(session.EnvSpaceliftAPIGitHubToken); accessToken != "" {
+		creds.AccessToken = accessToken
+	} else {
+		fmt.Print("Enter GitHub access token: ")
 
-	accessToken, err := term.ReadPassword(int(syscall.Stdin)) //nolint: unconvert
-	if err != nil {
-		return err
+		accessToken, err := term.ReadPassword(int(syscall.Stdin)) //nolint: unconvert
+		if err != nil {
+			return err
+		}
+		creds.AccessToken = strings.TrimSpace(string(accessToken))
+
+		fmt.Println()
 	}
-	creds.AccessToken = strings.TrimSpace(string(accessToken))
-
-	fmt.Println()
 
 	return nil
 }
