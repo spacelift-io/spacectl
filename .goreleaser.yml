@@ -24,47 +24,22 @@ archives:
       - README.md
       - completions/*
 
-dockers:
-  - use: buildx
-    goarch: amd64
-    build_flag_templates:
-     - "--platform=linux/amd64"
-     - "--label=org.opencontainers.image.title={{ .ProjectName }}"
-     - "--label=org.opencontainers.image.vendor=Spacelift"
-     - "--label=org.opencontainers.image.description=Spacelift CLI version {{ .Version }}"
-     - "--label=org.opencontainers.image.url=https://github.com/spacelift-io/spacectl"
-     - "--label=org.opencontainers.image.documentation=https://github.com/spacelift-io/spacectl/blob/main/README.md"
-     - "--label=org.opencontainers.image.source=https://github.com/spacelift-io/spacectl"
-     - "--label=org.opencontainers.image.version={{ .Version }}"
-     - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
-     - "--label=org.opencontainers.image.created={{ time \"2006-01-02T15:04:05Z07:00\" }}"
-    image_templates: ["ghcr.io/spacelift-io/spacectl:{{ .Version }}-amd64"]
-
-  - use: buildx
-    goarch: arm64
-    build_flag_templates:
-     - "--platform=linux/arm64"
-     - "--label=org.opencontainers.image.title={{ .ProjectName }}"
-     - "--label=org.opencontainers.image.vendor=Spacelift"
-     - "--label=org.opencontainers.image.description=Spacelift CLI version {{ .Version }}"
-     - "--label=org.opencontainers.image.url=https://github.com/spacelift-io/spacectl"
-     - "--label=org.opencontainers.image.documentation=https://github.com/spacelift-io/spacectl/blob/main/README.md"
-     - "--label=org.opencontainers.image.source=https://github.com/spacelift-io/spacectl"
-     - "--label=org.opencontainers.image.version={{ .Version }}"
-     - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
-     - "--label=org.opencontainers.image.created={{ time \"2006-01-02T15:04:05Z07:00\" }}"
-    image_templates: ["ghcr.io/spacelift-io/spacectl:{{ .Version }}-arm64"]
-
-docker_manifests:
-  - name_template: ghcr.io/spacelift-io/spacectl:{{ .Version }}
-    image_templates:
-    - ghcr.io/spacelift-io/spacectl:{{ .Version }}-amd64
-    - ghcr.io/spacelift-io/spacectl:{{ .Version }}-arm64
-
-  - name_template: ghcr.io/spacelift-io/spacectl:latest
-    image_templates:
-    - ghcr.io/spacelift-io/spacectl:{{ .Version }}-amd64
-    - ghcr.io/spacelift-io/spacectl:{{ .Version }}-arm64
+dockers_v2:
+  - images:
+      - "ghcr.io/spacelift-io/spacectl"
+    tags:
+      - "{{ .Version }}"
+      - "latest"
+    labels:
+      "org.opencontainers.image.title": "{{ .ProjectName }}"
+      "org.opencontainers.image.vendor": "Spacelift"
+      "org.opencontainers.image.description": "Spacelift CLI version {{ .Version }}"
+      "org.opencontainers.image.url": "https://github.com/spacelift-io/spacectl"
+      "org.opencontainers.image.documentation": "https://github.com/spacelift-io/spacectl/blob/main/README.md"
+      "org.opencontainers.image.source": "https://github.com/spacelift-io/spacectl"
+      "org.opencontainers.image.version": "{{ .Version }}"
+      "org.opencontainers.image.revision": "{{ .FullCommit }}"
+      "org.opencontainers.image.created": "{{ time \"2006-01-02T15:04:05Z07:00\" }}"
 
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
@@ -100,8 +75,14 @@ release:
 changelog:
   use: github-native
 
-brews:
+homebrew_casks:
   - name: "{{ .ProjectName }}"
+    binaries:
+      - "{{ .ProjectName }}"
+    completions:
+      bash: "completions/{{ .ProjectName }}.bash"
+      zsh: "completions/{{ .ProjectName }}.zsh"
+      fish: "completions/{{ .ProjectName }}.fish"
     repository:
       owner: "spacelift-io"
       name: "homebrew-spacelift"
@@ -109,10 +90,6 @@ brews:
     homepage: https://github.com/spacelift-io/spacectl
     description: "Spacelift client and CLI"
     license: "MIT"
-    extra_install: |
-      bash_completion.install "completions/{{ .ProjectName }}.bash" => "{{ .ProjectName }}"
-      zsh_completion.install "completions/{{ .ProjectName }}.zsh" => "_{{ .ProjectName }}"
-      fish_completion.install "completions/{{ .ProjectName }}.fish"
 
 winget:
   - name: "{{ .ProjectName }}"
