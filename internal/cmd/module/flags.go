@@ -56,3 +56,8 @@ var flagWithGitDir = &cli.BoolFlag{
 	Name:  "with-git-dir",
 	Usage: "[Optional] Add the .git to the archive, useful when you define custom behavior inside the repository",
 }
+
+var flagNoAnimation = &cli.BoolFlag{
+	Name:  "no-animation",
+	Usage: "[Optional] Disable animated output and print plain text status updates instead. Automatically enabled when the output is not a terminal.",
+}
