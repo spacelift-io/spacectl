@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mattn/go-isatty"
 	"github.com/mholt/archiver/v3"
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v3"
@@ -140,6 +141,11 @@ func localPreviewFunc(useHeaders bool) cli.ActionFunc {
 			return err
 		}
 
+		noAnimation := cliCmd.Bool(flagNoAnimation.Name) || !isatty.IsTerminal(os.Stdout.Fd())
+		if noAnimation {
+			return runPlainLocalPreview(ctx, moduleID, triggerMutation.VersionProposeLocalWorkspace)
+		}
+
 		model := newModuleLocalPreviewModel(moduleID, triggerMutation.VersionProposeLocalWorkspace)
 
 		go func() {
@@ -185,6 +191,74 @@ func localPreviewFunc(useHeaders bool) cli.ActionFunc {
 
 		return nil
 	}
+}
+
+func runPlainLocalPreview(ctx context.Context, moduleID string, initialRuns []runQuery) error {
+	runs := make([]runQuery, len(initialRuns))
+	copy(runs, initialRuns)
+
+	printRun := func(run runQuery) {
+		fmt.Printf("%s • %s • %s\n", run.State, run.Title, authenticated.Client().URL(
+			"/module/%s/run/%s",
+			moduleID,
+			run.ID,
+		))
+	}
+
+	for _, run := range runs {
+		printRun(run)
+	}
+
+	ticker := time.NewTicker(time.Second * 5)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		newRuns := make([]runQuery, len(runs))
+		var g errgroup.Group
+		for i := range newRuns {
+			index := i
+			g.Go(func() error {
+				var getRun struct {
+					Module struct {
+						Run runQuery `graphql:"run(id: $run)"`
+					} `graphql:"module(id: $module)"`
+				}
+
+				if err := authenticated.Client().Query(ctx, &getRun, map[string]interface{}{
+					"module": graphql.ID(moduleID),
+					"run":    graphql.ID(runs[index].ID),
+				}); err != nil {
+					return err
+				}
+
+				newRuns[index] = getRun.Module.Run
+				return nil
+			})
+		}
+		if err := g.Wait(); err != nil {
+			return fmt.Errorf("couldn't get runs: %w", err)
+		}
+
+		for i, newRun := range newRuns {
+			if newRun.State != runs[i].State {
+				printRun(newRun)
+			}
+		}
+		runs = newRuns
+
+		allFinished := true
+		for _, run := range runs {
+			if !run.Finished {
+				allFinished = false
+				break
+			}
+		}
+		if allFinished {
+			return nil
+		}
+	}
+
+	return nil
 }
 
 type checkRunsFinishedMsg struct{}
