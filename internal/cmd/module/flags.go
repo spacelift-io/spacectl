@@ -1,6 +1,11 @@
 package module
 
-import "github.com/urfave/cli/v3"
+import (
+	"os"
+
+	"github.com/mattn/go-isatty"
+	"github.com/urfave/cli/v3"
+)
 
 var flagModuleID = &cli.StringFlag{
 	Name:     "id",
@@ -55,4 +60,10 @@ var flagTests = &cli.StringSliceFlag{
 var flagWithGitDir = &cli.BoolFlag{
 	Name:  "with-git-dir",
 	Usage: "[Optional] Add the .git to the archive, useful when you define custom behavior inside the repository",
+}
+
+var flagNoAnimation = &cli.BoolFlag{
+	Name:  "no-animation",
+	Usage: "[Optional] Disable animated output and print plain text status updates instead. Automatically enabled when the output is not a terminal.",
+	Value: isatty.IsTerminal(os.Stdout.Fd()),
 }
