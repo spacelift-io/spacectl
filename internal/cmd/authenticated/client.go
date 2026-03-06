@@ -80,8 +80,19 @@ func configureTLS(httpClient *http.Client) error {
 		MinVersion: tls.VersionTLS12,
 	}
 
-	if caFile, ok := os.LookupEnv(EnvSpaceliftAPIClientCA); ok && caFile != "" {
-		caCert, err := os.ReadFile("cacert")
+	// Check SPACELIFT_API_TLS_CA first, then fall back to SSL_CERT_FILE.
+	// Setting RootCAs to a non-nil pool forces Go's pure-Go certificate
+	// verifier, bypassing Security.framework (which fails in sandboxed
+	// environments where macOS Keychain is inaccessible).
+	caFile := ""
+	if f, ok := os.LookupEnv(EnvSpaceliftAPIClientCA); ok && f != "" {
+		caFile = f
+	} else if f, ok := os.LookupEnv("SSL_CERT_FILE"); ok && f != "" {
+		caFile = f
+	}
+
+	if caFile != "" {
+		caCert, err := os.ReadFile(caFile)
 		if err != nil {
 			return err
 		}
