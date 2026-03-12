@@ -5,7 +5,41 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/urfave/cli/v3"
 )
+
+type stringSliceArgs struct {
+	v []string
+}
+
+func (a *stringSliceArgs) Get(n int) string {
+	if len(a.v) > n {
+		return a.v[n]
+	}
+	return ""
+}
+
+func (a *stringSliceArgs) First() string { return a.Get(0) }
+
+func (a *stringSliceArgs) Tail() []string {
+	if len(a.v) <= 1 {
+		return []string{}
+	}
+	ret := make([]string, len(a.v)-1)
+	copy(ret, a.v[1:])
+	return ret
+}
+
+func (a *stringSliceArgs) Len() int { return len(a.v) }
+
+func (a *stringSliceArgs) Present() bool { return len(a.v) > 0 }
+
+func (a *stringSliceArgs) Slice() []string {
+	ret := make([]string, len(a.v))
+	copy(ret, a.v)
+	return ret
+}
 
 func TestResolveQueryFromMutualExclusion(t *testing.T) {
 	_, err := resolveQueryFrom("query", "file.graphql", bytes.NewBufferString(""), true)
@@ -138,4 +172,51 @@ func TestNormalizeQuery(t *testing.T) {
 			t.Fatalf("normalizeQuery(%q) = %q, want %q", tc.in, got, tc.want)
 		}
 	}
+}
+
+func TestResolveRequestPartsPositionalQueryVariables(t *testing.T) {
+	query, vars, operation, selector, err := resolveRequestParts(&commandWithArgs{
+		flags: []cli.Flag{flagQuery, flagFile, flagVariables, flagOperation},
+		args:  []string{"stack(id: $stack) { id }"},
+		flagValues: map[string]string{
+			flagVariables.Name: "{\"stack\":\"my-stack\"}",
+		},
+	}, false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if selector != "" {
+		t.Fatalf("unexpected selector: %q", selector)
+	}
+	if operation != "" {
+		t.Fatalf("unexpected operation: %q", operation)
+	}
+	if query != "query { stack(id: $stack) { id } }" {
+		t.Fatalf("unexpected query: %q", query)
+	}
+	if vars["stack"] != "my-stack" {
+		t.Fatalf("unexpected variables: %v", vars)
+	}
+}
+
+type commandWithArgs struct {
+	cli.Command
+	flags      []cli.Flag
+	args       []string
+	flagValues map[string]string
+}
+
+func (c *commandWithArgs) Args() cli.Args {
+	return &stringSliceArgs{v: c.args}
+}
+
+func (c *commandWithArgs) String(name string) string {
+	if v, ok := c.flagValues[name]; ok {
+		return v
+	}
+	return ""
+}
+
+func (c *commandWithArgs) Bool(name string) bool {
+	return false
 }

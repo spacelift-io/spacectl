@@ -68,8 +68,7 @@ func run(ctx context.Context, cliCmd *cli.Command) error {
 	if strings.HasSuffix(baseURL.Path, "/graphql") {
 		baseURL.Path = strings.TrimSuffix(baseURL.Path, "/graphql")
 	}
-	req.URL.Scheme = baseURL.Scheme
-	req.URL.Host = baseURL.Host
+	req.URL = baseURL.ResolveReference(&url.URL{Path: "/graphql"})
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -107,7 +106,12 @@ func run(ctx context.Context, cliCmd *cli.Command) error {
 	return nil
 }
 
-func resolveRequestParts(cliCmd *cli.Command, schemaOnly bool) (string, map[string]any, string, string, error) {
+type commandArgs interface {
+	String(name string) string
+	Args() cli.Args
+}
+
+func resolveRequestParts(cliCmd commandArgs, schemaOnly bool) (string, map[string]any, string, string, error) {
 	query := strings.TrimSpace(cliCmd.String(flagQuery.Name))
 	file := strings.TrimSpace(cliCmd.String(flagFile.Name))
 	variablesRaw := cliCmd.String(flagVariables.Name)
@@ -123,7 +127,11 @@ func resolveRequestParts(cliCmd *cli.Command, schemaOnly bool) (string, map[stri
 	}
 
 	if query == "" && file == "" && argsQuery != "" {
-		return normalizeQuery(argsQuery), nil, operation, "", nil
+		variables, err := parseVariables(variablesRaw)
+		if err != nil {
+			return "", nil, "", "", err
+		}
+		return normalizeQuery(argsQuery), variables, operation, "", nil
 	}
 
 	resolvedQuery, err := resolveQueryFrom(query, file, os.Stdin, isatty.IsTerminal(os.Stdin.Fd()))

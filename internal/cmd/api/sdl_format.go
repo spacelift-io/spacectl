@@ -12,6 +12,9 @@ func addTopLevelSpacing(input string) string {
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
+			if inTopLevelBlockComment {
+				out = append(out, line)
+			}
 			continue
 		}
 
