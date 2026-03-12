@@ -51,20 +51,15 @@ func isTopLevelCommentLine(line string, trimmed string, inBlock *bool) bool {
 		return true
 	}
 
-	if strings.HasPrefix(trimmed, "\"\"\"") && strings.HasSuffix(trimmed, "\"\"\"") && len(trimmed) > len("\"\"\"\"\"\"") {
-		return true
-	}
-
 	if strings.HasPrefix(trimmed, "\"\"\"") {
+		if strings.HasSuffix(trimmed, "\"\"\"") && len(trimmed) > len("\"\"\"\"\"\"") {
+			return true
+		}
 		*inBlock = true
 		return true
 	}
 
-	if strings.HasPrefix(trimmed, "\"") {
-		return true
-	}
-
-	return false
+	return strings.HasPrefix(trimmed, "\"")
 }
 
 func isTopLevelDefinitionLine(line string, trimmed string) bool {
