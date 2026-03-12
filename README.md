@@ -120,6 +120,27 @@ stack-1                       | 1aa0ef62 | Adam Connelly | NONE      |          
 stack-2                       | 1aa0ef62 | Adam Connelly | DISCARDED |             |
 ```
 
+## GraphQL API
+
+You can issue ad-hoc GraphQL queries and mutations using `spacectl api`:
+
+```bash
+spacectl api --query '{ viewer { id name } }'
+```
+
+Pass variables as JSON and read queries from a file or stdin:
+
+```bash
+spacectl api --file query.graphql --variables '{"stack":"my-stack"}'
+cat query.graphql | spacectl api
+```
+
+Download the full schema (SDL) via introspection:
+
+```bash
+spacectl api --schema > schema.json
+```
+
 ## Getting Help
 
 To list all the commands available, use `spacectl help`:
