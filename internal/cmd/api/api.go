@@ -4,7 +4,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
-	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 var (
@@ -53,7 +52,6 @@ func Command() cmd.Command {
 						flagSchema,
 					},
 					Description: "You can also pass a query as a positional argument. If it does not start with `query`, `mutation`, `subscription`, or `{`, it will be wrapped as `query { ... }`. When `--schema` is set, the positional argument selects what to show: `queries`, `mutations`, `types`, or a specific query/mutation/type name.",
-					Before:      authenticated.Ensure,
 					Action:      run,
 					ArgsUsage:   "[query]",
 				},
