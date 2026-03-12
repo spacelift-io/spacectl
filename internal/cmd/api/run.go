@@ -61,9 +61,12 @@ func run(ctx context.Context, cliCmd *cli.Command) error {
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	baseURL, err := url.Parse(strings.TrimRight(endpoint, "/graphql"))
+	baseURL, err := url.Parse(endpoint)
 	if err != nil {
 		return fmt.Errorf("failed to parse endpoint: %w", err)
+	}
+	if strings.HasSuffix(baseURL.Path, "/graphql") {
+		baseURL.Path = strings.TrimSuffix(baseURL.Path, "/graphql")
 	}
 	req.URL.Scheme = baseURL.Scheme
 	req.URL.Host = baseURL.Host
@@ -79,16 +82,6 @@ func run(ctx context.Context, cliCmd *cli.Command) error {
 		return fmt.Errorf("failed to read response: %w", err)
 	}
 
-	if schemaOnly {
-		if err := outputSchema(body, schemaSelector); err != nil {
-			return err
-		}
-	} else {
-		if err := outputResponse(body, cliCmd.Bool(flagRaw.Name)); err != nil {
-			return err
-		}
-	}
-
 	if resp.StatusCode == http.StatusUnauthorized {
 		return errors.New("unauthorized: you can re-login using `spacectl profile login`")
 	}
@@ -99,6 +92,16 @@ func run(ctx context.Context, cliCmd *cli.Command) error {
 
 	if msg, ok := graphqlErrorMessage(body); ok {
 		return fmt.Errorf("graphql errors: %s", msg)
+	}
+
+	if schemaOnly {
+		if err := outputSchema(body, schemaSelector); err != nil {
+			return err
+		}
+	} else {
+		if err := outputResponse(body, cliCmd.Bool(flagRaw.Name)); err != nil {
+			return err
+		}
 	}
 
 	return nil
