@@ -125,7 +125,8 @@ stack-2                       | 1aa0ef62 | Adam Connelly | DISCARDED |          
 You can issue ad-hoc GraphQL queries and mutations using `spacectl api`:
 
 ```bash
-spacectl api --query '{ viewer { id name } }'
+spacectl api 'workerPools { name, id, workers { id } }'
+spacectl api --query 'workerPools { name, id, workers { id } }'
 ```
 
 Pass variables as JSON and read queries from a file or stdin:
@@ -135,10 +136,15 @@ spacectl api --file query.graphql --variables '{"stack":"my-stack"}'
 cat query.graphql | spacectl api
 ```
 
-Download the full schema (SDL) via introspection:
+Schema exploration examples:
 
 ```bash
-spacectl api --schema > schema.json
+spacectl api --schema queries
+spacectl api --schema mutations
+spacectl api --schema types
+spacectl api --schema workerPools
+spacectl api --schema WorkerPool
+spacectl api --schema > schema.graphql
 ```
 
 ## Getting Help
