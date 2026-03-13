@@ -177,6 +177,25 @@ func Command() cmd.Command {
 					},
 				},
 			},
+			{
+				Category: "Version management",
+				Name:     "upload-docs",
+				Usage:    "Upload documentation for a provider version",
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagRequiredVersionID,
+								flagDocsArchive,
+							},
+							Action:    uploadDocs(),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
+				},
+			},
 		},
 	}
 }
