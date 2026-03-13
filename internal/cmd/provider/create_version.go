@@ -21,14 +21,21 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 		dir := cliCmd.String(flagGoReleaserDir.Name)
 
 		providerType := cliCmd.String(flagProviderType.Name)
+		quiet := cliCmd.Bool(flagQuiet.Name)
 
-		fmt.Println("Retrieving release data from ", dir)
+		log := func(format string, a ...any) {
+			if !quiet {
+				fmt.Printf(format, a...)
+			}
+		}
+
+		log("Retrieving release data from %s\n", dir)
 		versionData, err := internal.BuildGoReleaserVersionData(dir)
 		if err != nil {
 			return errors.Wrap(err, "invalid release data")
 		}
 
-		fmt.Println("Creating version ", versionData.Metadata.Version)
+		log("Creating version %s\n", versionData.Metadata.Version)
 
 		checksumsFile, err := versionData.Artifacts.ChecksumsFile()
 		if err != nil {
@@ -116,12 +123,12 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 			versionID = createMutation.CreateTerraformProviderVersion.Version.ID
 		}
 
-		fmt.Println("Uploading the checksums file")
+		log("Uploading the checksums file\n")
 		if err := checksumsFile.Upload(ctx, dir, sha256SumsUploadURL, sha256SumsUploadHeaders); err != nil {
 			return errors.Wrap(err, "could not upload checksums file")
 		}
 
-		fmt.Println("Uploading the signatures file")
+		log("Uploading the signatures file\n")
 		if err := signatureFile.Upload(ctx, dir, sha256SumsSigUploadURL, sha256SumsSigUploadHeaders); err != nil {
 			return errors.Wrap(err, "could not upload signature file")
 		}
@@ -133,18 +140,21 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 			}
 
 			if useHeadersFromAPI {
-				if err := registerPlatformV2(ctx, dir, versionID, &archives[i]); err != nil {
+				if err := registerPlatformV2(ctx, dir, versionID, &archives[i], log); err != nil {
 					return err
 				}
 			} else {
-				if err := registerPlatform(ctx, dir, versionID, &archives[i]); err != nil {
+				if err := registerPlatform(ctx, dir, versionID, &archives[i], log); err != nil {
 					return err
 				}
 			}
 		}
-		fmt.Printf("Draft version %s created\n", versionID)
+		log("Draft version %s created\n", versionID)
 
 		if versionData.Changelog == nil {
+			if quiet {
+				fmt.Print(versionID)
+			}
 			return nil
 		}
 
@@ -159,18 +169,21 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 			"description": graphql.String(*versionData.Changelog),
 		}
 
-		fmt.Println("Uploading the changelog")
+		log("Uploading the changelog\n")
 
 		if err := authenticated.Client().Mutate(ctx, &changelogMutation, variables); err != nil {
 			return errors.Wrap(err, "could not update changelog")
 		}
 
+		if quiet {
+			fmt.Print(versionID)
+		}
 		return nil
 	}
 }
 
 // deprecated, use registerPlatformV2 instead.
-func registerPlatform(ctx context.Context, dir string, versionID string, artifact *internal.GoReleaserArtifact) error {
+func registerPlatform(ctx context.Context, dir string, versionID string, artifact *internal.GoReleaserArtifact, log func(string, ...any)) error {
 	var mutation struct {
 		RegisterTerraformProviderVersionPlatform string `graphql:"terraformProviderVersionRegisterPlatform(version: $version, input: $input)"`
 	}
@@ -180,7 +193,7 @@ func registerPlatform(ctx context.Context, dir string, versionID string, artifac
 		return errors.Wrap(err, "could not calculate checksum of artifact")
 	}
 
-	fmt.Printf("Uploading the artifact for %s/%s\n", *artifact.OS, *artifact.Arch)
+	log("Uploading the artifact for %s/%s\n", *artifact.OS, *artifact.Arch)
 
 	variables := map[string]any{
 		"version": graphql.ID(versionID),
@@ -203,7 +216,7 @@ func registerPlatform(ctx context.Context, dir string, versionID string, artifac
 	return nil
 }
 
-func registerPlatformV2(ctx context.Context, dir string, versionID string, artifact *internal.GoReleaserArtifact) error {
+func registerPlatformV2(ctx context.Context, dir string, versionID string, artifact *internal.GoReleaserArtifact, log func(string, ...any)) error {
 	var mutation struct {
 		RegisterTerraformProviderVersionPlatform struct {
 			UploadURL     string `json:"uploadUrl"`
@@ -221,7 +234,7 @@ func registerPlatformV2(ctx context.Context, dir string, versionID string, artif
 		return errors.Wrap(err, "could not calculate checksum of artifact")
 	}
 
-	fmt.Printf("Uploading the artifact for %s/%s\n", *artifact.OS, *artifact.Arch)
+	log("Uploading the artifact for %s/%s\n", *artifact.OS, *artifact.Arch)
 
 	variables := map[string]any{
 		"version": graphql.ID(versionID),

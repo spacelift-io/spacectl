@@ -60,6 +60,11 @@ var flagRequiredVersionID = &cli.StringFlag{
 	Required: true,
 }
 
+var flagQuiet = &cli.BoolFlag{
+	Name:  "quiet",
+	Usage: "Only output the version ID, useful for CI/CD pipelines",
+}
+
 var flagGPGKeyID = &cli.StringFlag{
 	Name:     "gpg-key-id",
 	Usage:    "ID of the GPG key used to sign the provider version",
