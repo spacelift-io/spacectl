@@ -7,11 +7,16 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
+	"github.com/spacelift-io/spacectl/internal/cmd/apikey"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
+	spaceliftcontext "github.com/spacelift-io/spacectl/internal/cmd/context"
 	"github.com/spacelift-io/spacectl/internal/cmd/graphql"
 	"github.com/spacelift-io/spacectl/internal/cmd/module"
 	"github.com/spacelift-io/spacectl/internal/cmd/policy"
+	"github.com/spacelift-io/spacectl/internal/cmd/space"
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
+	"github.com/spacelift-io/spacectl/internal/cmd/workerpool"
 )
 
 // Command returns the MCP command subtree.
@@ -43,6 +48,11 @@ func Command() cmd.Command {
 								module.RegisterMCPTools(s)
 								policy.RegisterMCPTools(s)
 								graphql.RegisterMCPTools(s)
+								spaceliftcontext.RegisterMCPTools(s)
+								apikey.RegisterMCPTools(s)
+								space.RegisterMCPTools(s)
+								workerpool.RegisterMCPTools(s)
+								blueprint.RegisterMCPTools(s)
 
 								return server.ServeStdio(s)
 							},
@@ -62,6 +72,11 @@ func Command() cmd.Command {
 								module.RegisterMCPTools(s)
 								policy.RegisterMCPTools(s)
 								graphql.RegisterMCPTools(s)
+								spaceliftcontext.RegisterMCPTools(s)
+								apikey.RegisterMCPTools(s)
+								space.RegisterMCPTools(s)
+								workerpool.RegisterMCPTools(s)
+								blueprint.RegisterMCPTools(s)
 
 								return server.ServeStdio(s)
 							},
