@@ -147,6 +147,19 @@ spacectl api --schema WorkerPool
 spacectl api --schema > schema.graphql
 ```
 
+Pipe output through `jq` to filter and reshape results:
+
+```bash
+# Find stacks using a specific repository
+spacectl api 'stacks { id name repository namespace }' \
+  | jq '.data.stacks[] | select(.repository == "tf-infra")'
+
+# Check resources and latest run state for a stack
+spacectl api --variables '{"id":"my-stack"}' \
+  'query($id: ID!) { stack(id: $id) { entityCount runs { id state type } } }' \
+  | jq '.data.stack | {resources: .entityCount, latest_run: (.runs | first | {id, state})}'
+```
+
 ## Getting Help
 
 To list all the commands available, use `spacectl help`:

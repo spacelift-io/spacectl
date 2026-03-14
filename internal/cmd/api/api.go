@@ -51,7 +51,7 @@ func Command() cmd.Command {
 						flagRaw,
 						flagSchema,
 					},
-					Description: "You can also pass a query as a positional argument. If it does not start with `query`, `mutation`, `subscription`, or `{`, it will be wrapped as `query { ... }`. When `--schema` is set, the positional argument selects what to show: `queries`, `mutations`, `types`, or a specific query/mutation/type name.",
+					Description: "You can pass a query as a positional argument when neither --query nor --file is specified. If the query does not start with `query`, `mutation`, `subscription`, or `{`, it will be wrapped as `query { ... }`. When `--schema` is set, the positional argument selects what to show: `queries`, `mutations`, `types`, or a specific query/mutation/type name.",
 					Action:      run,
 					ArgsUsage:   "[query]",
 				},

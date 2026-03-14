@@ -25,10 +25,13 @@ type apiRequest struct {
 	OperationName string         `json:"operationName,omitempty"`
 }
 
+type gqlError struct {
+	Message string `json:"message"`
+}
+
 type gqlErrorResponse struct {
-	Errors []struct {
-		Message string `json:"message"`
-	} `json:"errors"`
+	Data   json.RawMessage `json:"data"`
+	Errors []gqlError      `json:"errors"`
 }
 
 func run(ctx context.Context, cliCmd *cli.Command) error {
@@ -87,8 +90,22 @@ func run(ctx context.Context, cliCmd *cli.Command) error {
 		return fmt.Errorf("unexpected status code: %d: %s", resp.StatusCode, snippet(body))
 	}
 
-	if msg, ok := graphqlErrorMessage(body); ok {
-		return fmt.Errorf("graphql errors: %s", msg)
+	if msg, hasErrors, hasData := graphqlErrors(body); hasErrors {
+		if !hasData {
+			return fmt.Errorf("graphql error: %s", msg)
+		}
+		// Partial success: output the body but signal failure via stderr + non-zero exit.
+		if schemaOnly {
+			if err := outputSchema(body, schemaSelector); err != nil {
+				return err
+			}
+		} else {
+			if err := outputResponse(body, cliCmd.Bool(flagRaw.Name)); err != nil {
+				return err
+			}
+		}
+		fmt.Fprintf(os.Stderr, "graphql error: %s\n", msg)
+		return cli.Exit("", 1)
 	}
 
 	if schemaOnly {
@@ -232,18 +249,31 @@ func outputResponse(body []byte, raw bool) error {
 	return enc.Encode(payload)
 }
 
-func graphqlErrorMessage(body []byte) (string, bool) {
-	var gqlErr gqlErrorResponse
-	if err := json.Unmarshal(body, &gqlErr); err != nil {
-		return "", false
+// graphqlErrors inspects a GraphQL response body and returns a formatted error
+// message, whether errors are present, and whether the response also contains data
+// (partial success). The message is a single string for one error, or a
+// semicolon-separated list for multiple errors.
+func graphqlErrors(body []byte) (msg string, hasErrors bool, hasData bool) {
+	var gqlResp gqlErrorResponse
+	if err := json.Unmarshal(body, &gqlResp); err != nil {
+		return "", false, false
 	}
-	if len(gqlErr.Errors) == 0 {
-		return "", false
+	if len(gqlResp.Errors) == 0 {
+		return "", false, false
 	}
-	if gqlErr.Errors[0].Message != "" {
-		return gqlErr.Errors[0].Message, true
+
+	messages := make([]string, 0, len(gqlResp.Errors))
+	for _, e := range gqlResp.Errors {
+		if e.Message != "" {
+			messages = append(messages, e.Message)
+		}
 	}
-	return "unknown error", true
+	if len(messages) == 0 {
+		messages = []string{"unknown error"}
+	}
+
+	dataPresent := len(gqlResp.Data) > 0 && string(gqlResp.Data) != "null"
+	return strings.Join(messages, "; "), true, dataPresent
 }
 
 func snippet(body []byte) string {

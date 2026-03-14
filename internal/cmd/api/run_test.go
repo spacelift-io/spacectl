@@ -134,17 +134,31 @@ func TestValidateSchemaArgs(t *testing.T) {
 	}
 }
 
-func TestGraphqlErrorMessage(t *testing.T) {
-	if _, ok := graphqlErrorMessage([]byte(`{"data": {}}`)); ok {
-		t.Fatalf("did not expect error")
+func TestGraphqlErrors(t *testing.T) {
+	if _, hasErrors, _ := graphqlErrors([]byte(`{"data": {}}`)); hasErrors {
+		t.Fatalf("did not expect errors")
 	}
 
-	msg, ok := graphqlErrorMessage([]byte(`{"errors":[{"message":"bad"}]}`))
-	if !ok {
-		t.Fatalf("expected error")
+	msg, hasErrors, hasData := graphqlErrors([]byte(`{"errors":[{"message":"bad"}]}`))
+	if !hasErrors {
+		t.Fatalf("expected errors")
 	}
 	if msg != "bad" {
 		t.Fatalf("unexpected message: %q", msg)
+	}
+	if hasData {
+		t.Fatalf("did not expect data")
+	}
+
+	msg, hasErrors, hasData = graphqlErrors([]byte(`{"data":{"user":"alice"},"errors":[{"message":"err1"},{"message":"err2"}]}`))
+	if !hasErrors {
+		t.Fatalf("expected errors")
+	}
+	if msg != "err1; err2" {
+		t.Fatalf("unexpected message: %q", msg)
+	}
+	if !hasData {
+		t.Fatalf("expected data")
 	}
 }
 
