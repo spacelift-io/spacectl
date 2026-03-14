@@ -121,15 +121,15 @@ func TestParseVariables(t *testing.T) {
 }
 
 func TestValidateSchemaArgs(t *testing.T) {
-	if err := validateSchemaArgs(false, "", "", "", "", ""); err != nil {
+	if err := validateSchemaArgs(false, "", "", "", ""); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := validateSchemaArgs(true, "", "", "", "", ""); err != nil {
+	if err := validateSchemaArgs(true, "", "", "", ""); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := validateSchemaArgs(true, "query", "", "", "", ""); err == nil {
+	if err := validateSchemaArgs(true, "query", "", "", ""); err == nil {
 		t.Fatalf("expected error for query with schema")
 	}
 }

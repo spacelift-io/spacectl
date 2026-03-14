@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-var httpClient *http.Client = &http.Client{
+var httpClient = &http.Client{
 	Timeout: 60 * time.Second,
 }
 

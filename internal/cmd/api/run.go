@@ -65,9 +65,7 @@ func run(ctx context.Context, cliCmd *cli.Command) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse endpoint: %w", err)
 	}
-	if strings.HasSuffix(baseURL.Path, "/graphql") {
-		baseURL.Path = strings.TrimSuffix(baseURL.Path, "/graphql")
-	}
+	baseURL.Path = strings.TrimSuffix(baseURL.Path, "/graphql")
 	req.URL = baseURL.ResolveReference(&url.URL{Path: "/graphql"})
 
 	resp, err := httpClient.Do(req)
@@ -118,7 +116,7 @@ func resolveRequestParts(cliCmd commandArgs, schemaOnly bool) (string, map[strin
 	operation := strings.TrimSpace(cliCmd.String(flagOperation.Name))
 	argsQuery := strings.TrimSpace(strings.Join(cliCmd.Args().Slice(), " "))
 
-	if err := validateSchemaArgs(schemaOnly, query, file, variablesRaw, operation, argsQuery); err != nil {
+	if err := validateSchemaArgs(schemaOnly, query, file, variablesRaw, operation); err != nil {
 		return "", nil, "", "", err
 	}
 
@@ -205,7 +203,7 @@ func parseVariables(raw string) (map[string]any, error) {
 	return obj, nil
 }
 
-func validateSchemaArgs(schemaOnly bool, query string, file string, variables string, operation string, argsQuery string) error {
+func validateSchemaArgs(schemaOnly bool, query string, file string, variables string, operation string) error {
 	if !schemaOnly {
 		return nil
 	}
