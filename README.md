@@ -120,6 +120,46 @@ stack-1                       | 1aa0ef62 | Adam Connelly | NONE      |          
 stack-2                       | 1aa0ef62 | Adam Connelly | DISCARDED |             |
 ```
 
+## GraphQL API
+
+You can issue ad-hoc GraphQL queries and mutations using `spacectl api`:
+
+```bash
+spacectl api 'workerPools { name, id, workers { id } }'
+spacectl api --query 'workerPools { name, id, workers { id } }'
+```
+
+Pass variables as JSON and read queries from a file or stdin:
+
+```bash
+spacectl api --file query.graphql --variables '{"stack":"my-stack"}'
+cat query.graphql | spacectl api
+```
+
+Schema exploration examples:
+
+```bash
+spacectl api --schema queries
+spacectl api --schema mutations
+spacectl api --schema types
+spacectl api --schema workerPools
+spacectl api --schema WorkerPool
+spacectl api --schema > schema.graphql
+```
+
+Pipe output through `jq` to filter and reshape results:
+
+```bash
+# Find stacks using a specific repository
+spacectl api 'stacks { id name repository namespace }' \
+  | jq '.data.stacks[] | select(.repository == "tf-infra")'
+
+# Check resources and latest run state for a stack
+spacectl api --variables '{"id":"my-stack"}' \
+  'query($id: ID!) { stack(id: $id) { entityCount runs { id state type } } }' \
+  | jq '.data.stack | {resources: .entityCount, latest_run: (.runs | first | {id, state})}'
+```
+
 ## Getting Help
 
 To list all the commands available, use `spacectl help`:

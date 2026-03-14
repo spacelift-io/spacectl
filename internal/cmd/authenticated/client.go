@@ -113,3 +113,26 @@ func configureTLS(httpClient *http.Client) error {
 
 	return nil
 }
+
+// HTTPClient returns an authenticated HTTP client, bearer token, and endpoint without oauth2 transport.
+func HTTPClient(ctx context.Context) (*http.Client, string, string, error) {
+	m.Lock()
+	defer m.Unlock()
+
+	httpClient := client.GetHTTPClient()
+	if err := configureTLS(httpClient); err != nil {
+		return nil, "", "", err
+	}
+
+	sess, err := session.New(ctx, httpClient)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	token, err := sess.BearerToken(ctx)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	return httpClient, token, sess.Endpoint(), nil
+}
