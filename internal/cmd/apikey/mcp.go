@@ -19,42 +19,42 @@ func RegisterMCPTools(s *server.MCPServer) {
 }
 
 type apiKeyNode struct {
-	ID          string   `graphql:"id" json:"id"`
-	Name        string   `graphql:"name" json:"name"`
-	Description string   `graphql:"description" json:"description"`
-	Type        string   `graphql:"type" json:"type"`
-	Admin       bool     `graphql:"admin" json:"admin"`
-	Creator     string   `graphql:"creator" json:"creator"`
-	CreatedAt   int      `graphql:"createdAt" json:"createdAt"`
-	LastUsedAt  *int     `graphql:"lastUsedAt" json:"lastUsedAt"`
-	Deleted     bool     `graphql:"deleted" json:"deleted"`
-	Teams       []string `graphql:"teams" json:"teams"`
-	TeamCount   int      `graphql:"teamCount" json:"teamCount"`
-	SpaceCount  int      `graphql:"spaceCount" json:"spaceCount"`
-	IsMachineUser bool   `graphql:"isMachineUser" json:"isMachineUser"`
-	ExpiresAt   *int     `graphql:"expiresAt" json:"expiresAt"`
+	ID            string   `graphql:"id" json:"id"`
+	Name          string   `graphql:"name" json:"name"`
+	Description   string   `graphql:"description" json:"description"`
+	Type          string   `graphql:"type" json:"type"`
+	Admin         bool     `graphql:"admin" json:"admin"`
+	Creator       string   `graphql:"creator" json:"creator"`
+	CreatedAt     int      `graphql:"createdAt" json:"createdAt"`
+	LastUsedAt    *int     `graphql:"lastUsedAt" json:"lastUsedAt"`
+	Deleted       bool     `graphql:"deleted" json:"deleted"`
+	Teams         []string `graphql:"teams" json:"teams"`
+	TeamCount     int      `graphql:"teamCount" json:"teamCount"`
+	SpaceCount    int      `graphql:"spaceCount" json:"spaceCount"`
+	IsMachineUser bool     `graphql:"isMachineUser" json:"isMachineUser"`
+	ExpiresAt     *int     `graphql:"expiresAt" json:"expiresAt"`
 }
 
 type apiKeyDetail struct {
-	ID          string   `graphql:"id" json:"id"`
-	Name        string   `graphql:"name" json:"name"`
-	Description string   `graphql:"description" json:"description"`
-	Type        string   `graphql:"type" json:"type"`
-	Admin       bool     `graphql:"admin" json:"admin"`
-	Creator     string   `graphql:"creator" json:"creator"`
-	CreatedAt   int      `graphql:"createdAt" json:"createdAt"`
-	LastUsedAt  *int     `graphql:"lastUsedAt" json:"lastUsedAt"`
-	Deleted     bool     `graphql:"deleted" json:"deleted"`
-	Teams       []string `graphql:"teams" json:"teams"`
-	TeamCount   int      `graphql:"teamCount" json:"teamCount"`
-	SpaceCount  int      `graphql:"spaceCount" json:"spaceCount"`
-	IsMachineUser bool   `graphql:"isMachineUser" json:"isMachineUser"`
-	ExpiresAt   *int     `graphql:"expiresAt" json:"expiresAt"`
-	AccessRules []apiKeyAccessRule `graphql:"accessRules" json:"accessRules"`
+	ID            string             `graphql:"id" json:"id"`
+	Name          string             `graphql:"name" json:"name"`
+	Description   string             `graphql:"description" json:"description"`
+	Type          string             `graphql:"type" json:"type"`
+	Admin         bool               `graphql:"admin" json:"admin"`
+	Creator       string             `graphql:"creator" json:"creator"`
+	CreatedAt     int                `graphql:"createdAt" json:"createdAt"`
+	LastUsedAt    *int               `graphql:"lastUsedAt" json:"lastUsedAt"`
+	Deleted       bool               `graphql:"deleted" json:"deleted"`
+	Teams         []string           `graphql:"teams" json:"teams"`
+	TeamCount     int                `graphql:"teamCount" json:"teamCount"`
+	SpaceCount    int                `graphql:"spaceCount" json:"spaceCount"`
+	IsMachineUser bool               `graphql:"isMachineUser" json:"isMachineUser"`
+	ExpiresAt     *int               `graphql:"expiresAt" json:"expiresAt"`
+	AccessRules   []apiKeyAccessRule `graphql:"accessRules" json:"accessRules"`
 }
 
 type apiKeyAccessRule struct {
-	Space         string `graphql:"space" json:"space"`
+	Space            string `graphql:"space" json:"space"`
 	SpaceAccessLevel string `graphql:"spaceAccessLevel" json:"spaceAccessLevel"`
 }
 

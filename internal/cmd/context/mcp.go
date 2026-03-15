@@ -30,8 +30,8 @@ type contextNode struct {
 		ID   string `graphql:"id" json:"id"`
 		Name string `graphql:"name" json:"name"`
 	} `graphql:"spaceDetails" json:"spaceDetails"`
-	Description    *string `graphql:"description" json:"description"`
-	HasAttachedStacks bool `graphql:"hasAttachedStacks" json:"hasAttachedStacks"`
+	Description       *string `graphql:"description" json:"description"`
+	HasAttachedStacks bool    `graphql:"hasAttachedStacks" json:"hasAttachedStacks"`
 }
 
 type contextDetail struct {
@@ -44,10 +44,10 @@ type contextDetail struct {
 		ID   string `graphql:"id" json:"id"`
 		Name string `graphql:"name" json:"name"`
 	} `graphql:"spaceDetails" json:"spaceDetails"`
-	Description    *string         `graphql:"description" json:"description"`
-	HasAttachedStacks bool         `graphql:"hasAttachedStacks" json:"hasAttachedStacks"`
-	Config         []configElement `graphql:"config" json:"config"`
-	AttachedStacks []contextStackAttachment `graphql:"attachedStacks" json:"attachedStacks"`
+	Description       *string                  `graphql:"description" json:"description"`
+	HasAttachedStacks bool                     `graphql:"hasAttachedStacks" json:"hasAttachedStacks"`
+	Config            []configElement          `graphql:"config" json:"config"`
+	AttachedStacks    []contextStackAttachment `graphql:"attachedStacks" json:"attachedStacks"`
 }
 
 type configElement struct {

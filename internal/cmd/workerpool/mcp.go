@@ -47,11 +47,11 @@ type workerPoolDetail struct {
 		ID   string `graphql:"id" json:"id"`
 		Name string `graphql:"name" json:"name"`
 	} `graphql:"spaceDetails" json:"spaceDetails"`
-	Labels              []string `graphql:"labels" json:"labels"`
-	WorkersCount        int      `graphql:"workersCount" json:"workersCount"`
-	BusyWorkers         int      `graphql:"busyWorkers" json:"busyWorkers"`
-	PendingRuns         int      `graphql:"pendingRuns" json:"pendingRuns"`
-	ManagedByK8sController bool  `graphql:"managedByK8sController" json:"managedByK8sController"`
+	Labels                 []string `graphql:"labels" json:"labels"`
+	WorkersCount           int      `graphql:"workersCount" json:"workersCount"`
+	BusyWorkers            int      `graphql:"busyWorkers" json:"busyWorkers"`
+	PendingRuns            int      `graphql:"pendingRuns" json:"pendingRuns"`
+	ManagedByK8sController bool     `graphql:"managedByK8sController" json:"managedByK8sController"`
 }
 
 type searchWorkerPoolsResult struct {
