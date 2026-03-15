@@ -37,4 +37,3 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           args: --verbose
-          version: v2.7

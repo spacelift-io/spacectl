@@ -110,7 +110,7 @@ func (c *client) Do(req *http.Request) (*http.Response, error) {
 	req.URL.Host = u.Host
 
 	// execute request
-	resp, err := httpC.Do(req)
+	resp, err := httpC.Do(req) //nolint:gosec // URL is constructed from user-configured Spacelift endpoint, not untrusted input
 	if err != nil {
 		return nil, fmt.Errorf("error executing request: %w", err)
 	}

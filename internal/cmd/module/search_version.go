@@ -105,7 +105,7 @@ func getSearchModuleVersions(ctx context.Context, cliCmd *cli.Command, cursor st
 	if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{
 		"id": cliCmd.String(flagModuleID.Name),
 		"input": structs.SearchInput{
-			First: graphql.NewInt(graphql.Int(int32(limit))), //nolint: gosec
+			First: graphql.NewInt(graphql.Int(int32(limit))), //nolint:gosec
 			After: after,
 			OrderBy: &structs.QueryOrder{
 				Field:     "createdAt",
