@@ -28,7 +28,7 @@ func registerListPoliciesTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a paginated list of Spacelift policies. Returns policies you have access to with their metadata.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Policies",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithNumber("limit", mcp.Description("The maximum number of policies to return, default is 50")),
 		mcp.WithString("search", mcp.Description("Perform a full text search on policy name and description")),
@@ -41,16 +41,16 @@ func registerListPoliciesTool(s *server.MCPServer) {
 
 		var fullTextSearch *graphql.String
 		if searchParam := request.GetString("search", ""); searchParam != "" {
-			fullTextSearch = graphql.NewString(graphql.String(searchParam))
+			fullTextSearch = new(graphql.String(searchParam))
 		}
 
 		var nextPageCursor *graphql.String
 		if cursor := request.GetString("next_page_cursor", ""); cursor != "" {
-			nextPageCursor = graphql.NewString(graphql.String(cursor))
+			nextPageCursor = new(graphql.String(cursor))
 		}
 
 		pageInput := structs.SearchInput{
-			First:          graphql.NewInt(graphql.Int(limit)), //nolint: gosec
+			First:          new(graphql.Int(limit)), //nolint: gosec
 			FullTextSearch: fullTextSearch,
 			After:          nextPageCursor,
 		}
@@ -88,7 +88,7 @@ func registerGetPolicyTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve detailed information about a specific Spacelift policy including its body, type, and metadata.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Policy",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("policy_id", mcp.Description("The ID of the policy to retrieve"), mcp.Required()),
 	)
@@ -123,7 +123,7 @@ func registerListPolicySamplesTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a list of evaluation samples for a specific Spacelift policy. Shows sample keys, outcomes, and timestamps.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Policy Samples",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("policy_id", mcp.Description("The ID of the policy"), mcp.Required()),
 	)
@@ -139,7 +139,7 @@ func registerListPolicySamplesTool(s *server.MCPServer) {
 			Policy *policyEvaluation `graphql:"policy(id: $policyId)"`
 		}
 
-		variables := map[string]interface{}{
+		variables := map[string]any{
 			"policyId": graphql.ID(policyID),
 		}
 
@@ -170,7 +170,7 @@ func registerGetPolicySampleTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a specific evaluation sample for a Spacelift policy by key. Returns the sample input and policy body.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Policy Sample",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("policy_id", mcp.Description("The ID of the policy"), mcp.Required()),
 		mcp.WithString("sample_key", mcp.Description("The key of the sample to retrieve"), mcp.Required()),
@@ -194,7 +194,7 @@ func registerGetPolicySampleTool(s *server.MCPServer) {
 			} `graphql:"policy(id: $policyId)"`
 		}
 
-		variables := map[string]interface{}{
+		variables := map[string]any{
 			"policyId": graphql.ID(policyID),
 			"key":      graphql.String(sampleKey),
 		}
@@ -221,7 +221,7 @@ func registerListPolicySamplesIndexedTool(s *server.MCPServer) {
 		mcp.WithDescription(`List indexed policy evaluation samples with pagination and full-text search support. Returns searchable evaluation records with keys, outcomes, and timestamps. Supports filtering by outcome.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Policy Samples Indexed",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("policy_id", mcp.Description("The ID of the policy"), mcp.Required()),
 		mcp.WithNumber("limit", mcp.Description("The maximum number of samples to return, default is 50")),
@@ -241,12 +241,12 @@ func registerListPolicySamplesIndexedTool(s *server.MCPServer) {
 
 		var fullTextSearch *graphql.String
 		if searchParam := request.GetString("search", ""); searchParam != "" {
-			fullTextSearch = graphql.NewString(graphql.String(searchParam))
+			fullTextSearch = new(graphql.String(searchParam))
 		}
 
 		var nextPageCursor *graphql.String
 		if cursor := request.GetString("next_page_cursor", ""); cursor != "" {
-			nextPageCursor = graphql.NewString(graphql.String(cursor))
+			nextPageCursor = new(graphql.String(cursor))
 		}
 
 		// Build predicates for outcome filter
@@ -261,7 +261,7 @@ func registerListPolicySamplesIndexedTool(s *server.MCPServer) {
 		}
 
 		pageInput := structs.SearchInput{
-			First:          graphql.NewInt(graphql.Int(limit)), //nolint: gosec
+			First:          new(graphql.Int(limit)), //nolint: gosec
 			FullTextSearch: fullTextSearch,
 			After:          nextPageCursor,
 			Predicates:     &predicates,

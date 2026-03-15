@@ -24,7 +24,7 @@ func runStop() cli.ActionFunc {
 			} `graphql:"runStop(stack: $stack, run: $run, note: $note)"`
 		}
 
-		variables := map[string]interface{}{
+		variables := map[string]any{
 			"stack": graphql.ID(stackID),
 			"run":   graphql.ID(cliCmd.String(flagRequiredRun.Name)),
 			"note":  graphql.String("Stopped by spacectl"),

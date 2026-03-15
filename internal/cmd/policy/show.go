@@ -66,7 +66,7 @@ func getPolicyByID(ctx context.Context, policyID string) (policy, bool, error) {
 		Policy *policy `graphql:"policy(id: $policyId)" json:"policy,omitempty"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"policyId": graphql.ID(policyID),
 	}
 

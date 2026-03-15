@@ -127,7 +127,7 @@ func stackGetByID[T hasIDAndName](ctx context.Context, stackID string) (*T, erro
 		Stack T `graphql:"stack(id: $id)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"id": graphql.ID(stackID),
 	}
 
@@ -148,7 +148,7 @@ func stackGetByRunID[T hasIDAndName](ctx context.Context, runID string) (*T, err
 		RunStack T `graphql:"runStack(runId: $runId)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"runId": graphql.ID(runID),
 	}
 
@@ -247,7 +247,7 @@ func fetchStacks[T hasIDAndName](
 	conditions := buildStackSearchPredicates(p)
 
 	input := structs.SearchInput{
-		First:      graphql.NewInt(graphql.Int(p.count)), //nolint: gosec
+		First:      new(graphql.Int(p.count)), //nolint: gosec
 		Predicates: &conditions,
 	}
 
@@ -271,7 +271,7 @@ func fetchStacks[T hasIDAndName](
 		stacks = append(stacks, result.Stacks...)
 
 		if paginateAll && result.PageInfo.HasNextPage {
-			input.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+			input.After = new(graphql.String(result.PageInfo.EndCursor))
 		} else {
 			break
 		}

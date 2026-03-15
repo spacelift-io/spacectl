@@ -38,7 +38,7 @@ func (c *simulateCommand) simulate(ctx context.Context, cliCmd *cli.Command) err
 		PolicySimulate string `graphql:"policySimulate(body: $body, input: $input, type: $type)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"body":  graphql.String(b.Body),
 		"input": graphql.String(parsedInput),
 		"type":  b.Type,
@@ -58,12 +58,12 @@ func parseInput(input string) (string, error) {
 			return "", fmt.Errorf("failed to read file: %v", err)
 		}
 
-		var result map[string]interface{}
+		var result map[string]any
 		if err := json.Unmarshal(fileContent, &result); err == nil {
 			return string(fileContent), nil
 		}
 	} else {
-		var result map[string]interface{}
+		var result map[string]any
 		if err := json.Unmarshal([]byte(input), &result); err == nil {
 			return input, nil
 		}

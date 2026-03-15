@@ -10,7 +10,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
-	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
@@ -26,12 +25,12 @@ func samplesIndexed() cli.ActionFunc {
 
 		var limit *uint
 		if cliCmd.IsSet(cmd.FlagLimit.Name) {
-			limit = internal.Ptr(cliCmd.Uint(cmd.FlagLimit.Name))
+			limit = new(cliCmd.Uint(cmd.FlagLimit.Name))
 		}
 
 		var outcome *string
 		if cliCmd.IsSet(flagOutcomeFilter.Name) {
-			outcome = internal.Ptr(cliCmd.String(flagOutcomeFilter.Name))
+			outcome = new(cliCmd.String(flagOutcomeFilter.Name))
 		}
 
 		switch outputFormat {
@@ -53,7 +52,7 @@ func samplesIndexedJSON(
 ) error {
 	var first *graphql.Int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+		first = new(graphql.Int(*limit)) //nolint: gosec
 	}
 
 	// Build predicates for outcome filter
@@ -91,7 +90,7 @@ func samplesIndexedTable(
 ) error {
 	var first *graphql.Int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+		first = new(graphql.Int(*limit)) //nolint: gosec
 	}
 
 	// Build predicates for outcome filter
@@ -155,7 +154,7 @@ func searchAllEvaluationRecords(ctx context.Context, policyID string, input stru
 	for {
 		if !fetchAll {
 			// Fetch exactly the number of items requested
-			pageInput.First = graphql.NewInt(
+			pageInput.First = new(
 				//nolint: gosec
 				graphql.Int(
 					slices.Min([]int{maxPageSize, limit - len(out)}),
@@ -171,7 +170,7 @@ func searchAllEvaluationRecords(ctx context.Context, policyID string, input stru
 		out = append(out, result.Records...)
 
 		if result.PageInfo.HasNextPage && (fetchAll || limit > len(out)) {
-			pageInput.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+			pageInput.After = new(graphql.String(result.PageInfo.EndCursor))
 		} else {
 			break
 		}
@@ -204,7 +203,7 @@ func searchEvaluationRecords(ctx context.Context, policyID string, input structs
 		} `graphql:"policy(id: $id)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"id":    graphql.ID(policyID),
 		"input": input,
 	}

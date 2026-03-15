@@ -64,7 +64,7 @@ type runtimeConfig struct {
 		ID          string `graphql:"id" json:"id,omitempty"`
 		ContextName string `graphql:"contextName" json:"contextName,omitempty"`
 	} `graphql:"context" json:"context"`
-	Element configElement `graphql:"element" json:"element,omitempty"`
+	Element configElement `graphql:"element" json:"element"`
 }
 
 type listEnvQuery struct {
@@ -103,7 +103,7 @@ func setVar(ctx context.Context, cliCmd *cli.Command) error {
 		} `graphql:"stackConfigAdd(stack: $stack, config: $config)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack": graphql.ID(stackID),
 		"config": ConfigInput{
 			ID:        graphql.ID(envName),
@@ -140,7 +140,7 @@ func (e *listEnvCommand) listEnv(ctx context.Context, cliCmd *cli.Command) error
 	}
 
 	var query listEnvQuery
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack": graphql.ID(stackID),
 	}
 
@@ -150,7 +150,6 @@ func (e *listEnvCommand) listEnv(ctx context.Context, cliCmd *cli.Command) error
 
 	var elements []listEnvElementOutput
 	for _, config := range query.Stack.RuntimeConfig {
-		config := config
 		var contextName *string
 		var isAutoAttached *bool
 		if config.Context != nil {
@@ -317,7 +316,7 @@ func mountFile(ctx context.Context, cliCmd *cli.Command) error {
 		} `graphql:"stackConfigAdd(stack: $stack, config: $config)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack": graphql.ID(stackID),
 		"config": ConfigInput{
 			ID:        graphql.ID(envName),
@@ -355,7 +354,7 @@ func deleteEnvironment(ctx context.Context, cliCmd *cli.Command) error {
 		} `graphql:"stackConfigDelete(stack: $stack, id: $id)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack": graphql.ID(stackID),
 		"id":    graphql.ID(envName),
 	}

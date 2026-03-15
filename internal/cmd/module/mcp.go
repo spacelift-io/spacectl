@@ -31,7 +31,7 @@ func registerModuleGuideTool(s *server.MCPServer) {
 		mcp.WithDescription(`Get comprehensive guidance on working with Spacelift modules through MCP tools, including parameter explanations, common patterns, and troubleshooting tips.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Module Operations Guide",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("topic", mcp.Description("Specific topic to focus on: 'all', 'search', 'filtering', 'versioning', 'terraform_providers'"),
 			mcp.DefaultString("all"),
@@ -167,7 +167,7 @@ func registerListModulesTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a paginated list of Spacelift modules in the private module registry. Returns basic module information including current and latest versions.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Modules",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithNumber("limit", mcp.Description("The maximum number of modules to return, default is 50")),
 		mcp.WithString("search", mcp.Description("Perform a full text search on module name, description, and provider")),
@@ -180,16 +180,16 @@ func registerListModulesTool(s *server.MCPServer) {
 
 		var fullTextSearch *graphql.String
 		if searchParam := request.GetString("search", ""); searchParam != "" {
-			fullTextSearch = graphql.NewString(graphql.String(searchParam))
+			fullTextSearch = new(graphql.String(searchParam))
 		}
 
 		var nextPageCursor *graphql.String
 		if cursor := request.GetString("next_page_cursor", ""); cursor != "" {
-			nextPageCursor = graphql.NewString(graphql.String(cursor))
+			nextPageCursor = new(graphql.String(cursor))
 		}
 
 		pageInput := structs.SearchInput{
-			First:          graphql.NewInt(graphql.Int(limit)), //nolint: gosec
+			First:          new(graphql.Int(limit)), //nolint: gosec
 			FullTextSearch: fullTextSearch,
 			After:          nextPageCursor,
 		}
@@ -227,7 +227,7 @@ func registerGetModuleTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve detailed information about a specific Spacelift module including metadata, inputs, outputs, and version information.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Module",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("module_id", mcp.Description("The ID of the module to retrieve"), mcp.Required()),
 	)
@@ -265,7 +265,7 @@ func registerListModuleVersionsTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a list of versions for a specific Spacelift module. Shows version numbers, states, and creation dates.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Module Versions",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("module_id", mcp.Description("The ID of the module"), mcp.Required()),
 		mcp.WithBoolean("include_failed", mcp.Description("Include failed versions in the results (default: false)")),
@@ -319,7 +319,7 @@ func registerGetModuleVersionTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve detailed information about a specific version of a Spacelift module including metadata, inputs, outputs, dependencies, and consumer information.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Module Version",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("module_id", mcp.Description("The ID of the module"), mcp.Required()),
 		mcp.WithString("version_id", mcp.Description("The ID of the version to retrieve"), mcp.Required()),
@@ -373,7 +373,7 @@ func registerSearchModulesTool(s *server.MCPServer) {
 		mcp.WithDescription(`Search Spacelift modules with advanced filtering capabilities. Supports filtering by provider, labels, public/private status, and more.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Search Modules",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("search", mcp.Description("Full text search query")),
 		mcp.WithString("terraform_provider", mcp.Description("Filter by Terraform provider (e.g., 'aws', 'gcp', 'azure')")),
@@ -389,12 +389,12 @@ func registerSearchModulesTool(s *server.MCPServer) {
 
 		var fullTextSearch *graphql.String
 		if searchParam := request.GetString("search", ""); searchParam != "" {
-			fullTextSearch = graphql.NewString(graphql.String(searchParam))
+			fullTextSearch = new(graphql.String(searchParam))
 		}
 
 		var nextPageCursor *graphql.String
 		if cursor := request.GetString("next_page_cursor", ""); cursor != "" {
-			nextPageCursor = graphql.NewString(graphql.String(cursor))
+			nextPageCursor = new(graphql.String(cursor))
 		}
 
 		// Build predicates for advanced filtering
@@ -441,7 +441,7 @@ func registerSearchModulesTool(s *server.MCPServer) {
 		}
 
 		pageInput := structs.SearchInput{
-			First:          graphql.NewInt(graphql.Int(limit)), //nolint: gosec
+			First:          new(graphql.Int(limit)), //nolint: gosec
 			FullTextSearch: fullTextSearch,
 			After:          nextPageCursor,
 			Predicates:     &predicates,

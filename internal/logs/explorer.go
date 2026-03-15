@@ -99,7 +99,7 @@ func (e *Explorer) getHistory(ctx context.Context) ([]structs.RunStateTransition
 		} `graphql:"stack(id: $stack)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack": graphql.ID(e.stack),
 		"run":   graphql.ID(e.run),
 	}

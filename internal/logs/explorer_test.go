@@ -91,7 +91,6 @@ func TestProcessTargetPhase(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			explorer := &Explorer{
 				stack:              "test-stack",
@@ -173,7 +172,6 @@ func TestProcessTargetPhaseTerminalFlag(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			explorer := &Explorer{
 				stack:              "test-stack",

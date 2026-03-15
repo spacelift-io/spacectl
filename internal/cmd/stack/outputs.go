@@ -43,7 +43,7 @@ func (c *showOutputsStackCommand) showOutputs(ctx context.Context, cliCmd *cli.C
 	}
 
 	var query showOutputsQuery
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stackId": graphql.ID(stackID),
 	}
 

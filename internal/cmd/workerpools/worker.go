@@ -59,7 +59,7 @@ func (c *listWorkersCommand) listWorkers(ctx context.Context, cliCmd *cli.Comman
 	workerPoolID := cliCmd.String(flagPoolIDNamed.Name)
 
 	var query listWorkersQuery
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"workerPool": workerPoolID,
 	}
 
@@ -82,15 +82,15 @@ func (c *listWorkersCommand) listWorkers(ctx context.Context, cliCmd *cli.Comman
 }
 
 func (c *listWorkersCommand) showOutputsJSON(workers []worker) error {
-	var output []interface{}
+	var output []any
 	for _, worker := range workers {
-		var parsedMetadata map[string]interface{}
+		var parsedMetadata map[string]any
 
 		if err := json.Unmarshal([]byte(worker.Metadata), &parsedMetadata); err != nil {
 			return errors.Wrapf(err, "failed to parse metadata of worker with id %s", worker.ID)
 		}
 
-		row := map[string]interface{}{
+		row := map[string]any{
 			"id":       worker.ID,
 			"busy":     worker.Busy,
 			"drained":  worker.Drained,
@@ -120,7 +120,7 @@ func (c *drainWorkerCommand) drainWorker(ctx context.Context, cliCmd *cli.Comman
 	waitUntilDrained := cliCmd.Bool(flagWaitUntilDrained.Name)
 
 	var mutation drainWorkerMutation
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"worker":     graphql.ID(workerID),
 		"workerPool": graphql.ID(workerPoolID),
 		"drain":      graphql.Boolean(true),
@@ -176,7 +176,7 @@ func (c *drainWorkerCommand) drainedWorkerIsIdle(ctx context.Context, workerID s
 		} `graphql:"workerPool(id: $workerPool)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"workerPool": graphql.ID(workerPoolID),
 	}
 
@@ -209,7 +209,7 @@ func (c *undrainWorkerCommand) undrainWorker(ctx context.Context, cliCmd *cli.Co
 	workerPoolID := cliCmd.String(flagPoolIDNamed.Name)
 
 	var mutation drainWorkerMutation
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"worker":     graphql.ID(workerID),
 		"workerPool": graphql.ID(workerPoolID),
 		"drain":      graphql.Boolean(false),
@@ -228,7 +228,7 @@ func (c *undrainWorkerCommand) undrainWorker(ctx context.Context, cliCmd *cli.Co
 
 func (c *cycleWorkersCommand) cycleWorkers(ctx context.Context, cliCmd *cli.Command) error {
 	var mutation cycleWorkerMutation
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"workerPoolId": graphql.ID(cliCmd.String(flagPoolIDNamed.Name)),
 	}
 

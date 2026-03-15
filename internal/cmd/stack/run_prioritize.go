@@ -51,7 +51,7 @@ type setRunPriorityMutation struct {
 func setRunPriority(ctx context.Context, stackID, runID string, prioritize bool) (setRunPriorityMutation, error) {
 	var mutation setRunPriorityMutation
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stackId":    graphql.ID(stackID),
 		"runId":      graphql.ID(runID),
 		"prioritize": graphql.Boolean(prioritize),

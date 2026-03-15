@@ -25,7 +25,7 @@ func syncCommit(ctx context.Context, cliCmd *cli.Command) error {
 			ID string `graphql:"id"`
 		} `graphql:"stackSyncCommit(id: $stack)"`
 	}
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack": graphql.ID(stackID),
 	}
 

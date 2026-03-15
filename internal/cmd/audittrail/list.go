@@ -11,7 +11,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
-	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
@@ -34,7 +33,7 @@ func listAuditTrails() cli.ActionFunc {
 				return fmt.Errorf("limit must be less than %d", math.MaxInt32)
 			}
 
-			limit = internal.Ptr(cliCmd.Uint(cmd.FlagLimit.Name))
+			limit = new(cliCmd.Uint(cmd.FlagLimit.Name))
 		}
 
 		var search *string
@@ -43,7 +42,7 @@ func listAuditTrails() cli.ActionFunc {
 				return fmt.Errorf("search must be non-empty")
 			}
 
-			search = internal.Ptr(cliCmd.String(cmd.FlagSearch.Name))
+			search = new(cliCmd.String(cmd.FlagSearch.Name))
 		}
 
 		switch outputFormat {
@@ -64,12 +63,12 @@ func listAuditTrailEntriesTable(
 ) error {
 	var first *graphql.Int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+		first = new(graphql.Int(*limit)) //nolint: gosec
 	}
 
 	var fullTextSearch *graphql.String
 	if search != nil {
-		fullTextSearch = graphql.NewString(graphql.String(*search))
+		fullTextSearch = new(graphql.String(*search))
 	}
 
 	input := structs.SearchInput{
@@ -110,12 +109,12 @@ func listAuditTrailEntriesJSON(
 	var first *graphql.Int
 	if limit != nil {
 		//nolint: gosec
-		first = graphql.NewInt(graphql.Int(*limit))
+		first = new(graphql.Int(*limit))
 	}
 
 	var fullTextSearch *graphql.String
 	if search != nil {
-		fullTextSearch = graphql.NewString(graphql.String(*search))
+		fullTextSearch = new(graphql.String(*search))
 	}
 
 	auditTrailEntries, err := searchAllAuditTrailEntries(ctx, structs.SearchInput{
@@ -147,7 +146,7 @@ func searchAllAuditTrailEntries(ctx context.Context, input structs.SearchInput) 
 	}
 	for {
 		if !fetchAll {
-			pageInput.First = graphql.NewInt(
+			pageInput.First = new(
 				//nolint: gosec
 				graphql.Int(
 					slices.Min([]int{maxPageSize, limit - len(out)}),
@@ -163,7 +162,7 @@ func searchAllAuditTrailEntries(ctx context.Context, input structs.SearchInput) 
 		out = append(out, result.AuditTrailEntries...)
 
 		if result.PageInfo.HasNextPage && (fetchAll || limit > len(out)) {
-			pageInput.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+			pageInput.After = new(graphql.String(result.PageInfo.EndCursor))
 		} else {
 			break
 		}
@@ -185,7 +184,7 @@ func searchAuditTrailEntries(ctx context.Context, input structs.SearchInput) (se
 	if err := authenticated.Client().Query(
 		ctx,
 		&query,
-		map[string]interface{}{"input": input},
+		map[string]any{"input": input},
 	); err != nil {
 		return searchAuditTrailEntriesResult{}, errors.Wrap(err, "failed search for audit trail entries")
 	}

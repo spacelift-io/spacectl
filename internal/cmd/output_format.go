@@ -52,7 +52,7 @@ func OutputTable(data [][]string, hasHeader bool) error {
 }
 
 // OutputJSON outputs the specified object as JSON.
-func OutputJSON(v interface{}) error {
+func OutputJSON(v any) error {
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 

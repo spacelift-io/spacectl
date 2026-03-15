@@ -11,7 +11,6 @@ import (
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
-	"github.com/spacelift-io/spacectl/internal/nullable"
 )
 
 func runList(ctx context.Context, cliCmd *cli.Command) error {
@@ -92,7 +91,7 @@ func queryTrackedRuns[T any](ctx context.Context, stackID string, before *string
 		} `graphql:"stack(id: $stackId)"`
 	}
 
-	if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, map[string]any{"stackId": stackID, "before": before}); err != nil {
 		return nil, errors.Wrap(err, "failed to query run list")
 	}
 
@@ -110,7 +109,7 @@ func queryPreviewRuns[T any](ctx context.Context, stackID string, before *string
 		} `graphql:"stack(id: $stackId)"`
 	}
 
-	if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, map[string]any{"stackId": stackID, "before": before}); err != nil {
 		return nil, errors.Wrap(err, "failed to query run list")
 	}
 
@@ -141,7 +140,7 @@ func fetchRuns[T withCursor](ctx context.Context, maxResults int, fetcher func(c
 
 		results = append(results, runs[:resultsToAdd]...)
 
-		before = nullable.OfValue(runs[len(runs)-1].Cursor())
+		before = new(runs[len(runs)-1].Cursor())
 	}
 
 	return results, nil

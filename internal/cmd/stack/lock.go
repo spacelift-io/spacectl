@@ -39,7 +39,7 @@ func lock(ctx context.Context, cliCmd *cli.Command) error {
 	}
 
 	var mutation stackLockMutation
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack": graphql.ID(stackID),
 		"note":  graphql.String(note),
 	}
@@ -58,7 +58,7 @@ func unlock(ctx context.Context, cliCmd *cli.Command) error {
 	}
 
 	var mutation stackUnlockMutation
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack": graphql.ID(stackID),
 	}
 

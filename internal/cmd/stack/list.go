@@ -11,7 +11,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
-	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 )
 
@@ -32,7 +31,7 @@ func listStacks() cli.ActionFunc {
 				return fmt.Errorf("limit must be less than %d", math.MaxInt32)
 			}
 
-			limit = internal.Ptr(cliCmd.Uint(cmd.FlagLimit.Name))
+			limit = new(cliCmd.Uint(cmd.FlagLimit.Name))
 		}
 
 		var search *string
@@ -41,7 +40,7 @@ func listStacks() cli.ActionFunc {
 				return fmt.Errorf("search must be non-empty")
 			}
 
-			search = internal.Ptr(cliCmd.String(cmd.FlagSearch.Name))
+			search = new(cliCmd.String(cmd.FlagSearch.Name))
 		}
 
 		switch outputFormat {
@@ -62,12 +61,12 @@ func listStacksJSON(
 ) error {
 	var first *graphql.Int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+		first = new(graphql.Int(*limit)) //nolint: gosec
 	}
 
 	var fullTextSearch *graphql.String
 	if search != nil {
-		fullTextSearch = graphql.NewString(graphql.String(*search))
+		fullTextSearch = new(graphql.String(*search))
 	}
 
 	stacks, err := searchAllStacks(ctx, structs.SearchInput{
@@ -89,12 +88,12 @@ func listStacksTable(
 ) error {
 	var first *graphql.Int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+		first = new(graphql.Int(*limit)) //nolint: gosec
 	}
 
 	var fullTextSearch *graphql.String
 	if search != nil {
-		fullTextSearch = graphql.NewString(graphql.String(*search))
+		fullTextSearch = new(graphql.String(*search))
 	}
 
 	input := structs.SearchInput{
@@ -156,7 +155,7 @@ func searchAllStacks(ctx context.Context, input structs.SearchInput) ([]stack, e
 	for {
 		if !fetchAll {
 			// Fetch exactly the number of items requested
-			pageInput.First = graphql.NewInt(
+			pageInput.First = new(
 				//nolint: gosec
 				graphql.Int(
 					slices.Min([]int{maxPageSize, limit - len(out)}),
@@ -172,7 +171,7 @@ func searchAllStacks(ctx context.Context, input structs.SearchInput) ([]stack, e
 		out = append(out, result.Stacks...)
 
 		if result.PageInfo.HasNextPage && (fetchAll || limit > len(out)) {
-			pageInput.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+			pageInput.After = new(graphql.String(result.PageInfo.EndCursor))
 		} else {
 			break
 		}
@@ -242,7 +241,7 @@ type stack struct {
 		Name        string  `graphql:"name" json:"name,omitempty"`
 		Description string  `graphql:"description" json:"description,omitempty"`
 		ParentSpace *string `graphql:"parentSpace" json:"parentSpace,omitempty"`
-	} `graphql:"spaceDetails" json:"spaceDetails,omitempty"`
+	} `graphql:"spaceDetails" json:"spaceDetails"`
 	TrackedCommit struct {
 		AuthorLogin string `graphql:"authorLogin" json:"authorLogin,omitempty"`
 		AuthorName  string `graphql:"authorName" json:"authorName,omitempty"`
@@ -250,12 +249,12 @@ type stack struct {
 		Message     string `graphql:"message" json:"message,omitempty"`
 		Timestamp   int64  `graphql:"timestamp" json:"timestamp,omitempty"`
 		URL         string `graphql:"url" json:"url,omitempty"`
-	} `graphql:"trackedCommit" json:"trackedCommit,omitempty"`
+	} `graphql:"trackedCommit" json:"trackedCommit"`
 	TrackedCommitSetBy string `graphql:"trackedCommitSetBy" json:"trackedCommitSetBy,omitempty"`
 	WorkerPool         struct {
 		ID   string `graphql:"id" json:"id,omitempty"`
 		Name string `graphql:"name" json:"name,omitempty"`
-	} `graphql:"workerPool" json:"workerPool,omitempty"`
+	} `graphql:"workerPool" json:"workerPool"`
 }
 
 func (s stack) GetID() string {

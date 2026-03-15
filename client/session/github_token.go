@@ -54,7 +54,7 @@ func (g *gitHubToken) exchange(ctx context.Context) error {
 		APIKeyUser user `graphql:"oauthUser(token: $token)"`
 	}
 
-	variables := map[string]interface{}{"token": graphql.String(g.accessToken)}
+	variables := map[string]any{"token": graphql.String(g.accessToken)}
 
 	if err := g.mutate(ctx, &mutation, variables); err != nil {
 		return fmt.Errorf("could not exchange access token for Spacelift one: %w", err)

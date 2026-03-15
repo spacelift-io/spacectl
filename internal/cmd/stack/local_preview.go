@@ -16,7 +16,6 @@ import (
 	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 	"github.com/spacelift-io/spacectl/internal/logs"
-	"github.com/spacelift-io/spacectl/internal/nullable"
 )
 
 func getStackForLocalPreview(ctx context.Context, cliCmd *cli.Command) (*stack, error) {
@@ -66,7 +65,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 
 		var runMetadata *string
 		if cliCmd.IsSet(flagRunMetadata.Name) {
-			runMetadata = nullable.OfValue(cliCmd.String(flagRunMetadata.Name))
+			runMetadata = new(cliCmd.String(flagRunMetadata.Name))
 		}
 
 		runID, err := createLocalPreviewRun(

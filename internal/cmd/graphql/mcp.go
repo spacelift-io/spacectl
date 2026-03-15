@@ -30,7 +30,7 @@ func registerIntrospectSchemaTool(s *server.MCPServer) {
 		mcp.WithDescription(`Introspect the complete GraphQL schema for the Spacelift API. Returns all available types, queries, mutations, and subscriptions with their fields and descriptions.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Introspect GraphQL Schema",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("format", mcp.Description("Output format: 'summary' for high-level overview, 'detailed' for complete schema"),
 			mcp.DefaultString("summary"),
@@ -139,7 +139,7 @@ func registerGetTypeDetailsTool(s *server.MCPServer) {
 		mcp.WithDescription(`Get detailed information about a specific GraphQL type including its fields, arguments, and relationships.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get GraphQL Type Details",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("type_name", mcp.Description("The name of the GraphQL type to get details for"), mcp.Required()),
 	)
@@ -216,7 +216,7 @@ func registerSearchSchemaFieldsTool(s *server.MCPServer) {
 		mcp.WithDescription(`Search for fields, types, or operations in the GraphQL schema. Useful for discovering available operations and finding specific functionality.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Search GraphQL Schema Fields",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("search_term", mcp.Description("The term to search for in field names, type names, and descriptions"), mcp.Required()),
 		mcp.WithString("search_scope", mcp.Description("Scope of search: 'all', 'queries', 'mutations', 'types'"),
@@ -500,7 +500,7 @@ func registerAuthenticationGuideTool(s *server.MCPServer) {
 		mcp.WithDescription(`Get comprehensive guidance on how to authenticate with the Spacelift GraphQL API, including all available authentication methods and practical examples.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Authentication Guide",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("auth_method", mcp.Description("Specific authentication method to focus on: 'all', 'api_key', 'api_token', 'github_token', 'cli_token'"),
 			mcp.DefaultString("all"),

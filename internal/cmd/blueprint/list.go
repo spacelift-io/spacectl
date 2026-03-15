@@ -11,7 +11,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
-	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
@@ -25,12 +24,12 @@ func listBlueprints() cli.ActionFunc {
 
 		var limit *uint
 		if cliCmd.IsSet(cmd.FlagLimit.Name) {
-			limit = internal.Ptr(cliCmd.Uint(cmd.FlagLimit.Name))
+			limit = new(cliCmd.Uint(cmd.FlagLimit.Name))
 		}
 
 		var search *string
 		if cliCmd.IsSet(cmd.FlagSearch.Name) {
-			search = internal.Ptr(cliCmd.String(cmd.FlagSearch.Name))
+			search = new(cliCmd.String(cmd.FlagSearch.Name))
 		}
 
 		switch outputFormat {
@@ -51,12 +50,12 @@ func listBlueprintsJSON(
 ) error {
 	var first *graphql.Int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+		first = new(graphql.Int(*limit)) //nolint: gosec
 	}
 
 	var fullTextSearch *graphql.String
 	if search != nil {
-		fullTextSearch = graphql.NewString(graphql.String(*search))
+		fullTextSearch = new(graphql.String(*search))
 	}
 
 	blueprints, err := searchAllBlueprints(ctx, structs.SearchInput{
@@ -78,12 +77,12 @@ func listBlueprintsTable(
 ) error {
 	var first *graphql.Int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+		first = new(graphql.Int(*limit)) //nolint: gosec
 	}
 
 	var fullTextSearch *graphql.String
 	if search != nil {
-		fullTextSearch = graphql.NewString(graphql.String(*search))
+		fullTextSearch = new(graphql.String(*search))
 	}
 
 	input := structs.SearchInput{
@@ -144,7 +143,7 @@ func searchAllBlueprints(ctx context.Context, input structs.SearchInput) ([]blue
 	for {
 		if !fetchAll {
 			// Fetch exactly the number of items requested
-			pageInput.First = graphql.NewInt(
+			pageInput.First = new(
 				//nolint: gosec
 				graphql.Int(
 					slices.Min([]int{maxPageSize, limit - len(out)}),
@@ -160,7 +159,7 @@ func searchAllBlueprints(ctx context.Context, input structs.SearchInput) ([]blue
 		out = append(out, result.Blueprints...)
 
 		if result.PageInfo.HasNextPage && (fetchAll || limit > len(out)) {
-			pageInput.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+			pageInput.After = new(graphql.String(result.PageInfo.EndCursor))
 		} else {
 			break
 		}
@@ -189,7 +188,7 @@ type blueprintNode struct {
 		ID          string `graphql:"id" json:"id,omitempty"`
 		Name        string `graphql:"name" json:"name,omitempty"`
 		AccessLevel string `graphql:"accessLevel" json:"accessLevel,omitempty"`
-	} `graphql:"space" json:"space,omitempty"`
+	} `graphql:"space" json:"space"`
 }
 
 type searchBlueprintsResult struct {
@@ -210,7 +209,7 @@ func searchBlueprints(ctx context.Context, input structs.SearchInput) (searchBlu
 	if err := authenticated.Client().Query(
 		ctx,
 		&query,
-		map[string]interface{}{"input": input},
+		map[string]any{"input": input},
 	); err != nil {
 		return searchBlueprintsResult{}, errors.Wrap(err, "failed search for blueprints")
 	}

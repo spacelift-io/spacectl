@@ -99,13 +99,13 @@ func getSearchModuleVersions(ctx context.Context, cliCmd *cli.Command, cursor st
 
 	var after *graphql.String
 	if cursor != "" {
-		after = graphql.NewString(graphql.String(cursor))
+		after = new(graphql.String(cursor))
 	}
 
-	if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{
+	if err := authenticated.Client().Query(ctx, &query, map[string]any{
 		"id": cliCmd.String(flagModuleID.Name),
 		"input": structs.SearchInput{
-			First: graphql.NewInt(graphql.Int(int32(limit))), //nolint:gosec
+			First: new(graphql.Int(int32(limit))),
 			After: after,
 			OrderBy: &structs.QueryOrder{
 				Field:     "createdAt",
@@ -172,10 +172,10 @@ type version struct {
 		Timestamp   int    `json:"timestamp" graphql:"timestamp"`
 		URL         string `json:"url" graphql:"url"`
 	} `json:"commit" graphql:"commit"`
-	DownloadLink interface{} `json:"downloadLink" graphql:"downloadLink"`
-	Number       string      `json:"number" graphql:"number"`
-	SourceURL    string      `json:"sourceURL" graphql:"sourceURL"`
-	State        string      `json:"state" graphql:"state"`
-	VersionCount int         `json:"versionCount" graphql:"versionCount"`
-	Yanked       bool        `json:"yanked" graphql:"yanked"`
+	DownloadLink any    `json:"downloadLink" graphql:"downloadLink"`
+	Number       string `json:"number" graphql:"number"`
+	SourceURL    string `json:"sourceURL" graphql:"sourceURL"`
+	State        string `json:"state" graphql:"state"`
+	VersionCount int    `json:"versionCount" graphql:"versionCount"`
+	Yanked       bool   `json:"yanked" graphql:"yanked"`
 }

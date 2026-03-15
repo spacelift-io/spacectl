@@ -60,7 +60,7 @@ func deleteStack() cli.ActionFunc {
 			} `graphql:"stackDelete(id: $id, destroyResources: $destroyResources)"`
 		}
 
-		variables := map[string]interface{}{
+		variables := map[string]any{
 			"id":               graphql.ID(stackID),
 			"destroyResources": graphql.Boolean(destroyResources),
 		}

@@ -60,7 +60,7 @@ func addRunReview(ctx context.Context, stackID, runID, note string, decision enu
 	}
 
 	var mutation runReviewMutation
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack":    graphql.ID(stackID),
 		"run":      runIDGQL,
 		"decision": decision,

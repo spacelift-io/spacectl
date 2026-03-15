@@ -24,14 +24,14 @@ func createVersion(ctx context.Context, cliCmd *cli.Command) error {
 
 	var version *graphql.String
 	if forcedVersion != "" {
-		version = graphql.NewString(graphql.String(forcedVersion))
+		version = new(graphql.String(forcedVersion))
 	}
 	var commitSha *graphql.String
 	if forcedCommitSHA != "" {
-		commitSha = graphql.NewString(graphql.String(forcedCommitSHA))
+		commitSha = new(graphql.String(forcedCommitSHA))
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"module":    graphql.ID(moduleID),
 		"commitSha": commitSha,
 		"version":   version,
