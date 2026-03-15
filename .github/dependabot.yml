@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: daily
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "chore(gha-deps)"
     groups:
       github-actions:
         patterns:
@@ -16,7 +16,7 @@ updates:
     schedule:
       interval: daily
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "chore(go-deps)"
     groups:
       go-dependencies:
         patterns:
