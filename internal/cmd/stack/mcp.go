@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -639,6 +640,15 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 
 		awaitForCompletion := request.GetString("await_for_completion", "true") == "true"
 
+		// Save and restore CWD: createLocalPreviewRun with FindRepositoryRoot=true
+		// calls os.Chdir() to the git root. We restore afterward so the long-running
+		// MCP server process isn't left with a permanently changed working directory.
+		origDir, err := os.Getwd()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get working directory: %w", err)
+		}
+		defer os.Chdir(origDir) //nolint: errcheck
+
 		// Create a string builder to capture output
 		var outputBuilder strings.Builder
 
@@ -649,7 +659,7 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 				EnvironmentVars:    envVars,
 				Targets:            targets,
 				Path:               path,
-				FindRepositoryRoot: false,
+				FindRepositoryRoot: true,
 				DisregardGitignore: false,
 				UseHeaders:         options.UseHeadersForLocalPreview,
 				NoUpload:           false,
