@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Generate winget token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         id: winget_token
         with:
           app-id: ${{ secrets.WINGET_APP_ID }}
@@ -36,14 +36,14 @@ jobs:
         with: { go-version-file: go.mod }
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with: { platforms: linux/arm64 }
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         if: startsWith(github.ref, 'refs/tags/v')
         with:
           registry: ghcr.io
@@ -52,7 +52,7 @@ jobs:
 
       - name: Import GPG key
         id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@v7
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
@@ -63,7 +63,7 @@ jobs:
           gpg --armor --export ${{ steps.import_gpg.outputs.keyid }} > key.asc
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           version: "~> v2"
           args: release --clean --snapshot=${{ !startsWith(github.ref, 'refs/tags/v') }}
