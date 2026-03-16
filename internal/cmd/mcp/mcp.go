@@ -93,7 +93,6 @@ func mcpServer() *server.MCPServer {
 	s := server.NewMCPServer(
 		"Spacelift MCP Server",
 		"1.0.0",
-		server.WithResourceCapabilities(true, true),
 		server.WithLogging(),
 		server.WithRecovery(),
 	)
