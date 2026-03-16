@@ -234,6 +234,130 @@ func TestGetIgnoreMatcherFnWithArchiver(t *testing.T) {
 	}
 }
 
+func TestGetIgnoreMatcherFnAbsoluteProjectRootWithRelativePaths(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "spacectl-abs-root-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	// Resolve symlinks (macOS /var -> /private/var) so Rel works correctly
+	tempDir, err = filepath.EvalSymlinks(tempDir)
+	require.NoError(t, err)
+
+	originalWd, err := os.Getwd()
+	require.NoError(t, err)
+	defer os.Chdir(originalWd) //nolint: errcheck
+
+	// Create a repo-like structure: tempDir is the "repo root" with a subdir
+	subdir := filepath.Join(tempDir, "subdir")
+	err = os.MkdirAll(subdir, 0755)
+	require.NoError(t, err)
+
+	files := map[string]string{
+		"root.txt":        "root file",
+		"subdir/main.tf":  "resource {}",
+		"subdir/vars.tf":  "variable {}",
+		"other/other.txt": "other file",
+	}
+	for path, content := range files {
+		full := filepath.Join(tempDir, path)
+		err := os.MkdirAll(filepath.Dir(full), 0755)
+		require.NoError(t, err)
+		err = os.WriteFile(full, []byte(content), 0644) //nolint: gosec
+		require.NoError(t, err)
+	}
+
+	// Chdir to "repo root" to simulate MoveToRepositoryRoot
+	err = os.Chdir(tempDir)
+	require.NoError(t, err)
+
+	// Use the absolute path as projectRoot (what MCP does)
+	absSubdir := filepath.Join(tempDir, "subdir")
+
+	// Convert absolute to relative (the fix) using CWD
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	relSubdir, err := filepath.Rel(cwd, absSubdir)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	matchFn, err := GetIgnoreMatcherFn(ctx, &relSubdir, []string{".gitignore"}, false)
+	require.NoError(t, err)
+
+	// Archiver produces relative paths from "."
+	testCases := map[string]bool{
+		"subdir/main.tf":  true,
+		"subdir/vars.tf":  true,
+		"root.txt":        false, // outside project root
+		"other/other.txt": false, // outside project root
+	}
+
+	for filePath, shouldInclude := range testCases {
+		result := matchFn(filePath)
+		assert.Equal(t, shouldInclude, result,
+			"File %q: expected included=%v, got included=%v", filePath, shouldInclude, result)
+	}
+}
+
+// TestGetIgnoreMatcherFnAbsoluteProjectRootWithArchiver is an end-to-end test
+// verifying that an absolute projectRoot converted to relative works with the archiver.
+func TestGetIgnoreMatcherFnAbsoluteProjectRootWithArchiver(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "spacectl-abs-archiver-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	originalWd, err := os.Getwd()
+	require.NoError(t, err)
+	defer os.Chdir(originalWd) //nolint: errcheck
+
+	subdir := filepath.Join(tempDir, "subdir")
+	files := map[string]string{
+		"root.txt":       "root file",
+		"subdir/main.tf": "resource {}",
+		"subdir/vars.tf": "variable {}",
+	}
+	for path, content := range files {
+		full := filepath.Join(tempDir, path)
+		err := os.MkdirAll(filepath.Dir(full), 0755)
+		require.NoError(t, err)
+		err = os.WriteFile(full, []byte(content), 0644) //nolint: gosec
+		require.NoError(t, err)
+	}
+
+	err = os.Chdir(tempDir)
+	require.NoError(t, err)
+
+	// Convert absolute to relative as the fix does
+	relSubdir, err := filepath.Rel(tempDir, subdir)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	matchFn, err := GetIgnoreMatcherFn(ctx, &relSubdir, []string{".gitignore"}, false)
+	require.NoError(t, err)
+
+	archivePath := filepath.Join(tempDir, "test.tar.gz")
+	tgz := *archiver.DefaultTarGz
+	tgz.MatchFn = matchFn
+
+	err = tgz.Archive([]string{"."}, archivePath)
+	require.NoError(t, err)
+
+	extractDir := filepath.Join(tempDir, "extracted")
+	err = os.MkdirAll(extractDir, 0755)
+	require.NoError(t, err)
+
+	err = tgz.Unarchive(archivePath, extractDir)
+	require.NoError(t, err)
+
+	// Only subdir files should be in the archive
+	for _, file := range []string{"subdir/main.tf", "subdir/vars.tf"} {
+		_, err := os.Stat(filepath.Join(extractDir, file))
+		assert.NoError(t, err, "Expected file %q to be included in archive", file)
+	}
+
+	_, err = os.Stat(filepath.Join(extractDir, "root.txt"))
+	assert.True(t, os.IsNotExist(err), "Expected root.txt to be excluded from archive")
+}
+
 func TestGetIgnoreMatcherFnWithProjectRoot(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "spacectl-root-test-*")
 	require.NoError(t, err)
