@@ -20,7 +20,7 @@ func deleteVersion(ctx context.Context, cliCmd *cli.Command) error {
 		} `graphql:"versionDelete(id: $id, module: $module)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"id":     graphql.ID(versionID),
 		"module": graphql.ID(moduleID),
 	}

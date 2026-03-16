@@ -42,7 +42,7 @@ func resourcesListAllStacks(ctx context.Context) error {
 		Stacks []stackWithResources `graphql:"stacks" json:"stacks,omitempty"`
 	}
 
-	if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{}); err != nil {
+	if err := authenticated.Client().Query(ctx, &query, map[string]any{}); err != nil {
 		return errors.Wrap(err, "failed to query list of stacks")
 	}
 
@@ -68,7 +68,7 @@ type managedEntity struct {
 	ThirdPartyMetadata *string      `graphql:"thirdPartyMetadata" json:"third_party_metadata,omitempty"`
 	Type               string       `graphql:"type" json:"type,omitempty"`
 	Updater            *run         `graphql:"updater" json:"updater,omitempty"`
-	Vendor             entityVendor `graphql:"vendor" json:"vendor,omitempty"`
+	Vendor             entityVendor `graphql:"vendor" json:"vendor"`
 }
 
 type run struct {
@@ -78,25 +78,25 @@ type run struct {
 type entityVendor struct {
 	EntityVendorAnsible struct {
 		Ansible *ansibleEntity `graphql:"ansible" json:"ansible,omitempty"`
-	} `graphql:"... on EntityVendorAnsible" json:"entity_vendor_ansible,omitempty"`
+	} `graphql:"... on EntityVendorAnsible" json:"entity_vendor_ansible"`
 	EntityVendorCloudFormation struct {
 		CloudFormation *cloudFormationEntity `graphql:"cloudFormation" json:"cloudFormation,omitempty"`
-	} `graphql:"... on EntityVendorCloudFormation" json:"entity_vendor_cloud_formation,omitempty"`
+	} `graphql:"... on EntityVendorCloudFormation" json:"entity_vendor_cloud_formation"`
 	EntityVendorKubernetes struct {
 		Kubernetes *kubernetesEntity `graphql:"kubernetes" json:"kubernetes,omitempty"`
-	} `graphql:"... on EntityVendorKubernetes" json:"entity_vendor_kubernetes,omitempty"`
+	} `graphql:"... on EntityVendorKubernetes" json:"entity_vendor_kubernetes"`
 	EntityVendorPulumi struct {
 		Pulumi *pulumiEntity `graphql:"pulumi" json:"pulumi,omitempty"`
-	} `graphql:"... on EntityVendorPulumi" json:"entity_vendor_pulumi,omitempty"`
+	} `graphql:"... on EntityVendorPulumi" json:"entity_vendor_pulumi"`
 	EntityVendorTerraform struct {
 		Terraform *terraformEntity `graphql:"terraform" json:"terraform,omitempty"`
-	} `graphql:"... on EntityVendorTerraform" json:"entity_vendor_terraform,omitempty"`
+	} `graphql:"... on EntityVendorTerraform" json:"entity_vendor_terraform"`
 }
 
 type ansibleEntity struct {
 	AnsibleResource struct {
 		Data string `graphql:"data" json:"data,omitempty"`
-	} `graphql:"... on AnsibleResource" json:"ansible_resource,omitempty"`
+	} `graphql:"... on AnsibleResource" json:"ansible_resource"`
 }
 
 type cloudFormationEntity struct {
@@ -104,21 +104,21 @@ type cloudFormationEntity struct {
 		LogicalResourceID  string `graphql:"logicalResourceId" json:"logical_resource_id,omitempty"`
 		PhysicalResourceID string `graphql:"physicalResourceId" json:"physical_resource_id,omitempty"`
 		Template           string `graphql:"template" json:"template,omitempty"`
-	} `graphql:"... on CloudFormationResource" json:"cloud_formation_resource,omitempty"`
+	} `graphql:"... on CloudFormationResource" json:"cloud_formation_resource"`
 	CloudFormationOutput struct {
 		Description *string `graphql:"description" json:"description,omitempty"`
 		Export      *string `graphql:"export" json:"export,omitempty"`
 		Value       string  `graphql:"value" json:"value,omitempty"`
-	} `graphql:"... on CloudFormationOutput" json:"cloud_formation_output,omitempty"`
+	} `graphql:"... on CloudFormationOutput" json:"cloud_formation_output"`
 }
 
 type kubernetesEntity struct {
 	KubernetesResource struct {
 		Data string `graphql:"data" json:"data,omitempty"`
-	} `graphql:"... on KubernetesResource" json:"kubernetes_resource,omitempty"`
+	} `graphql:"... on KubernetesResource" json:"kubernetes_resource"`
 	KubernetesRoot struct {
 		Phantom bool `graphql:"phantom" json:"phantom,omitempty"`
-	} `graphql:"... on KubernetesRoot" json:"kubernetes_root,omitempty"`
+	} `graphql:"... on KubernetesRoot" json:"kubernetes_root"`
 }
 
 type pulumiEntity struct {
@@ -126,17 +126,17 @@ type pulumiEntity struct {
 		Sensitive bool    `graphql:"sensitive" json:"sensitive,omitempty"`
 		Value     *string `graphql:"value" json:"value,omitempty"`
 		Hash      string  `graphql:"hash" json:"hash,omitempty"`
-	} `graphql:"... on PulumiOutput" json:"pulumi_output,omitempty"`
+	} `graphql:"... on PulumiOutput" json:"pulumi_output"`
 	PulumiStack struct {
 		Phantom bool `graphql:"phantom" json:"phantom,omitempty"`
-	} `graphql:"... on PulumiStack" json:"pulumi_stack,omitempty"`
+	} `graphql:"... on PulumiStack" json:"pulumi_stack"`
 	PulumiResource struct {
 		Urn      string `graphql:"urn" json:"urn,omitempty"`
 		ID       string `graphql:"id" json:"id,omitempty"`
 		Provider string `graphql:"provider" json:"provider,omitempty"`
 		Parent   string `graphql:"parent" json:"parent,omitempty"`
 		Outputs  string `graphql:"outputs" json:"outputs,omitempty"`
-	} `graphql:"... on PulumiResource " json:"pulumi_resource,omitempty"`
+	} `graphql:"... on PulumiResource " json:"pulumi_resource"`
 }
 
 type terraformEntity struct {
@@ -147,13 +147,13 @@ type terraformEntity struct {
 		Provider string `graphql:"provider" json:"provider,omitempty"`
 		Tainted  bool   `graphql:"tainted" json:"tainted,omitempty"`
 		Values   string `graphql:"values" json:"values,omitempty"`
-	} `graphql:"... on TerraformResource" json:"terraform_resource,omitempty"`
+	} `graphql:"... on TerraformResource" json:"terraform_resource"`
 	TerraformModule struct {
 		Phantom bool `graphql:"phantom" json:"phantom,omitempty"`
-	} `graphql:"... on TerraformModule" json:"terraform_module,omitempty"`
+	} `graphql:"... on TerraformModule" json:"terraform_module"`
 	TerraformOutput struct {
 		Sensitive bool    `graphql:"sensitive" json:"sensitive,omitempty"`
 		Value     *string `graphql:"value" json:"value,omitempty"`
 		Hash      string  `graphql:"hash" json:"hash,omitempty"`
-	} `graphql:"... on TerraformOutput" json:"terraform_output,omitempty"`
+	} `graphql:"... on TerraformOutput" json:"terraform_output"`
 }

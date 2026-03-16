@@ -41,7 +41,7 @@ func registerListStacksTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a paginated list of Spacelift stacks. Use the pagination cursor to navigate through multiple pages of results.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Stacks",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithNumber("limit", mcp.Description("The maximum number of stacks to return, default is 50")),
 		mcp.WithString("search", mcp.Description("Perform a full text search on stack name, description, and tags")),
@@ -54,16 +54,16 @@ func registerListStacksTool(s *server.MCPServer) {
 
 		var fullTextSearch *graphql.String
 		if searchParam := request.GetString("search", ""); searchParam != "" {
-			fullTextSearch = graphql.NewString(graphql.String(searchParam))
+			fullTextSearch = new(graphql.String(searchParam))
 		}
 
 		var nextPageCursor *graphql.String
 		if cursor := request.GetString("next_page_cursor", ""); cursor != "" {
-			nextPageCursor = graphql.NewString(graphql.String(cursor))
+			nextPageCursor = new(graphql.String(cursor))
 		}
 
 		pageInput := structs.SearchInput{
-			First:          graphql.NewInt(graphql.Int(limit)), //nolint: gosec
+			First:          new(graphql.Int(limit)), //nolint: gosec
 			FullTextSearch: fullTextSearch,
 			After:          nextPageCursor,
 		}
@@ -101,7 +101,7 @@ func registerListStackRunsTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a paginated list of tracked runs (runs making changes in resources) for a specific Spacelift stack Use the pagination cursor to navigate through the run history. This tool does not include proposed (preview) runs`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Stack Runs",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack to list runs for"), mcp.Required()),
 		mcp.WithString("next_page_cursor", mcp.Description("The pagination cursor to use for fetching the next page of results")),
@@ -125,7 +125,7 @@ func registerListStackRunsTool(s *server.MCPServer) {
 			} `graphql:"stack(id: $stackId)"`
 		}
 
-		if err := authenticated.Client().Query(ctx, &query, map[string]interface{}{"stackId": stackID, "before": before}); err != nil {
+		if err := authenticated.Client().Query(ctx, &query, map[string]any{"stackId": stackID, "before": before}); err != nil {
 			return nil, errors.Wrap(err, "failed to query run list")
 		}
 		if query.Stack == nil {
@@ -161,7 +161,7 @@ func registerListStackProposedRunsTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a paginated list of preview (including local preview) runs (runs showing preview of introduced changes) for a specific Spacelift stack Use the pagination cursor to navigate through the run history. This tools does not include tracked runs`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Stack Runs",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack to list runs for"), mcp.Required()),
 		mcp.WithString("next_page_cursor", mcp.Description("The pagination cursor to use for fetching the next page of results")),
@@ -221,7 +221,7 @@ func registerGetStackRunTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a specific run for a Spacelift stack. Use the pagination cursor to navigate through the run history.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Stack Run",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack to list runs for"), mcp.Required()),
 		mcp.WithString("run_id", mcp.Description("The ID of the run to retrieve"), mcp.Required()),
@@ -273,7 +273,7 @@ func registerGetStackRunLogsTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve logs for a specific run of a Spacelift stack. Shows output generated during the run execution, including commands, errors, and results. You can use skip and limit parameters to retrieve specific line ranges.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Stack Run Logs",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack"), mcp.Required()),
 		mcp.WithString("run_id", mcp.Description("The ID of the run"), mcp.Required()),
@@ -370,7 +370,7 @@ func registerGetStackRunChangesTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve the resource changes detected or applied during a specific Spacelift stack run.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Stack Run Changes",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack"), mcp.Required()),
 		mcp.WithString("run_id", mcp.Description("The ID of the run"), mcp.Required()),
@@ -442,7 +442,7 @@ func registerTriggerStackRunTool(s *server.MCPServer) {
 		}
 
 		if commitSha := request.GetString("commit_sha", ""); commitSha != "" {
-			variables["sha"] = graphql.NewString(graphql.String(commitSha))
+			variables["sha"] = new(graphql.String(commitSha))
 		}
 
 		if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
@@ -488,7 +488,7 @@ func registerDiscardStackRunTool(s *server.MCPServer) {
 			} `graphql:"runDiscard(stack: $stack, run: $run)"`
 		}
 
-		variables := map[string]interface{}{
+		variables := map[string]any{
 			"stack": graphql.ID(stackID),
 			"run":   graphql.ID(runID),
 		}
@@ -561,7 +561,7 @@ func registerListResourcesTool(s *server.MCPServer) {
 		mcp.WithDescription(`Retrieve a list of infrastructure resources managed by all Spacelift stacks or a specific stack.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "List Resources",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack. If not provided, resources for all stacks will be listed")),
 	)

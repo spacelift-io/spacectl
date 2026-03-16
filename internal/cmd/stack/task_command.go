@@ -25,10 +25,10 @@ func taskCommand(ctx context.Context, cliCmd *cli.Command) error {
 		} `graphql:"taskCreate(stack: $stack, command: $command, skipInitialization: $noinit)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack":   graphql.ID(stackID),
 		"command": graphql.String(strings.Join(cliCmd.Args().Slice(), " ")),
-		"noinit":  graphql.NewBoolean(graphql.Boolean(cliCmd.Bool(flagNoInit.Name))),
+		"noinit":  new(graphql.Boolean(cliCmd.Bool(flagNoInit.Name))),
 	}
 
 	var requestOpts []graphql.RequestOption

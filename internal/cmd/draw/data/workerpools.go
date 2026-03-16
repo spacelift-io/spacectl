@@ -97,8 +97,8 @@ func (q *WorkerPool) getPrivatePoolRuns(ctx context.Context) ([]runsEdge, error)
 	return query.WorkerPool.Runs.Edges, nil
 }
 
-func (q *WorkerPool) baseSearchParams() map[string]interface{} {
-	return map[string]interface{}{
+func (q *WorkerPool) baseSearchParams() map[string]any {
+	return map[string]any{
 		"input": structs.SearchInput{
 			First: graphql.NewInt(graphql.Int(100)),
 			OrderBy: &structs.QueryOrder{

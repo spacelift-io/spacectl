@@ -184,7 +184,7 @@ func searchStacks[T hasIDAndName](ctx context.Context, input structs.SearchInput
 	if err := authenticated.Client().Query(
 		ctx,
 		&query,
-		map[string]interface{}{"input": input},
+		map[string]any{"input": input},
 		graphql.WithHeader("Spacelift-GraphQL-Query", "StacksPage"),
 	); err != nil {
 		return searchStacksResult[T]{}, errors.Wrap(err, "failed search for stacks")

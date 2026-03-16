@@ -47,7 +47,7 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 			} `graphql:"runTrigger(stack: $stack, commitSha: $sha, runType: $type, runtimeConfig: $runtimeConfig)"`
 		}
 
-		variables := map[string]interface{}{
+		variables := map[string]any{
 			"stack":         graphql.ID(stackID),
 			"sha":           (*graphql.String)(nil),
 			"type":          structs.NewRunType(spaceliftType),
@@ -55,7 +55,7 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 		}
 
 		if cliCmd.IsSet(flagCommitSHA.Name) {
-			variables["sha"] = graphql.NewString(graphql.String(cliCmd.String(flagCommitSHA.Name)))
+			variables["sha"] = new(graphql.String(cliCmd.String(flagCommitSHA.Name)))
 		}
 
 		var requestOpts []graphql.RequestOption
@@ -94,7 +94,7 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 				} `graphql:"runConfirm(stack: $stack, run: $run)"`
 			}
 
-			variables := map[string]interface{}{
+			variables := map[string]any{
 				"stack": graphql.ID(stackID),
 				"run":   graphql.ID(runID),
 			}

@@ -44,7 +44,7 @@ func enableDisable[T any](ctx context.Context, cliCmd *cli.Command) error {
 	}
 
 	var mutation T
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack": graphql.ID(stackID),
 	}
 

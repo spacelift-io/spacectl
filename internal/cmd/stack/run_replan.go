@@ -49,7 +49,7 @@ func runReplan(ctx context.Context, cliCmd *cli.Command) error {
 		targets[i] = graphql.String(resource)
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack":   graphql.ID(stackID),
 		"run":     graphql.ID(runID),
 		"targets": targets,

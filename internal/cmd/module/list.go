@@ -10,7 +10,6 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/structs"
-	"github.com/spacelift-io/spacectl/internal"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
@@ -24,12 +23,12 @@ func listModules() cli.ActionFunc {
 
 		var limit *uint
 		if cliCmd.IsSet(cmd.FlagLimit.Name) {
-			limit = internal.Ptr(cliCmd.Uint(cmd.FlagLimit.Name))
+			limit = new(cliCmd.Uint(cmd.FlagLimit.Name))
 		}
 
 		var search *string
 		if cliCmd.IsSet(cmd.FlagSearch.Name) {
-			search = internal.Ptr(cliCmd.String(cmd.FlagSearch.Name))
+			search = new(cliCmd.String(cmd.FlagSearch.Name))
 		}
 
 		switch outputFormat {
@@ -46,12 +45,12 @@ func listModules() cli.ActionFunc {
 func listModulesJSON(ctx context.Context, search *string, limit *uint) error {
 	var first *graphql.Int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+		first = new(graphql.Int(*limit)) //nolint: gosec
 	}
 
 	var fullTextSearch *graphql.String
 	if search != nil {
-		fullTextSearch = graphql.NewString(graphql.String(*search))
+		fullTextSearch = new(graphql.String(*search))
 	}
 
 	modules, err := searchAllModules(ctx, structs.SearchInput{
@@ -70,14 +69,14 @@ func listModulesTable(ctx context.Context, search *string, limit *uint) error {
 
 	var first *graphql.Int
 	if limit != nil {
-		first = graphql.NewInt(graphql.Int(*limit)) //nolint: gosec
+		first = new(graphql.Int(*limit)) //nolint: gosec
 	} else {
 		first = graphql.NewInt(graphql.Int(defaultLimit))
 	}
 
 	var fullTextSearch *graphql.String
 	if search != nil {
-		fullTextSearch = graphql.NewString(graphql.String(*search))
+		fullTextSearch = new(graphql.String(*search))
 	}
 
 	input := structs.SearchInput{
@@ -137,7 +136,7 @@ func searchAllModules(ctx context.Context, input structs.SearchInput) ([]module,
 	for {
 		if !fetchAll {
 			// Fetch exactly the number of items requested
-			pageInput.First = graphql.NewInt(
+			pageInput.First = new(
 				//nolint: gosec
 				graphql.Int(
 					slices.Min([]int{maxPageSize, limit - len(out)}),
@@ -153,7 +152,7 @@ func searchAllModules(ctx context.Context, input structs.SearchInput) ([]module,
 		out = append(out, result.Modules...)
 
 		if result.PageInfo.HasNextPage && (fetchAll || limit > len(out)) {
-			pageInput.After = graphql.NewString(graphql.String(result.PageInfo.EndCursor))
+			pageInput.After = new(graphql.String(result.PageInfo.EndCursor))
 		} else {
 			break
 		}
@@ -198,7 +197,7 @@ type module struct {
 	WorkerPool struct {
 		ID   string `graphql:"id" json:"id,omitempty"`
 		Name string `graphql:"name" json:"name,omitempty"`
-	} `graphql:"workerPool" json:"workerPool,omitempty"`
+	} `graphql:"workerPool" json:"workerPool"`
 	Starred bool `json:"starred" graphql:"starred"`
 }
 
@@ -215,7 +214,7 @@ func searchModules(ctx context.Context, input structs.SearchInput) (searchModule
 	if err := authenticated.Client().Query(
 		ctx,
 		&query,
-		map[string]interface{}{"input": input},
+		map[string]any{"input": input},
 	); err != nil {
 		return searchModulesResult{}, errors.Wrap(err, "failed search for modules")
 	}

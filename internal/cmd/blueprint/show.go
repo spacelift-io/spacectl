@@ -160,7 +160,7 @@ func getBlueprintByID(ctx context.Context, blueprintID string) (blueprint, bool,
 		Blueprint *blueprint `graphql:"blueprint(id: $blueprintId)" json:"blueprint,omitempty"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"blueprintId": graphql.ID(blueprintID),
 	}
 

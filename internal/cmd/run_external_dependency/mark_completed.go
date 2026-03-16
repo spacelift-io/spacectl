@@ -26,7 +26,7 @@ func markRunExternalDependencyAsCompleted(ctx context.Context, cliCmd *cli.Comma
 	}
 
 	type RunExternalDependencyStatus string
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"dependency": externalDependencyID,
 		"status":     RunExternalDependencyStatus(strings.ToUpper(status)),
 	}

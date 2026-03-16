@@ -24,7 +24,7 @@ func runDiscard() cli.ActionFunc {
 			} `graphql:"runDiscard(stack: $stack, run: $run)"`
 		}
 
-		variables := map[string]interface{}{
+		variables := map[string]any{
 			"stack": graphql.ID(stackID),
 			"run":   graphql.ID(cliCmd.String(flagRequiredRun.Name)),
 		}

@@ -26,7 +26,7 @@ func setCurrentCommit(ctx context.Context, cliCmd *cli.Command) error {
 		} `graphql:"stackSetCurrentCommit(id: $stack, sha: $sha)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"sha":   graphql.String(cliCmd.String(flagRequiredCommitSHA.Name)),
 		"stack": graphql.ID(stackID),
 	}

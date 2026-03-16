@@ -95,7 +95,7 @@ type showStackQuery struct {
 			Message     string `graphql:"message" json:"message,omitempty"`
 			Timestamp   int64  `graphql:"timestamp" json:"timestamp,omitempty"`
 			URL         string `graphql:"url" json:"url,omitempty"`
-		} `graphql:"trackedCommit" json:"trackedCommit,omitempty"`
+		} `graphql:"trackedCommit" json:"trackedCommit"`
 		TrackedCommitSetBy string `graphql:"trackedCommitSetBy" json:"trackedCommitSetBy,omitempty"`
 		VendorConfig       struct {
 			Vendor string `graphql:"__typename"`
@@ -111,7 +111,7 @@ type showStackQuery struct {
 		WorkerPool struct {
 			ID   string `graphql:"id" json:"id,omitempty"`
 			Name string `graphql:"name" json:"name,omitempty"`
-		} `graphql:"workerPool" json:"workerPool,omitempty"`
+		} `graphql:"workerPool" json:"workerPool"`
 	} `graphql:"stack(id: $stackId)" json:"stacks,omitempty"`
 }
 
@@ -129,7 +129,7 @@ func (c *showStackCommand) showStack(ctx context.Context, cliCmd *cli.Command) e
 	}
 
 	var query showStackQuery
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stackId": graphql.ID(stackID),
 	}
 

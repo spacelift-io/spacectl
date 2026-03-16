@@ -30,7 +30,7 @@ func registerIntrospectSchemaTool(s *server.MCPServer) {
 		mcp.WithDescription(`Introspect the complete GraphQL schema for the Spacelift API. Returns all available types, queries, mutations, and subscriptions with their fields and descriptions.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Introspect GraphQL Schema",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("format", mcp.Description("Output format: 'summary' for high-level overview, 'detailed' for complete schema"),
 			mcp.DefaultString("summary"),
@@ -139,7 +139,7 @@ func registerGetTypeDetailsTool(s *server.MCPServer) {
 		mcp.WithDescription(`Get detailed information about a specific GraphQL type including its fields, arguments, and relationships.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get GraphQL Type Details",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("type_name", mcp.Description("The name of the GraphQL type to get details for"), mcp.Required()),
 	)
@@ -216,7 +216,7 @@ func registerSearchSchemaFieldsTool(s *server.MCPServer) {
 		mcp.WithDescription(`Search for fields, types, or operations in the GraphQL schema. Useful for discovering available operations and finding specific functionality.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Search GraphQL Schema Fields",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("search_term", mcp.Description("The term to search for in field names, type names, and descriptions"), mcp.Required()),
 		mcp.WithString("search_scope", mcp.Description("Scope of search: 'all', 'queries', 'mutations', 'types'"),
@@ -309,15 +309,15 @@ func formatSchemaSummary(schema any) (*mcp.CallToolResult, error) {
 	if queryType.IsValid() {
 		fields := queryType.FieldByName("Fields")
 		if fields.IsValid() && fields.Len() > 0 {
-			summary.WriteString(fmt.Sprintf("Available Queries (%d):\n", fields.Len()))
+			fmt.Fprintf(&summary, "Available Queries (%d):\n", fields.Len())
 			for i := 0; i < fields.Len(); i++ {
 				field := fields.Index(i)
 				name := field.FieldByName("Name").String()
 				description := field.FieldByName("Description").String()
 				if description != "" {
-					summary.WriteString(fmt.Sprintf("  - %s: %s\n", name, description))
+					fmt.Fprintf(&summary, "  - %s: %s\n", name, description)
 				} else {
-					summary.WriteString(fmt.Sprintf("  - %s\n", name))
+					fmt.Fprintf(&summary, "  - %s\n", name)
 				}
 			}
 			summary.WriteString("\n")
@@ -329,15 +329,15 @@ func formatSchemaSummary(schema any) (*mcp.CallToolResult, error) {
 	if mutationType.IsValid() && !mutationType.IsNil() {
 		fields := mutationType.Elem().FieldByName("Fields")
 		if fields.IsValid() && fields.Len() > 0 {
-			summary.WriteString(fmt.Sprintf("Available Mutations (%d):\n", fields.Len()))
+			fmt.Fprintf(&summary, "Available Mutations (%d):\n", fields.Len())
 			for i := 0; i < fields.Len(); i++ {
 				field := fields.Index(i)
 				name := field.FieldByName("Name").String()
 				description := field.FieldByName("Description").String()
 				if description != "" {
-					summary.WriteString(fmt.Sprintf("  - %s: %s\n", name, description))
+					fmt.Fprintf(&summary, "  - %s: %s\n", name, description)
 				} else {
-					summary.WriteString(fmt.Sprintf("  - %s\n", name))
+					fmt.Fprintf(&summary, "  - %s\n", name)
 				}
 			}
 			summary.WriteString("\n")
@@ -371,17 +371,17 @@ func formatSchemaSummary(schema any) (*mcp.CallToolResult, error) {
 
 		if len(objectTypes) > 0 {
 			sort.Strings(objectTypes)
-			summary.WriteString(fmt.Sprintf("Object Types (%d): %s\n\n", len(objectTypes), strings.Join(objectTypes, ", ")))
+			fmt.Fprintf(&summary, "Object Types (%d): %s\n\n", len(objectTypes), strings.Join(objectTypes, ", "))
 		}
 
 		if len(enumTypes) > 0 {
 			sort.Strings(enumTypes)
-			summary.WriteString(fmt.Sprintf("Enum Types (%d): %s\n\n", len(enumTypes), strings.Join(enumTypes, ", ")))
+			fmt.Fprintf(&summary, "Enum Types (%d): %s\n\n", len(enumTypes), strings.Join(enumTypes, ", "))
 		}
 
 		if len(scalarTypes) > 0 {
 			sort.Strings(scalarTypes)
-			summary.WriteString(fmt.Sprintf("Scalar Types (%d): %s\n\n", len(scalarTypes), strings.Join(scalarTypes, ", ")))
+			fmt.Fprintf(&summary, "Scalar Types (%d): %s\n\n", len(scalarTypes), strings.Join(scalarTypes, ", "))
 		}
 	}
 
@@ -500,7 +500,7 @@ func registerAuthenticationGuideTool(s *server.MCPServer) {
 		mcp.WithDescription(`Get comprehensive guidance on how to authenticate with the Spacelift GraphQL API, including all available authentication methods and practical examples.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Authentication Guide",
-			ReadOnlyHint: mcp.ToBoolPtr(true),
+			ReadOnlyHint: new(true),
 		}),
 		mcp.WithString("auth_method", mcp.Description("Specific authentication method to focus on: 'all', 'api_key', 'api_token', 'github_token', 'cli_token'"),
 			mcp.DefaultString("all"),

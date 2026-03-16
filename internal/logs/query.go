@@ -29,7 +29,7 @@ func runStateLogs(ctx context.Context, stack, run string, state structs.RunState
 	}
 
 	var token *graphql.String
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack":        graphql.ID(stack),
 		"run":          graphql.ID(run),
 		"state":        state,

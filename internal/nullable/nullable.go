@@ -2,7 +2,7 @@ package nullable
 
 // OfValue returns a pointer to the value.
 func OfValue[T any](value T) *T {
-	return &value
+	return new(value)
 }
 
 // GetValue returns the value of the pointer, or the zero value if the pointer is nil.

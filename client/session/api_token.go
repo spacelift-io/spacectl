@@ -77,7 +77,7 @@ func (a *apiToken) isFresh() bool {
 	return a.timer().Add(timePadding).Before(a.tokenValidUntil)
 }
 
-func (a *apiToken) mutate(ctx context.Context, m interface{}, variables map[string]interface{}) error {
+func (a *apiToken) mutate(ctx context.Context, m any, variables map[string]any) error {
 	return graphql.NewClient(a.Endpoint(), a.client).Mutate(ctx, m, variables)
 }
 

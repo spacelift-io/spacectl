@@ -24,7 +24,7 @@ func New(wraps *http.Client, session session.Session) Client {
 	return &client{wraps: wraps, session: session}
 }
 
-func (c *client) Mutate(ctx context.Context, mutation interface{}, variables map[string]interface{}, opts ...graphql.RequestOption) error {
+func (c *client) Mutate(ctx context.Context, mutation any, variables map[string]any, opts ...graphql.RequestOption) error {
 	apiClient, err := c.apiClient(ctx)
 	if err != nil {
 		return nil
@@ -34,7 +34,7 @@ func (c *client) Mutate(ctx context.Context, mutation interface{}, variables map
 	return c.determineClientError(ctx, apiClient, opts, err)
 }
 
-func (c *client) Query(ctx context.Context, query interface{}, variables map[string]interface{}, opts ...graphql.RequestOption) error {
+func (c *client) Query(ctx context.Context, query any, variables map[string]any, opts ...graphql.RequestOption) error {
 	apiClient, err := c.apiClient(ctx)
 	if err != nil {
 		return nil
@@ -58,7 +58,7 @@ func (c *client) determineClientError(ctx context.Context, client *graphql.Clien
 			ID string `graphql:"id" json:"id"`
 		}
 	}
-	queryErr := client.Query(ctx, &query, map[string]interface{}{}, opts...)
+	queryErr := client.Query(ctx, &query, map[string]any{}, opts...)
 	if queryErr == nil && query.Viewer != nil {
 		return fmt.Errorf("unauthorized: You're logged in. Maybe you don't have access to the resource?")
 	}
@@ -66,7 +66,7 @@ func (c *client) determineClientError(ctx context.Context, client *graphql.Clien
 	return fmt.Errorf("unauthorized: You can re-login using `spacectl profile login`")
 }
 
-func (c *client) URL(format string, a ...interface{}) string {
+func (c *client) URL(format string, a ...any) string {
 	endpoint := c.session.Endpoint()
 
 	endpointURL, err := url.Parse(endpoint)
@@ -110,7 +110,7 @@ func (c *client) Do(req *http.Request) (*http.Response, error) {
 	req.URL.Host = u.Host
 
 	// execute request
-	resp, err := httpC.Do(req)
+	resp, err := httpC.Do(req) //nolint:gosec // URL is constructed from user-configured Spacelift endpoint, not untrusted input
 	if err != nil {
 		return nil, fmt.Errorf("error executing request: %w", err)
 	}

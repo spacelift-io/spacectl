@@ -55,7 +55,7 @@ func (g *apiKey) exchange(ctx context.Context) error {
 		APIKeyUser user `graphql:"apiKeyUser(id: $id, secret: $secret)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"id":     graphql.ID(g.keyID),
 		"secret": graphql.String(g.keySecret),
 	}

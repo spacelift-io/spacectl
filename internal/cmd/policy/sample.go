@@ -37,7 +37,7 @@ func (c *sampleCommand) getSamplesPolicyByID(ctx context.Context, policyID, key 
 		} `graphql:"policy(id: $policyId)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"policyId": graphql.ID(policyID),
 		"key":      graphql.String(key),
 	}

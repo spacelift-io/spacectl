@@ -52,7 +52,7 @@ func localPreviewFunc(useHeaders bool) cli.ActionFunc {
 		var uploadURL string
 		var headers map[string]string
 
-		uploadVariables := map[string]interface{}{
+		uploadVariables := map[string]any{
 			"stack": graphql.ID(moduleID),
 		}
 
@@ -125,7 +125,7 @@ func localPreviewFunc(useHeaders bool) cli.ActionFunc {
 		for _, test := range cliCmd.StringSlice(flagTests.Name) {
 			tests = append(tests, graphql.String(test))
 		}
-		triggerVariables := map[string]interface{}{
+		triggerVariables := map[string]any{
 			"module":    graphql.ID(moduleID),
 			"workspace": graphql.ID(workspaceID),
 			"testIds":   tests,
@@ -163,7 +163,7 @@ func localPreviewFunc(useHeaders bool) cli.ActionFunc {
 							} `graphql:"module(id: $module)"`
 						}
 
-						if err := authenticated.Client().Query(ctx, &getRun, map[string]interface{}{
+						if err := authenticated.Client().Query(ctx, &getRun, map[string]any{
 							"module": graphql.ID(moduleID),
 							"run":    graphql.ID(triggerMutation.VersionProposeLocalWorkspace[index].ID),
 						}); err != nil {
@@ -223,7 +223,7 @@ func runPlainLocalPreview(ctx context.Context, moduleID string, initialRuns []ru
 					} `graphql:"module(id: $module)"`
 				}
 
-				if err := authenticated.Client().Query(ctx, &getRun, map[string]interface{}{
+				if err := authenticated.Client().Query(ctx, &getRun, map[string]any{
 					"module": graphql.ID(moduleID),
 					"run":    graphql.ID(runs[index].ID),
 				}); err != nil {

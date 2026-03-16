@@ -24,7 +24,7 @@ func runRetry(ctx context.Context, cliCmd *cli.Command) error {
 		} `graphql:"runRetry(stack: $stack, run: $run)"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"stack": graphql.ID(stackID),
 		"run":   graphql.ID(runID),
 	}
