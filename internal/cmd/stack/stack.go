@@ -636,6 +636,27 @@ func Command() cmd.Command {
 						},
 					},
 				},
+				Subcommands: []cmd.Command{
+					{
+						Name:  "list",
+						Usage: "Lists the tasks for a specified stack",
+						Versions: []cmd.VersionedCommand{
+							{
+								EarliestVersion: cmd.SupportedVersionAll,
+								Command: &cli.Command{
+									Flags: []cli.Flag{
+										flagStackID,
+										flagMaxResults,
+										cmd.FlagOutputFormat,
+									},
+									Action:    taskList,
+									Before:    authenticated.Ensure,
+									ArgsUsage: cmd.EmptyArgsUsage,
+								},
+							},
+						},
+					},
+				},
 			},
 			{
 				Category: "Stack management",
