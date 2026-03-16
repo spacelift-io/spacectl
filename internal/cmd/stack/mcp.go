@@ -659,7 +659,7 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 				EnvironmentVars:    envVars,
 				Targets:            targets,
 				Path:               path,
-				FindRepositoryRoot: true,
+				FindRepositoryRoot: path == nil,
 				DisregardGitignore: false,
 				UseHeaders:         options.UseHeadersForLocalPreview,
 				NoUpload:           false,

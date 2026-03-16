@@ -197,6 +197,18 @@ func createLocalPreviewRun(
 		}
 	}
 
+	if packagePath != nil && filepath.IsAbs(*packagePath) {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", fmt.Errorf("couldn't get current working directory: %w", err)
+		}
+		rel, err := filepath.Rel(cwd, *packagePath)
+		if err != nil {
+			return "", fmt.Errorf("couldn't make path %q relative to %q: %w", *packagePath, cwd, err)
+		}
+		packagePath = &rel
+	}
+
 	if packagePath == nil {
 		fmt.Fprintln(writer, "Packing local workspace...")
 	} else {
