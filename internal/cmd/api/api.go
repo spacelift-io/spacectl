@@ -27,6 +27,10 @@ var (
 		Name:  "raw",
 		Usage: "Output response body without pretty-printing",
 	}
+	flagSchema = &cli.BoolFlag{
+		Name:  "schema",
+		Usage: "Dump the full GraphQL schema via introspection",
+	}
 )
 
 func Command() cmd.Command {
@@ -39,7 +43,7 @@ func Command() cmd.Command {
 				EarliestVersion: cmd.SupportedVersionAll,
 				Command: &cli.Command{
 					Before:      authenticated.Ensure,
-					Flags:       []cli.Flag{flagVariables, flagRaw},
+					Flags:       []cli.Flag{flagVariables, flagRaw, flagSchema},
 					Description: "Pass a read-only GraphQL query as a positional argument, or pipe via stdin.\nBare field selections are wrapped as query { ... } automatically.\nMutations and subscriptions are not supported. Read more: https://github.com/spacelift-io/spacectl/tree/main/internal/cmd/api/README.md",
 					ArgsUsage:   "[query]",
 					Action:      run,
@@ -57,16 +61,22 @@ type apiRequest struct {
 var errMutationsNotAllowed = errors.New("mutations are not supported by spacectl api")
 
 func run(ctx context.Context, cliCmd *cli.Command) error {
-	query, err := resolveQuery(cliCmd)
-	if err != nil {
-		return err
-	}
+	var query string
+	if cliCmd.Bool(flagSchema.Name) {
+		query = introspectionQuery
+	} else {
+		var err error
+		query, err = resolveQuery(cliCmd)
+		if err != nil {
+			return err
+		}
 
-	// This is a hopefull check but it's enough for most cases.
-	// We could in theory allow mutations, but spacectl is not a great tool for
-	// that so we do not.
-	if isMutation(query) {
-		return errMutationsNotAllowed
+		// This is a hopefull check but it's enough for most cases.
+		// We could in theory allow mutations, but spacectl is not a great tool for
+		// that so we do not.
+		if isMutation(query) {
+			return errMutationsNotAllowed
+		}
 	}
 
 	variables, err := parseVariables(cliCmd.String(flagVariables.Name))
@@ -196,3 +206,87 @@ func truncate(b []byte, n int) string {
 	}
 	return s[:n] + "..."
 }
+
+const introspectionQuery = `query IntrospectionQuery {
+  __schema {
+    queryType { name }
+    mutationType { name }
+    subscriptionType { name }
+    types {
+      kind
+      name
+      description
+      fields(includeDeprecated: true) {
+        name
+        description
+        args {
+          name
+          description
+          type { ...TypeRef }
+          defaultValue
+        }
+        type { ...TypeRef }
+        isDeprecated
+        deprecationReason
+      }
+      inputFields {
+        name
+        description
+        type { ...TypeRef }
+        defaultValue
+      }
+      interfaces { ...TypeRef }
+      enumValues(includeDeprecated: true) {
+        name
+        description
+        isDeprecated
+        deprecationReason
+      }
+      possibleTypes { ...TypeRef }
+    }
+    directives {
+      name
+      description
+      locations
+      args {
+        name
+        description
+        type { ...TypeRef }
+        defaultValue
+      }
+    }
+  }
+}
+
+fragment TypeRef on __Type {
+  kind
+  name
+  ofType {
+    kind
+    name
+    ofType {
+      kind
+      name
+      ofType {
+        kind
+        name
+        ofType {
+          kind
+          name
+          ofType {
+            kind
+            name
+            ofType {
+              kind
+              name
+              ofType {
+                kind
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}`

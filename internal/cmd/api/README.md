@@ -45,25 +45,35 @@ spacectl api 'stacks { id name repository }' | jq '.data.stacks[] | select(.repo
 
 ## Schema Introspection
 
-You can explore the GraphQL schema using standard introspection queries:
+Use `--schema` to dump the full GraphQL schema via introspection:
+
+```bash
+# Full schema dump
+spacectl api --schema > schema.json
+
+# List all query names
+spacectl api --schema | jq '[.data.__schema.types[] | select(.name == "Query") | .fields[].name] | sort'
+
+# List all mutation names
+spacectl api --schema | jq '[.data.__schema.types[] | select(.name == "Mutation") | .fields[].name] | sort'
+
+# Inspect a specific type
+spacectl api --schema | jq '.data.__schema.types[] | select(.name == "Stack")'
+
+# List enum values
+spacectl api --schema | jq '.data.__schema.types[] | select(.name == "RunState") | .enumValues[].name'
+```
+
+You can also run targeted introspection queries directly:
 
 ```bash
 # List all queries
 spacectl api '{ __type(name: "Query") { fields { name } } }' | jq '.data.__type.fields[].name'
 
-# Inspect a specific query's arguments and return type
-spacectl api '{ __type(name: "Query") { fields { name args { name type { name kind ofType { name } } } type { name kind ofType { name } } } } }' \
+# Inspect a specific query's arguments
+spacectl api '{ __type(name: "Query") { fields { name args { name type { name kind ofType { name } } } } } }' \
   | jq '.data.__type.fields[] | select(.name == "stack")'
-
-# Inspect a type
-spacectl api '{ __type(name: "Stack") { fields { name type { name kind ofType { name } } } } }'
 
 # List all types (excluding internals)
 spacectl api '{ __schema { types { name kind } } }' | jq '[.data.__schema.types[] | select(.name | startswith("__") | not) | .name] | sort'
-
-# List enum values
-spacectl api '{ __type(name: "RunState") { enumValues { name } } }' | jq '.data.__type.enumValues[].name'
-
-# Full schema dump (raw introspection JSON):
-spacectl api '{ __schema { queryType { name } mutationType { name } types { kind name description fields(includeDeprecated: true) { name description args { name type { name kind ofType { name kind ofType { name kind } } } } type { name kind ofType { name kind ofType { name kind } } } } inputFields { name type { name kind ofType { name kind } } } enumValues { name description } possibleTypes { name } } } }' > schema.json
 ```
