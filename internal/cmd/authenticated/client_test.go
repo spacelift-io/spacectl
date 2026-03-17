@@ -1,11 +1,19 @@
 package authenticated
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
 	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,30 +93,28 @@ func TestConfigureTLS_InvalidCACert(t *testing.T) {
 	assert.ErrorIs(t, err, errEnvSpaceliftAPIClientCAParse)
 }
 
-// writeTempCA writes a self-signed PEM certificate to a temp file and returns the path.
+// writeTempCA generates a self-signed CA certificate and writes it to a temp file.
 func writeTempCA(t *testing.T) string {
 	t.Helper()
 
-	// Minimal self-signed cert for testing CA pool loading (not used for real TLS).
-	// Generated with: openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -days 36500
-	pem := []byte(`-----BEGIN CERTIFICATE-----
-MIIBkTCB+wIUYz3GFhMGQwMz3GFhMGQwMTIzNDU2NzgwCgYIKoZIzj0EAwIw
-ETEPMA0GA1UEAwwGdGVzdGNhMCAXDTI0MDEwMTAwMDAwMFoYDzIwNjQwMTAxMDAw
-MDAwWjARMQ8wDQYDVQQDDAZ0ZXN0Y2EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNC
-AASKYz3GFhMGQwbnGTi7lakFOVkgn3hMG6jPGXSDfIaJbMGGaNGQwMjM0NTY3ODkw
-MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4
-MAoGCCqGSM49BAMCA0gAMEUCIQCtest1234567890AAAAABBBBBCCCCCDDDDEEEE
-FFFGGGHHHIIIJJJKKKLLLMMMAIgtest1234567890abcdefghijklmnopqrstuvw
------END CERTIFICATE-----`)
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
 
-	// Use a real system cert if available, otherwise use a proper self-signed one.
-	// /etc/ssl/cert.pem exists on macOS and contains real CA certs.
-	systemCert := "/etc/ssl/cert.pem"
-	if _, err := os.Stat(systemCert); err == nil {
-		return systemCert
+	template := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "testca"},
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().Add(10 * 365 * 24 * time.Hour),
+		IsCA:                  true,
+		BasicConstraintsValid: true,
 	}
 
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	require.NoError(t, err)
+
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+
 	tmpFile := filepath.Join(t.TempDir(), "ca.pem")
-	require.NoError(t, os.WriteFile(tmpFile, pem, 0o600))
+	require.NoError(t, os.WriteFile(tmpFile, certPEM, 0o600))
 	return tmpFile
 }
