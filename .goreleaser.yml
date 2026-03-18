@@ -88,6 +88,12 @@ homebrew_casks:
       name: "homebrew-spacelift"
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: https://github.com/spacelift-io/spacectl
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/spacectl"]
+          end
     description: "Spacelift client and CLI"
     license: "MIT"
 
