@@ -1,22 +1,121 @@
 package api
 
-import (
-	"testing"
-)
+import "testing"
 
-func TestNormalizeQuery(t *testing.T) {
+func TestNormalizeDocument(t *testing.T) {
 	tests := []struct {
-		in, want string
+		name          string
+		in            string
+		allowMutation bool
+		want          string
+		wantErr       error
 	}{
-		{"{ viewer { id } }", "{ viewer { id } }"},
-		{"query { viewer { id } }", "query { viewer { id } }"},
-		{"mutation { deleteStack(id: \"x\") { id } }", "mutation { deleteStack(id: \"x\") { id } }"},
-		{"subscription { runs { id } }", "subscription { runs { id } }"},
-		{"stacks { id name }", "query { stacks { id name } }"},
+		{
+			name:    "query shorthand braces stay unchanged",
+			in:      "{ viewer { id } }",
+			want:    "{ viewer { id } }",
+			wantErr: nil,
+		},
+		{
+			name:    "query selection set shorthand",
+			in:      "stacks { id name }",
+			want:    "query { stacks { id name } }",
+			wantErr: nil,
+		},
+		{
+			name:    "full query syntax",
+			in:      "query { viewer { id } }",
+			want:    "query { viewer { id } }",
+			wantErr: nil,
+		},
+		{
+			name:          "mutation selection set shorthand",
+			in:            "stackDelete(id: \"x\") { id }",
+			allowMutation: true,
+			want:          "mutation { stackDelete(id: \"x\") { id } }",
+			wantErr:       nil,
+		},
+		{
+			name:    "field names containing keyword prefixes stay query shorthand",
+			in:      "mutation2Stack { id }",
+			want:    "query { mutation2Stack { id } }",
+			wantErr: nil,
+		},
+		{
+			name:          "full mutation syntax",
+			in:            "mutation DeleteStack($id: ID!) { stackDelete(id: $id) { id } }",
+			allowMutation: true,
+			want:          "mutation DeleteStack($id: ID!) { stackDelete(id: $id) { id } }",
+			wantErr:       nil,
+		},
+		{
+			name:    "mutation requires flag",
+			in:      "mutation { stackDelete(id: \"x\") { id } }",
+			wantErr: errMutationFlagRequired,
+		},
+		{
+			name:          "query rejected in mutation mode",
+			in:            "query { viewer { id } }",
+			allowMutation: true,
+			wantErr:       errMutationDocumentRequired,
+		},
+		{
+			name:          "query shorthand rejected in mutation mode",
+			in:            "{ viewer { id } }",
+			allowMutation: true,
+			wantErr:       errMutationDocumentRequired,
+		},
+		{
+			name:    "subscriptions rejected",
+			in:      "subscription { runs { id } }",
+			wantErr: errUnknownQueryDocument,
+		},
+		{
+			name:    "fragment must not be auto-wrapped",
+			in:      "fragment StackFields on Stack { id }",
+			wantErr: errUnknownQueryDocument,
+		},
 	}
+
 	for _, tc := range tests {
-		if got := normalizeQuery(tc.in); got != tc.want {
-			t.Errorf("normalizeQuery(%q) = %q, want %q", tc.in, got, tc.want)
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := normalizeDocument(tc.in, tc.allowMutation)
+			if tc.wantErr != nil {
+				if err == nil {
+					t.Fatalf("expected error %q, got nil", tc.wantErr)
+				}
+				if err.Error() != tc.wantErr.Error() {
+					t.Fatalf("got error %q, want %q", err, tc.wantErr)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if got != tc.want {
+				t.Fatalf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestFirstSignificantToken(t *testing.T) {
+	tests := []struct {
+		in   string
+		want string
+	}{
+		{"mutation { deleteStack(id: \"x\") { id } }", "mutation"},
+		{"mutation2Stack { id }", "mutation2stack"},
+		{"  # comment\nquery { viewer { id } }", "query"},
+		{"{ viewer { id } }", "{"},
+		{"...StackFields", "."},
+	}
+
+	for _, tc := range tests {
+		if got := firstSignificantToken(tc.in); got != tc.want {
+			t.Errorf("firstSignificantToken(%q) = %q, want %q", tc.in, got, tc.want)
 		}
 	}
 }
@@ -49,24 +148,6 @@ func TestGraphqlErrors(t *testing.T) {
 	}
 	if msg := graphqlErrors([]byte(`{"errors":[{"message":"a"},{"message":"b"}]}`)); msg != "a; b" {
 		t.Errorf("got %q", msg)
-	}
-}
-
-func TestIsMutation(t *testing.T) {
-	tests := []struct {
-		in   string
-		want bool
-	}{
-		{"mutation { deleteStack(id: \"x\") { id } }", true},
-		{"  Mutation { foo }", true},
-		{"query { stacks { id } }", false},
-		{"{ viewer { id } }", false},
-		{"stacks { id }", false},
-	}
-	for _, tc := range tests {
-		if got := isMutation(tc.in); got != tc.want {
-			t.Errorf("isMutation(%q) = %v, want %v", tc.in, got, tc.want)
-		}
 	}
 }
 

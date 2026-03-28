@@ -23,6 +23,10 @@ var (
 		Name:  "variables",
 		Usage: "JSON object with GraphQL variables",
 	}
+	flagMutation = &cli.BoolFlag{
+		Name:  "mutation",
+		Usage: "Allow and execute a GraphQL mutation",
+	}
 	flagRaw = &cli.BoolFlag{
 		Name:  "raw",
 		Usage: "Output response body without pretty-printing",
@@ -43,9 +47,9 @@ func Command() cmd.Command {
 				EarliestVersion: cmd.SupportedVersionAll,
 				Command: &cli.Command{
 					Before:      authenticated.Ensure,
-					Flags:       []cli.Flag{flagVariables, flagRaw, flagSchema},
-					Description: "Pass a read-only GraphQL query as a positional argument, or pipe via stdin.\nBare field selections are wrapped as query { ... } automatically.\nMutations and subscriptions are not supported. Read more: https://github.com/spacelift-io/spacectl/tree/main/internal/cmd/api/README.md",
-					ArgsUsage:   "[query]",
+					Flags:       []cli.Flag{flagVariables, flagMutation, flagRaw, flagSchema},
+					Description: "Pass a GraphQL document as a positional argument, or pipe via stdin.\nBare field selections are wrapped as query { ... } automatically.\nMutations require the --mutation flag. Subscriptions are not supported. Read more: https://github.com/spacelift-io/spacectl/tree/main/internal/cmd/api/README.md",
+					ArgsUsage:   "[document]",
 					Action:      run,
 				},
 			},
@@ -58,24 +62,28 @@ type apiRequest struct {
 	Variables map[string]any `json:"variables,omitempty"`
 }
 
-var errMutationsNotAllowed = errors.New("mutations are not supported by spacectl api")
+var errMutationFlagRequired = errors.New("this operation is a mutation; re-run with --mutation to allow write operations")
+var errMutationDocumentRequired = errors.New("--mutation requires a GraphQL mutation document")
+var errUnknownQueryDocument = errors.New(`could not determine GraphQL operation type; use 'query { stack(id: "x") { id } }' or 'stack(id: "x") { id }'`)
+var errUnknownMutationDocument = errors.New(`could not determine GraphQL operation type; when using --mutation, use 'mutation { stackDelete(id: "x") { id } }' or 'stackDelete(id: "x") { id }'`)
 
 func run(ctx context.Context, cliCmd *cli.Command) error {
 	var query string
 	if cliCmd.Bool(flagSchema.Name) {
+		if cliCmd.Bool(flagMutation.Name) {
+			return errors.New("--schema and --mutation cannot be used together")
+		}
 		query = introspectionQuery
 	} else {
 		var err error
-		query, err = resolveQuery(cliCmd)
+		query, err = resolveDocument(cliCmd)
 		if err != nil {
 			return err
 		}
 
-		// This is a hopefull check but it's enough for most cases.
-		// We could in theory allow mutations, but spacectl is not a great tool for
-		// that so we do not.
-		if isMutation(query) {
-			return errMutationsNotAllowed
+		query, err = normalizeDocument(query, cliCmd.Bool(flagMutation.Name))
+		if err != nil {
+			return err
 		}
 	}
 
@@ -124,9 +132,9 @@ func run(ctx context.Context, cliCmd *cli.Command) error {
 	return nil
 }
 
-func resolveQuery(cliCmd *cli.Command) (string, error) {
+func resolveDocument(cliCmd *cli.Command) (string, error) {
 	if args := strings.TrimSpace(strings.Join(cliCmd.Args().Slice(), " ")); args != "" {
-		return normalizeQuery(args), nil
+		return args, nil
 	}
 
 	if !isatty.IsTerminal(os.Stdin.Fd()) {
@@ -139,7 +147,7 @@ func resolveQuery(cliCmd *cli.Command) (string, error) {
 		}
 	}
 
-	return "", errors.New("query required: pass as argument or pipe via stdin")
+	return "", errors.New("document required: pass as argument or pipe via stdin")
 }
 
 func parseVariables(raw string) (map[string]any, error) {
@@ -153,17 +161,85 @@ func parseVariables(raw string) (map[string]any, error) {
 	return obj, nil
 }
 
-func normalizeQuery(query string) string {
-	lower := strings.ToLower(query)
-	if strings.HasPrefix(lower, "query") || strings.HasPrefix(lower, "mutation") || strings.HasPrefix(lower, "subscription") || strings.HasPrefix(query, "{") {
-		return query
+func normalizeDocument(document string, allowMutation bool) (string, error) {
+	switch start := firstSignificantToken(document); start {
+	case "mutation":
+		if !allowMutation {
+			return "", errMutationFlagRequired
+		}
+		return document, nil
+	case "query", "{":
+		if allowMutation {
+			return "", errMutationDocumentRequired
+		}
+		return document, nil
+	case "", "fragment", "subscription":
+		if allowMutation {
+			return "", errUnknownMutationDocument
+		}
+		return "", errUnknownQueryDocument
+	default:
+		if !isNameStart(start) {
+			if allowMutation {
+				return "", errUnknownMutationDocument
+			}
+			return "", errUnknownQueryDocument
+		}
+
+		if allowMutation {
+			return wrapOperation("mutation", document), nil
+		}
+		return wrapOperation("query", document), nil
 	}
-	return "query { " + query + " }"
 }
 
-func isMutation(query string) bool {
-	lower := strings.ToLower(strings.TrimSpace(query))
-	return strings.HasPrefix(lower, "mutation")
+func wrapOperation(kind, document string) string {
+	return kind + " { " + strings.TrimSpace(document) + " }"
+}
+
+func isNameStart(token string) bool {
+	if token == "" {
+		return false
+	}
+
+	c := token[0]
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
+}
+
+func firstSignificantToken(document string) string {
+	i := 0
+	for i < len(document) {
+		switch document[i] {
+		case ' ', '\t', '\n', '\r', ',':
+			i++
+		case '#':
+			for i < len(document) && document[i] != '\n' {
+				i++
+			}
+		default:
+			if document[i] == '{' {
+				return "{"
+			}
+
+			start := i
+			for i < len(document) {
+				c := document[i]
+				if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' {
+					i++
+					continue
+				}
+				break
+			}
+
+			if start == i {
+				return string(document[i])
+			}
+
+			return strings.ToLower(document[start:i])
+		}
+	}
+
+	return ""
 }
 
 func graphqlErrors(body []byte) string {

@@ -1,8 +1,8 @@
 # `spacectl api`
 
-`spacectl api` lets you run ad-hoc read-only GraphQL queries against the Spacelift API using your existing authentication.
+`spacectl api` lets you run ad-hoc GraphQL operations against the Spacelift API using your existing authentication.
 
-Mutations are not supported. For write operations, use the dedicated `spacectl` subcommands or the [Spacelift Terraform Provider](https://github.com/spacelift-io/terraform-provider-spacelift).
+Queries are allowed by default. Mutations require the explicit `--mutation` flag as a safety guard. Subscriptions are not supported.
 
 ## Usage
 
@@ -25,12 +25,20 @@ With variables:
 spacectl api --variables '{"id":"my-stack"}' 'query($id: ID!) { stack(id: $id) { id name } }'
 ```
 
+Mutations require `--mutation`. Bare mutation field selections are wrapped in `mutation { ... }` automatically:
+
+```bash
+spacectl api --mutation 'stackDelete(id: "my-stack") { id }'
+spacectl api --mutation 'mutation DeleteStack($id: ID!) { stackDelete(id: $id) { id } }' --variables '{"id":"my-stack"}'
+```
+
 From a file or stdin:
 
 ```bash
 spacectl api < query.graphql
 spacectl api --variables '{"id":"my-stack"}' < query.graphql
 cat query.graphql | spacectl api
+spacectl api --mutation < mutation.graphql
 ```
 
 ## Output
