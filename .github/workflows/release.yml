@@ -65,7 +65,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
-          version: "~> v2"
+          version: "v2.14.3"
           args: release --clean --snapshot=${{ !startsWith(github.ref, 'refs/tags/v') }}
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
