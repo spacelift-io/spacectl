@@ -58,27 +58,17 @@ func statePull() cli.ActionFunc {
 		}
 
 		outputPath := cliCmd.String(flagOutputFile.Name)
-		if outputPath == "" {
-			if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
-				return fmt.Errorf("failed to write state: %w", err)
+		outputWriter := io.WriteCloser(os.Stdout)
+		if outputPath != "" {
+			outputWriter, err = os.OpenFile(filepath.Clean(outputPath), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+			if err != nil {
+				return fmt.Errorf("failed to create output file: %w", err)
 			}
-			return nil
 		}
+		defer outputWriter.Close()
 
-		f, err := os.OpenFile(filepath.Clean(outputPath), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
-		if err != nil {
-			return fmt.Errorf("failed to create output file: %w", err)
-		}
-
-		if _, err := io.Copy(f, resp.Body); err != nil {
-			f.Close()
-			os.Remove(filepath.Clean(outputPath))
+		if _, err := io.Copy(outputWriter, resp.Body); err != nil {
 			return fmt.Errorf("failed to write state: %w", err)
-		}
-
-		if err := f.Close(); err != nil {
-			os.Remove(filepath.Clean(outputPath))
-			return fmt.Errorf("failed to flush state file: %w", err)
 		}
 
 		return nil
