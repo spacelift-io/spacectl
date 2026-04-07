@@ -770,6 +770,36 @@ func Command() cmd.Command {
 				},
 			},
 			{
+				Name:  "state",
+				Usage: "Manage stack state",
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command:         &cli.Command{},
+					},
+				},
+				Subcommands: []cmd.Command{
+					{
+						Name:  "pull",
+						Usage: "Download the current state file for a stack",
+						Versions: []cmd.VersionedCommand{
+							{
+								EarliestVersion: cmd.SupportedVersionAll,
+								Command: &cli.Command{
+									Flags: []cli.Flag{
+										flagStackID,
+										flagOutputFile,
+									},
+									Action:    statePull(),
+									Before:    authenticated.Ensure,
+									ArgsUsage: cmd.EmptyArgsUsage,
+								},
+							},
+						},
+					},
+				},
+			},
+			{
 				Name:  "resources",
 				Usage: "Manage and view resources for stacks",
 				Versions: []cmd.VersionedCommand{
