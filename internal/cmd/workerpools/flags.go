@@ -26,9 +26,9 @@ var flagWaitUntilDrained = &cli.BoolFlag{
 }
 
 var flagQueueLimit = &cli.IntFlag{
-	Name:    "limit",
-	Usage:   "Maximum number of schedulable runs to fetch",
-	Value:   100,
+	Name:  "limit",
+	Usage: "Maximum number of schedulable runs to fetch",
+	Value: 100,
 }
 
 var flagQueueAfter = &cli.StringFlag{
