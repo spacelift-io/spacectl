@@ -155,6 +155,7 @@ func Command() cmd.Command {
 								flagTail,
 								flagAutoConfirm,
 								flagRuntimeConfig,
+								flagForceApply,
 							},
 							Action:    runTrigger("TRACKED", "deployment"),
 							Before:    authenticated.Ensure,

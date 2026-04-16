@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v3"
@@ -41,10 +42,18 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 			}
 		}
 
+		var forceApply *structs.ForceApplyMode
+		if cliCmd.IsSet(flagForceApply.Name) {
+			forceApply, err = parseForceApplyMode(cliCmd.String(flagForceApply.Name))
+			if err != nil {
+				return err
+			}
+		}
+
 		var mutation struct {
 			RunTrigger struct {
 				ID string `graphql:"id"`
-			} `graphql:"runTrigger(stack: $stack, commitSha: $sha, runType: $type, runtimeConfig: $runtimeConfig)"`
+			} `graphql:"runTrigger(stack: $stack, commitSha: $sha, runType: $type, runtimeConfig: $runtimeConfig, forceApply: $forceApply)"`
 		}
 
 		variables := map[string]any{
@@ -52,6 +61,7 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 			"sha":           (*graphql.String)(nil),
 			"type":          structs.NewRunType(spaceliftType),
 			"runtimeConfig": runtimeConfigInput,
+			"forceApply":    forceApply,
 		}
 
 		if cliCmd.IsSet(flagCommitSHA.Name) {
@@ -113,5 +123,16 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 		}
 
 		return terminal.Error()
+	}
+}
+
+func parseForceApplyMode(s string) (*structs.ForceApplyMode, error) {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "single":
+		return structs.NewForceApplyMode("SINGLE"), nil
+	case "cascade":
+		return structs.NewForceApplyMode("CASCADE"), nil
+	default:
+		return nil, fmt.Errorf("invalid --force-apply value %q (use single or cascade)", s)
 	}
 }
