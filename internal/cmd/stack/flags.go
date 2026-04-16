@@ -95,6 +95,12 @@ var flagRuntimeConfig = &cli.StringFlag{
 	Required: false,
 }
 
+var flagForceApply = &cli.StringFlag{
+	Name:     "force-apply",
+	Usage:    "[Optional] Force apply: `single` (this stack only) or `cascade` (this stack and all dependencies)",
+	Required: false,
+}
+
 var flagNoTail = &cli.BoolFlag{
 	Name:  "no-tail",
 	Usage: "Indicate whether not to tail the run",
