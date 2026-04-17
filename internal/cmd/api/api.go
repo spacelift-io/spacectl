@@ -44,8 +44,8 @@ func Command() cmd.Command {
 				Command: &cli.Command{
 					Before:      authenticated.Ensure,
 					Flags:       []cli.Flag{flagVariables, flagRaw, flagSchema},
-					Description: "Pass a read-only GraphQL query as a positional argument, or pipe via stdin.\nBare field selections are wrapped as query { ... } automatically.\nMutations and subscriptions are not supported. Read more: https://github.com/spacelift-io/spacectl/tree/main/internal/cmd/api/README.md",
-					ArgsUsage:   "[query]",
+					Description: "Pass a GraphQL document as a positional argument, or pipe via stdin.\nThe provided document is sent unchanged to the Spacelift GraphQL API. Read more: https://github.com/spacelift-io/spacectl/tree/main/internal/cmd/api/README.md",
+					ArgsUsage:   "[document]",
 					Action:      run,
 				},
 			},
@@ -58,24 +58,15 @@ type apiRequest struct {
 	Variables map[string]any `json:"variables,omitempty"`
 }
 
-var errMutationsNotAllowed = errors.New("mutations are not supported by spacectl api")
-
 func run(ctx context.Context, cliCmd *cli.Command) error {
 	var query string
 	if cliCmd.Bool(flagSchema.Name) {
 		query = introspectionQuery
 	} else {
 		var err error
-		query, err = resolveQuery(cliCmd)
+		query, err = resolveDocument(cliCmd)
 		if err != nil {
 			return err
-		}
-
-		// This is a hopefull check but it's enough for most cases.
-		// We could in theory allow mutations, but spacectl is not a great tool for
-		// that so we do not.
-		if isMutation(query) {
-			return errMutationsNotAllowed
 		}
 	}
 
@@ -124,9 +115,9 @@ func run(ctx context.Context, cliCmd *cli.Command) error {
 	return nil
 }
 
-func resolveQuery(cliCmd *cli.Command) (string, error) {
+func resolveDocument(cliCmd *cli.Command) (string, error) {
 	if args := strings.TrimSpace(strings.Join(cliCmd.Args().Slice(), " ")); args != "" {
-		return normalizeQuery(args), nil
+		return args, nil
 	}
 
 	if !isatty.IsTerminal(os.Stdin.Fd()) {
@@ -139,7 +130,7 @@ func resolveQuery(cliCmd *cli.Command) (string, error) {
 		}
 	}
 
-	return "", errors.New("query required: pass as argument or pipe via stdin")
+	return "", errors.New("document required: pass as argument or pipe via stdin")
 }
 
 func parseVariables(raw string) (map[string]any, error) {
@@ -151,19 +142,6 @@ func parseVariables(raw string) (map[string]any, error) {
 		return nil, fmt.Errorf("failed to parse variables JSON: %w", err)
 	}
 	return obj, nil
-}
-
-func normalizeQuery(query string) string {
-	lower := strings.ToLower(query)
-	if strings.HasPrefix(lower, "query") || strings.HasPrefix(lower, "mutation") || strings.HasPrefix(lower, "subscription") || strings.HasPrefix(query, "{") {
-		return query
-	}
-	return "query { " + query + " }"
-}
-
-func isMutation(query string) bool {
-	lower := strings.ToLower(strings.TrimSpace(query))
-	return strings.HasPrefix(lower, "mutation")
 }
 
 func graphqlErrors(body []byte) string {
