@@ -357,6 +357,14 @@ Or if you prefer using Docker:
 - **search_graphql_schema_fields**: Search for fields, types, or operations
 - **get_authentication_guide**: Authentication guidance with examples
 
+## Agent Skill
+
+`spacectl` ships with an agent skill for LLM-based coding agents (Claude Code, OpenCode, etc.). Install it with:
+
+```bash
+npx skills add spacelift-io/spacectl
+```
+
 ## Contributing
 
 For information about how to contribute to the development of spacectl, please see our [CONTRIBUTING.md](./CONTRIBUTING.md) file.
