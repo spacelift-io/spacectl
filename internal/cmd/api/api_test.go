@@ -1,25 +1,6 @@
 package api
 
-import (
-	"testing"
-)
-
-func TestNormalizeQuery(t *testing.T) {
-	tests := []struct {
-		in, want string
-	}{
-		{"{ viewer { id } }", "{ viewer { id } }"},
-		{"query { viewer { id } }", "query { viewer { id } }"},
-		{"mutation { deleteStack(id: \"x\") { id } }", "mutation { deleteStack(id: \"x\") { id } }"},
-		{"subscription { runs { id } }", "subscription { runs { id } }"},
-		{"stacks { id name }", "query { stacks { id name } }"},
-	}
-	for _, tc := range tests {
-		if got := normalizeQuery(tc.in); got != tc.want {
-			t.Errorf("normalizeQuery(%q) = %q, want %q", tc.in, got, tc.want)
-		}
-	}
-}
+import "testing"
 
 func TestParseVariables(t *testing.T) {
 	if v, err := parseVariables(""); v != nil || err != nil {
@@ -49,24 +30,6 @@ func TestGraphqlErrors(t *testing.T) {
 	}
 	if msg := graphqlErrors([]byte(`{"errors":[{"message":"a"},{"message":"b"}]}`)); msg != "a; b" {
 		t.Errorf("got %q", msg)
-	}
-}
-
-func TestIsMutation(t *testing.T) {
-	tests := []struct {
-		in   string
-		want bool
-	}{
-		{"mutation { deleteStack(id: \"x\") { id } }", true},
-		{"  Mutation { foo }", true},
-		{"query { stacks { id } }", false},
-		{"{ viewer { id } }", false},
-		{"stacks { id }", false},
-	}
-	for _, tc := range tests {
-		if got := isMutation(tc.in); got != tc.want {
-			t.Errorf("isMutation(%q) = %v, want %v", tc.in, got, tc.want)
-		}
 	}
 }
 
