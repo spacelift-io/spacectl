@@ -17,29 +17,38 @@ import (
 
 func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 	return func(ctx context.Context, cliCmd *cli.Command) error {
-		stackID, err := getStackID(ctx, cliCmd)
+		stackID, sha, runtimeConfigInput, requestOpts, err := prepareRunTrigger(ctx, cliCmd)
 		if err != nil {
 			return err
 		}
 
-		var runtimeConfigInput *RuntimeConfigInput
-		if cliCmd.IsSet(flagRuntimeConfig.Name) {
-			runtimeConfigFilePath := cliCmd.String(flagRuntimeConfig.Name)
+		var mutation struct {
+			RunTrigger struct {
+				ID string `graphql:"id"`
+			} `graphql:"runTrigger(stack: $stack, commitSha: $sha, runType: $type, runtimeConfig: $runtimeConfig)"`
+		}
 
-			if _, err = os.Stat(runtimeConfigFilePath); err != nil {
-				return fmt.Errorf("runtime config file does not exist: %v", err)
-			}
+		variables := map[string]any{
+			"stack":         graphql.ID(stackID),
+			"sha":           sha,
+			"type":          structs.NewRunType(spaceliftType),
+			"runtimeConfig": runtimeConfigInput,
+		}
 
-			data, err := os.ReadFile(runtimeConfigFilePath)
-			if err != nil {
-				return fmt.Errorf("failed to read runtime config file: %v", err)
-			}
+		if err := authenticated.Client().Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
+			return err
+		}
 
-			yaml := string(data)
+		return finalizeRunTrigger(ctx, cliCmd, stackID, mutation.RunTrigger.ID, humanType, requestOpts)
+	}
+}
 
-			runtimeConfigInput = &RuntimeConfigInput{
-				Yaml: &yaml,
-			}
+// runTrigger510 is a version of runTrigger that works on SaaS and Self-Hosted versions 5.1.0+. It adds support for the forceApply option.
+func runTrigger510(spaceliftType, humanType string) cli.ActionFunc {
+	return func(ctx context.Context, cliCmd *cli.Command) error {
+		stackID, sha, runtimeConfigInput, requestOpts, err := prepareRunTrigger(ctx, cliCmd)
+		if err != nil {
+			return err
 		}
 
 		var forceApply *structs.ForceApplyMode
@@ -58,72 +67,106 @@ func runTrigger(spaceliftType, humanType string) cli.ActionFunc {
 
 		variables := map[string]any{
 			"stack":         graphql.ID(stackID),
-			"sha":           (*graphql.String)(nil),
+			"sha":           sha,
 			"type":          structs.NewRunType(spaceliftType),
 			"runtimeConfig": runtimeConfigInput,
 			"forceApply":    forceApply,
-		}
-
-		if cliCmd.IsSet(flagCommitSHA.Name) {
-			variables["sha"] = new(graphql.String(cliCmd.String(flagCommitSHA.Name)))
-		}
-
-		var requestOpts []graphql.RequestOption
-		if cliCmd.IsSet(flagRunMetadata.Name) {
-			requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCmd.String(flagRunMetadata.Name)))
 		}
 
 		if err := authenticated.Client().Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
 			return err
 		}
 
-		fmt.Println("You have successfully created a", humanType)
+		return finalizeRunTrigger(ctx, cliCmd, stackID, mutation.RunTrigger.ID, humanType, requestOpts)
+	}
+}
 
-		fmt.Println("The live run can be visited at", authenticated.Client().URL(
-			"/stack/%s/run/%s",
-			stackID,
-			mutation.RunTrigger.ID,
-		))
+func prepareRunTrigger(ctx context.Context, cliCmd *cli.Command) (string, *graphql.String, *RuntimeConfigInput, []graphql.RequestOption, error) {
+	stackID, err := getStackID(ctx, cliCmd)
+	if err != nil {
+		return "", nil, nil, nil, err
+	}
 
-		if !cliCmd.Bool(flagTail.Name) && !cliCmd.Bool(flagAutoConfirm.Name) {
-			return nil
+	var runtimeConfigInput *RuntimeConfigInput
+	if cliCmd.IsSet(flagRuntimeConfig.Name) {
+		runtimeConfigFilePath := cliCmd.String(flagRuntimeConfig.Name)
+
+		if _, err := os.Stat(runtimeConfigFilePath); err != nil {
+			return "", nil, nil, nil, fmt.Errorf("runtime config file does not exist: %v", err)
 		}
 
-		actionFn := func(state structs.RunState, stackID, runID string) error {
-			if state != "UNCONFIRMED" {
-				return nil
-			}
-
-			if !cliCmd.Bool(flagAutoConfirm.Name) {
-				return nil
-			}
-
-			var mutation struct {
-				RunConfirm struct {
-					ID string `graphql:"id"`
-				} `graphql:"runConfirm(stack: $stack, run: $run)"`
-			}
-
-			variables := map[string]any{
-				"stack": graphql.ID(stackID),
-				"run":   graphql.ID(runID),
-			}
-
-			if err := authenticated.Client().Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
-				return err
-			}
-
-			fmt.Println("Deployment was automatically confirmed because of --auto-confirm flag")
-			return nil
-		}
-
-		terminal, err := logs.NewExplorer(stackID, mutation.RunTrigger.ID, logs.WithActionOnRunState(actionFn)).RunFilteredLogs(ctx)
+		data, err := os.ReadFile(runtimeConfigFilePath)
 		if err != nil {
+			return "", nil, nil, nil, fmt.Errorf("failed to read runtime config file: %v", err)
+		}
+
+		yaml := string(data)
+
+		runtimeConfigInput = &RuntimeConfigInput{
+			Yaml: &yaml,
+		}
+	}
+
+	var sha *graphql.String
+	if cliCmd.IsSet(flagCommitSHA.Name) {
+		sha = new(graphql.String(cliCmd.String(flagCommitSHA.Name)))
+	}
+
+	var requestOpts []graphql.RequestOption
+	if cliCmd.IsSet(flagRunMetadata.Name) {
+		requestOpts = append(requestOpts, graphql.WithHeader(internal.UserProvidedRunMetadataHeader, cliCmd.String(flagRunMetadata.Name)))
+	}
+
+	return stackID, sha, runtimeConfigInput, requestOpts, nil
+}
+
+func finalizeRunTrigger(ctx context.Context, cliCmd *cli.Command, stackID, runID, humanType string, requestOpts []graphql.RequestOption) error {
+	fmt.Println("You have successfully created a", humanType)
+
+	fmt.Println("The live run can be visited at", authenticated.Client().URL(
+		"/stack/%s/run/%s",
+		stackID,
+		runID,
+	))
+
+	if !cliCmd.Bool(flagTail.Name) && !cliCmd.Bool(flagAutoConfirm.Name) {
+		return nil
+	}
+
+	actionFn := func(state structs.RunState, stackID, runID string) error {
+		if state != "UNCONFIRMED" {
+			return nil
+		}
+
+		if !cliCmd.Bool(flagAutoConfirm.Name) {
+			return nil
+		}
+
+		var mutation struct {
+			RunConfirm struct {
+				ID string `graphql:"id"`
+			} `graphql:"runConfirm(stack: $stack, run: $run)"`
+		}
+
+		variables := map[string]any{
+			"stack": graphql.ID(stackID),
+			"run":   graphql.ID(runID),
+		}
+
+		if err := authenticated.Client().Mutate(ctx, &mutation, variables, requestOpts...); err != nil {
 			return err
 		}
 
-		return terminal.Error()
+		fmt.Println("Deployment was automatically confirmed because of --auto-confirm flag")
+		return nil
 	}
+
+	terminal, err := logs.NewExplorer(stackID, runID, logs.WithActionOnRunState(actionFn)).RunFilteredLogs(ctx)
+	if err != nil {
+		return err
+	}
+
+	return terminal.Error()
 }
 
 func parseForceApplyMode(s string) (*structs.ForceApplyMode, error) {
