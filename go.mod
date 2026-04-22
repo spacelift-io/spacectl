@@ -9,11 +9,11 @@ require (
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834
 	github.com/cheggaaa/pb/v3 v3.1.7
-	github.com/cli/cli/v2 v2.90.0
+	github.com/cli/cli/v2 v2.91.0
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/manifoldco/promptui v0.9.0
-	github.com/mark3labs/mcp-go v0.48.0
+	github.com/mark3labs/mcp-go v0.49.0
 	github.com/mattn/go-isatty v0.0.21
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/onsi/gomega v1.39.1
