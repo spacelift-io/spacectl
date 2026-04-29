@@ -33,6 +33,7 @@ func loginCommand() *cli.Command {
 			flagBindHost,
 			flagBindPort,
 			flagEndpoint,
+			flagNoBrowser,
 		},
 	}
 }
@@ -193,7 +194,9 @@ func loginUsingWebBrowser(ctx context.Context, _ *cli.Command, creds *session.St
 	fmt.Printf("\nOpening browser to %s\n\n", handler.AuthenticationURL)
 
 	// Attempt to automatically open the URL in the user's browser
-	if err := browser.OpenURL(handler.AuthenticationURL); err != nil {
+	if noBrowser {
+		fmt.Printf("Please open the following URL in your browser to complete login:\n%s\n\n", handler.AuthenticationURL)
+	} else if err := browser.OpenURL(handler.AuthenticationURL); err != nil {
 		fmt.Printf("Failed to open the browser: %s\nPlease open the URL manually\n\n", err.Error())
 	}
 

@@ -69,6 +69,16 @@ var flagEndpoint = &cli.StringFlag{
 	Sources:  cli.EnvVars("SPACECTL_LOGIN_ENDPOINT"),
 }
 
+var noBrowser bool
+var flagNoBrowser = &cli.BoolFlag{
+	Name:        "no-browser",
+	Usage:       "[Optional] do not open the authentication URL in a browser",
+	Required:    false,
+	Value:       false,
+	Destination: &noBrowser,
+	Sources:     cli.EnvVars("SPACECTL_NO_BROWSER"),
+}
+
 const (
 	usageViewCSVTimeFormat   = "2006-01-02"
 	usageViewCSVDefaultRange = time.Duration(-1*30*24) * time.Hour
