@@ -78,17 +78,18 @@ type showStackQuery struct {
 				Owner string `graphql:"owner" json:"owner,omitempty"`
 			} `graphql:"module" json:"module"`
 		} `graphql:"moduleVersionsUsed" json:"moduleVersionsUsed,omitempty"`
-		Name             string `graphql:"name" json:"name,omitempty"`
-		Namespace        string `graphql:"namespace" json:"namespace,omitempty"`
-		ProjectRoot      string `graphql:"projectRoot" json:"projectRoot,omitempty"`
-		Provider         string `graphql:"provider" json:"provider,omitempty"`
-		Repository       string `graphql:"repository" json:"repository,omitempty"`
-		RunnerImage      string `graphql:"runnerImage" json:"runnerImage,omitempty"`
-		Starred          bool   `graphql:"starred" json:"starred"`
-		State            string `graphql:"state" json:"state,omitempty"`
-		StateSetAt       int64  `graphql:"stateSetAt" json:"stateSetAt,omitempty"`
-		TerraformVersion string `graphql:"terraformVersion" json:"terraformVersion,omitempty"`
-		TrackedCommit    struct {
+		Name                   string   `graphql:"name" json:"name,omitempty"`
+		Namespace              string   `graphql:"namespace" json:"namespace,omitempty"`
+		ProjectRoot            string   `graphql:"projectRoot" json:"projectRoot,omitempty"`
+		AdditionalProjectGlobs []string `graphql:"additionalProjectGlobs" json:"additionalProjectGlobs,omitempty"`
+		Provider               string   `graphql:"provider" json:"provider,omitempty"`
+		Repository             string   `graphql:"repository" json:"repository,omitempty"`
+		RunnerImage            string   `graphql:"runnerImage" json:"runnerImage,omitempty"`
+		Starred                bool     `graphql:"starred" json:"starred"`
+		State                  string   `graphql:"state" json:"state,omitempty"`
+		StateSetAt             int64    `graphql:"stateSetAt" json:"stateSetAt,omitempty"`
+		TerraformVersion       string   `graphql:"terraformVersion" json:"terraformVersion,omitempty"`
+		TrackedCommit          struct {
 			AuthorLogin string `graphql:"authorLogin" json:"authorLogin,omitempty"`
 			AuthorName  string `graphql:"authorName" json:"authorName,omitempty"`
 			Hash        string `graphql:"hash" json:"hash,omitempty"`
@@ -235,6 +236,7 @@ func (c *showStackCommand) outputBehaviorSettings(query showStackQuery) error {
 		{"Autoretry", fmt.Sprint(query.Stack.Autoretry)},
 		{"Local preview enabled", fmt.Sprint(query.Stack.LocalPreviewEnabled)},
 		{"Project root", fmt.Sprint(query.Stack.ProjectRoot)},
+		{"Additional project globs", strings.Join(query.Stack.AdditionalProjectGlobs, ", ")},
 		{"Runner image", stringWithDefault(query.Stack.RunnerImage, "default")},
 	}
 
