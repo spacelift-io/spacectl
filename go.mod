@@ -13,7 +13,7 @@ require (
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/manifoldco/promptui v0.9.0
-	github.com/mark3labs/mcp-go v0.50.0
+	github.com/mark3labs/mcp-go v0.52.0
 	github.com/mattn/go-isatty v0.0.22
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/onsi/gomega v1.40.0
@@ -26,7 +26,7 @@ require (
 	github.com/urfave/cli/v3 v3.8.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.20.0
-	golang.org/x/term v0.42.0
+	golang.org/x/term v0.43.0
 )
 
 require (
@@ -82,7 +82,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/net v0.53.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
+	golang.org/x/sys v0.44.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
