@@ -378,7 +378,7 @@ func registerSearchModulesTool(s *server.MCPServer) {
 		mcp.WithString("search", mcp.Description("Full text search query")),
 		mcp.WithString("terraform_provider", mcp.Description("Filter by Terraform provider (e.g., 'aws', 'gcp', 'azure')")),
 		mcp.WithString("space", mcp.Description("Filter by space ID")),
-		mcp.WithArray("labels", mcp.Description("Filter by labels (array of strings)")),
+		mcp.WithArray("labels", mcp.Description("Filter by labels (array of strings)"), mcp.WithStringItems()),
 		mcp.WithBoolean("public_only", mcp.Description("Only return public modules (default: false)")),
 		mcp.WithNumber("limit", mcp.Description("The maximum number of modules to return, default is 50")),
 		mcp.WithString("next_page_cursor", mcp.Description("The pagination cursor to use for fetching the next page of results")),

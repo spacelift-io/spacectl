@@ -210,7 +210,7 @@ func registerSearchContextsTool(s *server.MCPServer) {
 		}),
 		mcp.WithString("search", mcp.Description("Full text search query")),
 		mcp.WithString("space", mcp.Description("Filter by space ID")),
-		mcp.WithArray("labels", mcp.Description("Filter by labels (array of strings)")),
+		mcp.WithArray("labels", mcp.Description("Filter by labels (array of strings)"), mcp.WithStringItems()),
 		mcp.WithNumber("limit", mcp.Description("The maximum number of contexts to return, default is 50")),
 		mcp.WithString("next_page_cursor", mcp.Description("The pagination cursor to use for fetching the next page of results")),
 	)

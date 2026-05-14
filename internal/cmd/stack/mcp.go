@@ -585,7 +585,11 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 		}),
 		mcp.WithString("stack_id", mcp.Description("The ID of the stack"), mcp.Required()),
 		mcp.WithObject("environment_variables", mcp.Description("Environment variables to set for the run")),
-		mcp.WithArray("targets", mcp.Description("Limit the planning operation to only the given module, resource, or resource instance and all of its dependencies.")),
+		mcp.WithArray(
+			"targets",
+			mcp.Description("Limit the planning operation to only the given module, resource, or resource instance and all of its dependencies."),
+			mcp.WithStringItems(),
+		),
 		mcp.WithString("path", mcp.Description("The path to the local workspace. If not provided, the current working directory will be used.")),
 		mcp.WithString(
 			"await_for_completion",
