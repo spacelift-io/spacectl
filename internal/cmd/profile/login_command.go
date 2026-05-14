@@ -105,7 +105,7 @@ func getCredentialsType(cliCmd *cli.Command) (session.CredentialsType, error) {
 		return 0, err
 	}
 
-	return session.CredentialsType(result + 1), nil //nolint: gosec
+	return session.CredentialsType(result + 1), nil
 }
 
 func readEndpoint(cliCmd *cli.Command, reader *bufio.Reader) (string, error) {
