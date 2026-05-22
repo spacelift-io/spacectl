@@ -243,7 +243,7 @@ func (c *showStackCommand) outputBackendSettings(query showStackQuery) error {
 	pterm.DefaultSection.WithLevel(2).Println("Backend")
 	vc := query.Stack.VendorConfig
 	tableData := [][]string{
-		{"Vendor", c.humanizeVendor(vc.Vendor)},
+		{"Vendor", humanizeVendor(vc.Vendor)},
 	}
 
 	switch vc.Vendor {
@@ -442,7 +442,7 @@ func (c *showStackCommand) outputModuleVersionUsage(query showStackQuery) error 
 	return cmd.OutputTable(tableData, true)
 }
 
-func (c *showStackCommand) humanizeVendor(vendorConfigType string) string {
+func humanizeVendor(vendorConfigType string) string {
 	switch vendorConfigType {
 	case stackConfigVendorAnsible:
 		return "Ansible"

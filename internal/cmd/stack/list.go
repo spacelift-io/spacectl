@@ -110,7 +110,7 @@ func listStacksTable(
 		return err
 	}
 
-	columns := []string{"Name", "ID", "Commit", "Author", "State", "Worker Pool", "Locked By"}
+	columns := []string{"Name", "ID", "Commit", "Author", "State", "Vendor", "Worker Pool", "Locked By"}
 	if cliCmd.Bool(cmd.FlagShowLabels.Name) {
 		columns = append(columns, "Labels")
 	}
@@ -123,6 +123,7 @@ func listStacksTable(
 			cmd.HumanizeGitHash(s.TrackedCommit.Hash),
 			s.TrackedCommit.AuthorName,
 			s.State,
+			humanizeVendor(s.VendorConfig.Vendor),
 			s.WorkerPool.Name,
 			s.LockedBy,
 		}
@@ -251,7 +252,10 @@ type stack struct {
 		URL         string `graphql:"url" json:"url,omitempty"`
 	} `graphql:"trackedCommit" json:"trackedCommit"`
 	TrackedCommitSetBy string `graphql:"trackedCommitSetBy" json:"trackedCommitSetBy,omitempty"`
-	WorkerPool         struct {
+	VendorConfig       struct {
+		Vendor string `graphql:"__typename" json:"vendor,omitempty"`
+	} `graphql:"vendorConfig" json:"vendorConfig"`
+	WorkerPool struct {
 		ID   string `graphql:"id" json:"id,omitempty"`
 		Name string `graphql:"name" json:"name,omitempty"`
 	} `graphql:"workerPool" json:"workerPool"`
