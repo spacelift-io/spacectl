@@ -145,10 +145,14 @@ COMMANDS:
    run-external-dependency  Manage Spacelift Run external dependencies
    workerpool               Manages workerpools and their workers.
    blueprint                Manage Spacelift blueprints
+   template                 Manage Spacelift templates
    policy                   Manage Spacelift policies
    audit-trail              Manage Spacelift audit trail entries
    mcp                      Manage MCP server
    help, h                  Shows a list of commands or help for one command
+
+   GraphQL:
+     api  Call the Spacelift GraphQL API
 
 GLOBAL OPTIONS:
    --help, -h     show help
