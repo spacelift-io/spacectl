@@ -49,6 +49,25 @@ func Command() cmd.Command {
 					},
 				},
 			},
+			{
+				Name:  "show",
+				Usage: "Shows detailed information about a specific template",
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagRequiredTemplateID,
+								cmd.FlagOutputFormat,
+								cmd.FlagNoColor,
+							},
+							Action:    showTemplate,
+							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
+				},
+			},
 		},
 	}
 }
