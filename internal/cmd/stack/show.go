@@ -33,7 +33,144 @@ type stackConfigElement struct {
 	WriteOnly bool   `graphql:"writeOnly" json:"writeOnly"`
 }
 
-type showStackQuery struct {
+type stackVendorConfig interface {
+	vendorName() string
+	backendSettings(managesStateFile bool) [][]string
+}
+
+type vendorConfigBasic struct {
+	Vendor string `graphql:"__typename"`
+	Pulumi struct {
+		LoginURL  string `graphql:"loginURL"`
+		StackName string `graphql:"stackName"`
+	} `graphql:"... on StackConfigVendorPulumi"`
+	Terraform struct {
+		Version   string `graphql:"version"`
+		Workspace string `graphql:"workspace"`
+	} `graphql:"... on StackConfigVendorTerraform"`
+}
+
+func (vc vendorConfigBasic) vendorName() string {
+	return humanizeVendor(vc.Vendor)
+}
+
+func (vc vendorConfigBasic) backendSettings(managesStateFile bool) [][]string {
+	var tableData [][]string
+
+	switch vc.Vendor {
+	case stackConfigVendorPulumi:
+		tableData = append(tableData, []string{"Login URL", vc.Pulumi.LoginURL})
+		tableData = append(tableData, []string{"Stack name", vc.Pulumi.StackName})
+	case stackConfigVendorTerraform:
+		if !managesStateFile {
+			tableData = append(tableData, []string{"Workspace", vc.Terraform.Workspace})
+		}
+		tableData = append(tableData, []string{"Version", stringWithDefault(vc.Terraform.Version, "latest")})
+		tableData = append(tableData, []string{"Managed state", fmt.Sprint(managesStateFile)})
+	}
+
+	return tableData
+}
+
+type vendorConfigFull struct {
+	Vendor  string `graphql:"__typename"`
+	Ansible struct {
+		Playbook string `graphql:"playbook"`
+	} `graphql:"... on StackConfigVendorAnsible"`
+	CloudFormation struct {
+		EntryTemplateFile string `graphql:"entryTemplateFile"`
+		TemplateBucket    string `graphql:"templateBucket"`
+		StackName         string `graphql:"stackName"`
+		Region            string `graphql:"region"`
+	} `graphql:"... on StackConfigVendorCloudFormation"`
+	Kubernetes struct {
+		Namespace      string `graphql:"namespace"`
+		KubectlVersion string `graphql:"kubectlVersion"`
+		WorkflowTool   string `graphql:"kubernetesWorkflowTool"`
+	} `graphql:"... on StackConfigVendorKubernetes"`
+	OpenTofu struct {
+		Version                    string `graphql:"version"`
+		Workspace                  string `graphql:"workspace"`
+		UseSmartSanitization       bool   `graphql:"useSmartSanitization"`
+		ExternalStateAccessEnabled bool   `graphql:"externalStateAccessEnabled"`
+		Concise                    bool   `graphql:"concise"`
+		WorkflowTool               string `graphql:"openTofuWorkflowTool: workflowTool"`
+	} `graphql:"... on StackConfigVendorOpenTofu"`
+	Pulumi struct {
+		LoginURL  string `graphql:"loginURL"`
+		StackName string `graphql:"stackName"`
+	} `graphql:"... on StackConfigVendorPulumi"`
+	Terraform struct {
+		Version                    string `graphql:"version"`
+		Workspace                  string `graphql:"workspace"`
+		UseSmartSanitization       bool   `graphql:"useSmartSanitization"`
+		ExternalStateAccessEnabled bool   `graphql:"externalStateAccessEnabled"`
+		WorkflowTool               string `graphql:"terraformWorkflowTool: workflowTool"`
+	} `graphql:"... on StackConfigVendorTerraform"`
+	Terragrunt struct {
+		TerraformVersion     string `graphql:"terraformVersion"`
+		TerragruntVersion    string `graphql:"terragruntVersion"`
+		UseRunAll            bool   `graphql:"useRunAll"`
+		UseSmartSanitization bool   `graphql:"useSmartSanitization"`
+		Tool                 string `graphql:"tool"`
+		UseStateManagement   bool   `graphql:"useStateManagement"`
+	} `graphql:"... on StackConfigVendorTerragrunt"`
+}
+
+func (vc vendorConfigFull) vendorName() string {
+	return humanizeVendor(vc.Vendor)
+}
+
+func (vc vendorConfigFull) backendSettings(managesStateFile bool) [][]string {
+	var tableData [][]string
+
+	switch vc.Vendor {
+	case stackConfigVendorAnsible:
+		tableData = append(tableData, []string{"Playbook", vc.Ansible.Playbook})
+	case stackConfigVendorCloudFormation:
+		tableData = append(tableData, []string{"Stack name", vc.CloudFormation.StackName})
+		tableData = append(tableData, []string{"Region", vc.CloudFormation.Region})
+		tableData = append(tableData, []string{"Entry template file", vc.CloudFormation.EntryTemplateFile})
+		tableData = append(tableData, []string{"Template bucket", vc.CloudFormation.TemplateBucket})
+	case stackConfigVendorKubernetes:
+		tableData = append(tableData, []string{"Namespace", vc.Kubernetes.Namespace})
+		tableData = append(tableData, []string{"Kubectl version", stringWithDefault(vc.Kubernetes.KubectlVersion, "latest")})
+		tableData = append(tableData, []string{"Workflow tool", humanizeWorkflowTool(vc.Kubernetes.WorkflowTool)})
+	case stackConfigVendorOpenTofu:
+		if !managesStateFile {
+			tableData = append(tableData, []string{"Workspace", vc.OpenTofu.Workspace})
+		}
+		tableData = append(tableData, []string{"Version", stringWithDefault(vc.OpenTofu.Version, "latest")})
+		tableData = append(tableData, []string{"Workflow tool", humanizeWorkflowTool(vc.OpenTofu.WorkflowTool)})
+		tableData = append(tableData, []string{"Managed state", fmt.Sprint(managesStateFile)})
+		tableData = append(tableData, []string{"Smart sanitization", fmt.Sprint(vc.OpenTofu.UseSmartSanitization)})
+		tableData = append(tableData, []string{"External state access", fmt.Sprint(vc.OpenTofu.ExternalStateAccessEnabled)})
+		tableData = append(tableData, []string{"Concise", fmt.Sprint(vc.OpenTofu.Concise)})
+	case stackConfigVendorPulumi:
+		tableData = append(tableData, []string{"Login URL", vc.Pulumi.LoginURL})
+		tableData = append(tableData, []string{"Stack name", vc.Pulumi.StackName})
+	case stackConfigVendorTerraform:
+		if !managesStateFile {
+			tableData = append(tableData, []string{"Workspace", vc.Terraform.Workspace})
+		}
+		tableData = append(tableData, []string{"Version", stringWithDefault(vc.Terraform.Version, "latest")})
+		tableData = append(tableData, []string{"Workflow tool", humanizeWorkflowTool(vc.Terraform.WorkflowTool)})
+		tableData = append(tableData, []string{"Managed state", fmt.Sprint(managesStateFile)})
+		tableData = append(tableData, []string{"Smart sanitization", fmt.Sprint(vc.Terraform.UseSmartSanitization)})
+		tableData = append(tableData, []string{"External state access", fmt.Sprint(vc.Terraform.ExternalStateAccessEnabled)})
+	case stackConfigVendorTerragrunt:
+		tableData = append(tableData, []string{"Terragrunt version", stringWithDefault(vc.Terragrunt.TerragruntVersion, "latest")})
+		tableData = append(tableData, []string{"Terraform version", stringWithDefault(vc.Terragrunt.TerraformVersion, "latest")})
+		tableData = append(tableData, []string{"Tool", humanizeWorkflowTool(vc.Terragrunt.Tool)})
+		tableData = append(tableData, []string{"Run-all", fmt.Sprint(vc.Terragrunt.UseRunAll)})
+		tableData = append(tableData, []string{"State management", fmt.Sprint(vc.Terragrunt.UseStateManagement)})
+		tableData = append(tableData, []string{"Smart sanitization", fmt.Sprint(vc.Terragrunt.UseSmartSanitization)})
+	}
+
+	return tableData
+}
+
+type showStackQuery[VC stackVendorConfig] struct {
 	Stack *struct {
 		ID               string `graphql:"id" json:"id,omitempty"`
 		Administrative   bool   `graphql:"administrative" json:"administrative"`
@@ -103,60 +240,17 @@ type showStackQuery struct {
 			URL         string `graphql:"url" json:"url,omitempty"`
 		} `graphql:"trackedCommit" json:"trackedCommit"`
 		TrackedCommitSetBy string `graphql:"trackedCommitSetBy" json:"trackedCommitSetBy,omitempty"`
-		VendorConfig       struct {
-			Vendor  string `graphql:"__typename"`
-			Ansible struct {
-				Playbook string `graphql:"playbook"`
-			} `graphql:"... on StackConfigVendorAnsible"`
-			CloudFormation struct {
-				EntryTemplateFile string `graphql:"entryTemplateFile"`
-				TemplateBucket    string `graphql:"templateBucket"`
-				StackName         string `graphql:"stackName"`
-				Region            string `graphql:"region"`
-			} `graphql:"... on StackConfigVendorCloudFormation"`
-			Kubernetes struct {
-				Namespace      string `graphql:"namespace"`
-				KubectlVersion string `graphql:"kubectlVersion"`
-				WorkflowTool   string `graphql:"kubernetesWorkflowTool"`
-			} `graphql:"... on StackConfigVendorKubernetes"`
-			OpenTofu struct {
-				Version                    string `graphql:"version"`
-				Workspace                  string `graphql:"workspace"`
-				UseSmartSanitization       bool   `graphql:"useSmartSanitization"`
-				ExternalStateAccessEnabled bool   `graphql:"externalStateAccessEnabled"`
-				Concise                    bool   `graphql:"concise"`
-				WorkflowTool               string `graphql:"openTofuWorkflowTool: workflowTool"`
-			} `graphql:"... on StackConfigVendorOpenTofu"`
-			Pulumi struct {
-				LoginURL  string `graphql:"loginURL"`
-				StackName string `graphql:"stackName"`
-			} `graphql:"... on StackConfigVendorPulumi"`
-			Terraform struct {
-				Version                    string `graphql:"version"`
-				Workspace                  string `graphql:"workspace"`
-				UseSmartSanitization       bool   `graphql:"useSmartSanitization"`
-				ExternalStateAccessEnabled bool   `graphql:"externalStateAccessEnabled"`
-				WorkflowTool               string `graphql:"terraformWorkflowTool: workflowTool"`
-			} `graphql:"... on StackConfigVendorTerraform"`
-			Terragrunt struct {
-				TerraformVersion     string `graphql:"terraformVersion"`
-				TerragruntVersion    string `graphql:"terragruntVersion"`
-				UseRunAll            bool   `graphql:"useRunAll"`
-				UseSmartSanitization bool   `graphql:"useSmartSanitization"`
-				Tool                 string `graphql:"tool"`
-				UseStateManagement   bool   `graphql:"useStateManagement"`
-			} `graphql:"... on StackConfigVendorTerragrunt"`
-		} `graphql:"vendorConfig"`
-		WorkerPool struct {
+		VendorConfig       VC     `graphql:"vendorConfig"`
+		WorkerPool         struct {
 			ID   string `graphql:"id" json:"id,omitempty"`
 			Name string `graphql:"name" json:"name,omitempty"`
 		} `graphql:"workerPool" json:"workerPool"`
 	} `graphql:"stack(id: $stackId)" json:"stacks,omitempty"`
 }
 
-type showStackCommand struct{}
+type showStackCommand[VC stackVendorConfig] struct{}
 
-func (c *showStackCommand) showStack(ctx context.Context, cliCmd *cli.Command) error {
+func (c *showStackCommand[VC]) showStack(ctx context.Context, cliCmd *cli.Command) error {
 	stackID, err := getStackID(ctx, cliCmd)
 	if err != nil {
 		return err
@@ -167,7 +261,7 @@ func (c *showStackCommand) showStack(ctx context.Context, cliCmd *cli.Command) e
 		return err
 	}
 
-	var query showStackQuery
+	var query showStackQuery[VC]
 	variables := map[string]any{
 		"stackId": graphql.ID(stackID),
 	}
@@ -190,7 +284,7 @@ func (c *showStackCommand) showStack(ctx context.Context, cliCmd *cli.Command) e
 	return fmt.Errorf("unknown output format: %v", outputFormat)
 }
 
-func (c *showStackCommand) showStackTable(query showStackQuery) error {
+func (c *showStackCommand[VC]) showStackTable(query showStackQuery[VC]) error {
 	c.outputStackNameSection(query)
 	if err := c.outputVCSSettings(query); err != nil {
 		return err
@@ -214,7 +308,7 @@ func (c *showStackCommand) showStackTable(query showStackQuery) error {
 	return nil
 }
 
-func (c *showStackCommand) outputStackNameSection(query showStackQuery) {
+func (c *showStackCommand[VC]) outputStackNameSection(query showStackQuery[VC]) {
 	pterm.DefaultSection.WithLevel(1).Print(query.Stack.Name)
 
 	if len(query.Stack.Labels) > 0 {
@@ -228,7 +322,7 @@ func (c *showStackCommand) outputStackNameSection(query showStackQuery) {
 	}
 }
 
-func (c *showStackCommand) outputVCSSettings(query showStackQuery) error {
+func (c *showStackCommand[VC]) outputVCSSettings(query showStackQuery[VC]) error {
 	pterm.DefaultSection.WithLevel(2).Println("VCS Settings")
 	tableData := [][]string{
 		{"Provider", cmd.HumanizeVCSProvider(query.Stack.Provider)},
@@ -239,60 +333,19 @@ func (c *showStackCommand) outputVCSSettings(query showStackQuery) error {
 	return cmd.OutputTable(tableData, false)
 }
 
-func (c *showStackCommand) outputBackendSettings(query showStackQuery) error {
+func (c *showStackCommand[VC]) outputBackendSettings(query showStackQuery[VC]) error {
 	pterm.DefaultSection.WithLevel(2).Println("Backend")
 	vc := query.Stack.VendorConfig
 	tableData := [][]string{
-		{"Vendor", humanizeVendor(vc.Vendor)},
+		{"Vendor", vc.vendorName()},
 	}
 
-	switch vc.Vendor {
-	case stackConfigVendorAnsible:
-		tableData = append(tableData, []string{"Playbook", vc.Ansible.Playbook})
-	case stackConfigVendorCloudFormation:
-		tableData = append(tableData, []string{"Stack name", vc.CloudFormation.StackName})
-		tableData = append(tableData, []string{"Region", vc.CloudFormation.Region})
-		tableData = append(tableData, []string{"Entry template file", vc.CloudFormation.EntryTemplateFile})
-		tableData = append(tableData, []string{"Template bucket", vc.CloudFormation.TemplateBucket})
-	case stackConfigVendorKubernetes:
-		tableData = append(tableData, []string{"Namespace", vc.Kubernetes.Namespace})
-		tableData = append(tableData, []string{"Kubectl version", stringWithDefault(vc.Kubernetes.KubectlVersion, "latest")})
-		tableData = append(tableData, []string{"Workflow tool", humanizeWorkflowTool(vc.Kubernetes.WorkflowTool)})
-	case stackConfigVendorOpenTofu:
-		if !query.Stack.ManagesStateFile {
-			tableData = append(tableData, []string{"Workspace", vc.OpenTofu.Workspace})
-		}
-		tableData = append(tableData, []string{"Version", stringWithDefault(vc.OpenTofu.Version, "latest")})
-		tableData = append(tableData, []string{"Workflow tool", humanizeWorkflowTool(vc.OpenTofu.WorkflowTool)})
-		tableData = append(tableData, []string{"Managed state", fmt.Sprint(query.Stack.ManagesStateFile)})
-		tableData = append(tableData, []string{"Smart sanitization", fmt.Sprint(vc.OpenTofu.UseSmartSanitization)})
-		tableData = append(tableData, []string{"External state access", fmt.Sprint(vc.OpenTofu.ExternalStateAccessEnabled)})
-		tableData = append(tableData, []string{"Concise", fmt.Sprint(vc.OpenTofu.Concise)})
-	case stackConfigVendorPulumi:
-		tableData = append(tableData, []string{"Login URL", vc.Pulumi.LoginURL})
-		tableData = append(tableData, []string{"Stack name", vc.Pulumi.StackName})
-	case stackConfigVendorTerraform:
-		if !query.Stack.ManagesStateFile {
-			tableData = append(tableData, []string{"Workspace", vc.Terraform.Workspace})
-		}
-		tableData = append(tableData, []string{"Version", stringWithDefault(vc.Terraform.Version, "latest")})
-		tableData = append(tableData, []string{"Workflow tool", humanizeWorkflowTool(vc.Terraform.WorkflowTool)})
-		tableData = append(tableData, []string{"Managed state", fmt.Sprint(query.Stack.ManagesStateFile)})
-		tableData = append(tableData, []string{"Smart sanitization", fmt.Sprint(vc.Terraform.UseSmartSanitization)})
-		tableData = append(tableData, []string{"External state access", fmt.Sprint(vc.Terraform.ExternalStateAccessEnabled)})
-	case stackConfigVendorTerragrunt:
-		tableData = append(tableData, []string{"Terragrunt version", stringWithDefault(vc.Terragrunt.TerragruntVersion, "latest")})
-		tableData = append(tableData, []string{"Terraform version", stringWithDefault(vc.Terragrunt.TerraformVersion, "latest")})
-		tableData = append(tableData, []string{"Tool", humanizeWorkflowTool(vc.Terragrunt.Tool)})
-		tableData = append(tableData, []string{"Run-all", fmt.Sprint(vc.Terragrunt.UseRunAll)})
-		tableData = append(tableData, []string{"State management", fmt.Sprint(vc.Terragrunt.UseStateManagement)})
-		tableData = append(tableData, []string{"Smart sanitization", fmt.Sprint(vc.Terragrunt.UseSmartSanitization)})
-	}
+	tableData = append(tableData, vc.backendSettings(query.Stack.ManagesStateFile)...)
 
 	return cmd.OutputTable(tableData, false)
 }
 
-func (c *showStackCommand) outputBehaviorSettings(query showStackQuery) error {
+func (c *showStackCommand[VC]) outputBehaviorSettings(query showStackQuery[VC]) error {
 	pterm.DefaultSection.WithLevel(2).Println("VCS Settings")
 
 	workerPoolText := "Using shared public worker pool"
@@ -358,7 +411,7 @@ func (c *showStackCommand) outputBehaviorSettings(query showStackQuery) error {
 	return nil
 }
 
-func (c *showStackCommand) outputContexts(query showStackQuery) error {
+func (c *showStackCommand[VC]) outputContexts(query showStackQuery[VC]) error {
 	if len(query.Stack.AttachedContexts) == 0 {
 		return nil
 	}
@@ -382,7 +435,7 @@ func (c *showStackCommand) outputContexts(query showStackQuery) error {
 	return cmd.OutputTable(tableData, true)
 }
 
-func (c *showStackCommand) outputPolicies(query showStackQuery) error {
+func (c *showStackCommand[VC]) outputPolicies(query showStackQuery[VC]) error {
 	if len(query.Stack.AttachedPolicies) == 0 {
 		return nil
 	}
@@ -401,7 +454,7 @@ func (c *showStackCommand) outputPolicies(query showStackQuery) error {
 	return cmd.OutputTable(tableData, true)
 }
 
-func (c *showStackCommand) outputScripts(scripts []string, title string) error {
+func (c *showStackCommand[VC]) outputScripts(scripts []string, title string) error {
 	if len(scripts) > 0 {
 		pterm.DefaultSection.WithLevel(3).Println(title)
 		var items []pterm.BulletListItem
@@ -417,7 +470,7 @@ func (c *showStackCommand) outputScripts(scripts []string, title string) error {
 	return nil
 }
 
-func (c *showStackCommand) outputModuleVersionUsage(query showStackQuery) error {
+func (c *showStackCommand[VC]) outputModuleVersionUsage(query showStackQuery[VC]) error {
 	if len(query.Stack.ModuleVersionsUsed) == 0 {
 		return nil
 	}
