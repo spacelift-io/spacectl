@@ -604,7 +604,21 @@ func Command() cmd.Command {
 								cmd.FlagOutputFormat,
 								cmd.FlagNoColor,
 							},
-							Action:    (&showStackCommand{}).showStack,
+							Action:    (&showStackCommand[vendorConfigBasic]{}).showStack,
+							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
+					{
+						EarliestVersion: cmd.SupportedVersion("6.0.0"),
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRun,
+								cmd.FlagOutputFormat,
+								cmd.FlagNoColor,
+							},
+							Action:    (&showStackCommand[vendorConfigFull]{}).showStack,
 							Before:    cmd.PerformAllBefore(cmd.HandleNoColor, authenticated.Ensure),
 							ArgsUsage: cmd.EmptyArgsUsage,
 						},
