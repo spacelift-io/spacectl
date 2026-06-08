@@ -277,6 +277,20 @@ By default the login process is interactive, however, if that does not fit your 
 
 You can switch between account profiles by using `spacectl profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacectl profile logout ${MY_ALIAS}` command.
 
+### Custom TLS configuration
+
+If your Spacelift endpoint is served behind a custom or internal CA, `spacectl` needs to trust that CA to establish a TLS connection. This usually works out of the box on a workstation where the certificate is installed in the OS trust store, but not in minimal environments that only ship the public CA bundle, where the same command fails with a TLS verification error.
+
+`spacectl` reads the following environment variables to configure TLS for API requests:
+
+- `SPACELIFT_API_TLS_CA` - path to a PEM bundle used to verify the Spacelift API endpoint. Use this to trust a custom or internal CA.
+- `SPACELIFT_API_TLS_CERT` and `SPACELIFT_API_TLS_KEY` - paths to a client certificate and key, for endpoints that require mutual TLS.
+
+If `SPACELIFT_API_TLS_CA` is not set, `spacectl` falls back to the standard `SSL_CERT_FILE` variable (honored by Go's TLS stack), also pointing at a PEM file.
+
+> [!NOTE]
+> When a CA bundle is provided through either variable, it replaces the system trust store rather than extending it, so the file must contain the full chain needed to verify the endpoint.
+
 ## MCP Server
 
 Spacectl includes an MCP (Model Context Protocol) server that allows AI models to interact with Spacelift through a standardized interface. MCP is an open protocol that standardizes how applications provide context to LLMs, similar to how USB-C provides a standardized way to connect devices to peripherals.
