@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"testing"
 
@@ -329,6 +330,20 @@ func TestProfileManager(t *testing.T) {
 				current := manager.Current()
 				gomega.Expect(current).NotTo(gomega.BeNil())
 				gomega.Expect(current.Alias).To(gomega.Equal("profile2"))
+			})
+		})
+
+		g.Describe("UserProfileManager", func() {
+			g.It("uses SPACELIFT_CONFIG_DIR when set", func() {
+				customDir := path.Join(testDirectory, "custom-config")
+				g.Assert(os.Setenv(session.EnvSpaceliftConfigDirectory, customDir)).Equal(nil)
+				defer func() { _ = os.Unsetenv(session.EnvSpaceliftConfigDirectory) }()
+
+				userManager, err := session.UserProfileManager()
+
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				gomega.Expect(customDir).Should(gomega.BeADirectory())
+				gomega.Expect(userManager.ConfigurationFile).To(gomega.Equal(filepath.Join(customDir, session.ConfigFileName)))
 			})
 		})
 

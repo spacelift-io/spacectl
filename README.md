@@ -277,6 +277,17 @@ By default the login process is interactive, however, if that does not fit your 
 
 You can switch between account profiles by using `spacectl profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacectl profile logout ${MY_ALIAS}` command.
 
+#### Overriding the config directory location
+
+By default profiles are stored in `${HOME}/.spacelift`. In containers or CI runners `$HOME` may not be set or writable, so you can point `spacectl` at a different directory with the `SPACELIFT_CONFIG_DIR` environment variable:
+
+```bash
+export SPACELIFT_CONFIG_DIR=/workspace/.spacelift
+spacectl profile login my-account
+```
+
+When `SPACELIFT_CONFIG_DIR` is set it takes precedence over `${HOME}/.spacelift`; otherwise the default location is used.
+
 ## MCP Server
 
 Spacectl includes an MCP (Model Context Protocol) server that allows AI models to interact with Spacelift through a standardized interface. MCP is an open protocol that standardizes how applications provide context to LLMs, similar to how USB-C provides a standardized way to connect devices to peripherals.
