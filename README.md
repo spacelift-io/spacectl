@@ -277,6 +277,17 @@ By default the login process is interactive, however, if that does not fit your 
 
 You can switch between account profiles by using `spacectl profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacectl profile logout ${MY_ALIAS}` command.
 
+#### Overriding the config directory location
+
+By default profiles are stored in `${HOME}/.spacelift`. In containers or CI runners `$HOME` may not be set or writable, so you can point `spacectl` at a different directory with the `SPACELIFT_CONFIG_DIR` environment variable:
+
+```bash
+export SPACELIFT_CONFIG_DIR=/workspace/.spacelift
+spacectl profile login my-account
+```
+
+When `SPACELIFT_CONFIG_DIR` is set it takes precedence over `${HOME}/.spacelift`; otherwise the default location is used.
+
 ### Custom TLS configuration
 
 If your Spacelift endpoint is served behind a custom or internal CA, `spacectl` needs to trust that CA to establish a TLS connection. This usually works out of the box on a workstation where the certificate is installed in the OS trust store, but not in minimal environments that only ship the public CA bundle, where the same command fails with a TLS verification error.

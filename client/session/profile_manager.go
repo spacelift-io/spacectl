@@ -15,6 +15,11 @@ const (
 
 	// ConfigFileName is the name of the file containing the spacectl config.
 	ConfigFileName = "config.json"
+
+	// EnvSpaceliftConfigDirectory is the name of the environment variable that,
+	// when set, overrides the directory spacectl uses to store its profiles and
+	// configuration. When unset, spacectl falls back to ${HOME}/.spacelift.
+	EnvSpaceliftConfigDirectory = "SPACELIFT_CONFIG_DIR"
 )
 
 // invalidProfileAliases contains a list of strings that cannot be used as profile aliases.
@@ -49,16 +54,34 @@ type ProfileManager struct {
 }
 
 // UserProfileManager creates a new ProfileManager using the user home directory to store the profile data.
+// If SPACELIFT_CONFIG_DIR is set, that directory is used instead. This is useful in containerized or CI
+// environments where $HOME may not be writable or the config should live in a well-known location.
 func UserProfileManager() (*ProfileManager, error) {
-	userHomeDir, err := os.UserHomeDir()
+	configDir, err := userConfigDirectory()
 	if err != nil {
-		return nil, fmt.Errorf("could not find user home directory: %w", err)
+		return nil, err
 	}
-	manager, err := NewProfileManager(filepath.Join(userHomeDir, SpaceliftConfigDirectory))
+
+	manager, err := NewProfileManager(configDir)
 	if err != nil {
 		return nil, fmt.Errorf("could not create profile manager: %w", err)
 	}
 	return manager, nil
+}
+
+// userConfigDirectory resolves the directory used to store spacectl profiles and configuration.
+// It honors SPACELIFT_CONFIG_DIR when set, otherwise falling back to ${HOME}/.spacelift.
+func userConfigDirectory() (string, error) {
+	if dir := os.Getenv(EnvSpaceliftConfigDirectory); dir != "" {
+		return dir, nil
+	}
+
+	userHomeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("could not find user home directory: %w", err)
+	}
+
+	return filepath.Join(userHomeDir, SpaceliftConfigDirectory), nil
 }
 
 // NewProfileManager creates a new ProfileManager using the specified directory to store the profile data.
