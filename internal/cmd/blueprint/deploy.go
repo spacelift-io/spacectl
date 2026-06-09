@@ -96,7 +96,7 @@ func promptForInputs(b blueprint, err error) ([]BlueprintStackCreateInputPair, e
 				return nil, err
 			}
 		case "boolean":
-			value, err = promptForSelectInput(input, []string{"true", "false"})
+			value, err = promptForBooleanInput(input)
 			if err != nil {
 				return nil, err
 			}
@@ -202,6 +202,19 @@ func promptForSelectInput(input blueprintInput, options []string) (string, error
 	}
 
 	return result, nil
+}
+
+func promptForBooleanInput(input blueprintInput) (string, error) {
+	if input.Default != "" {
+		def, err := strconv.ParseBool(input.Default)
+		if err != nil { // Silently ignore invalid defaults and prompt the user.
+			input.Default = "" // Earlier validation should prevent this.
+		} else {
+			input.Default = strconv.FormatBool(def)
+		}
+	}
+
+	return promptForSelectInput(input, []string{"true", "false"})
 }
 
 // inputsFromFile reads blueprint inputs from a JSON file. The file must be a
