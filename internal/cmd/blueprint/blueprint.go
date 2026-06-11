@@ -77,6 +77,7 @@ func Command() cmd.Command {
 						Command: &cli.Command{
 							Flags: []cli.Flag{
 								flagRequiredBlueprintID,
+								flagInputFile,
 								cmd.FlagNoColor,
 							},
 							Action:    (&deployCommand{}).deploy,

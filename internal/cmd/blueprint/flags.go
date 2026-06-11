@@ -8,3 +8,9 @@ var flagRequiredBlueprintID = &cli.StringFlag{
 	Usage:    "[Required] `ID` of the blueprint",
 	Required: true,
 }
+
+var flagInputFile = &cli.StringFlag{
+	Name:    "input-file",
+	Aliases: []string{"if"},
+	Usage:   "[Optional] Load blueprint options from the JSON `FILE`",
+}
