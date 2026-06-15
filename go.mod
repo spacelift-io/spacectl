@@ -16,14 +16,14 @@ require (
 	github.com/mark3labs/mcp-go v0.54.1
 	github.com/mattn/go-isatty v0.0.22
 	github.com/mholt/archiver/v3 v3.5.1
-	github.com/onsi/gomega v1.41.0
+	github.com/onsi/gomega v1.42.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
 	github.com/pterm/pterm v0.12.83
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/shurcooL/graphql v0.0.0-20240915155400-7ee5256398cf
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.9.1
+	github.com/urfave/cli/v3 v3.10.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.21.0
 	golang.org/x/term v0.44.0
