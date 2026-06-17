@@ -227,6 +227,12 @@ type showStackQuery[VC stackVendorConfig] struct {
 		Provider               string   `graphql:"provider" json:"provider,omitempty"`
 		Repository             string   `graphql:"repository" json:"repository,omitempty"`
 		RunnerImage            string   `graphql:"runnerImage" json:"runnerImage,omitempty"`
+		SpaceDetails 	       struct {
+			ID          string  `graphql:"id" json:"id,omitempty"`
+			Name        string  `graphql:"name" json:"name,omitempty"`
+			Description string  `graphql:"description" json:"description,omitempty"`
+			ParentSpace *string `graphql:"parentSpace" json:"parentSpace,omitempty"`
+		} `graphql:"spaceDetails" json:"spaceDetails"`
 		Starred                bool     `graphql:"starred" json:"starred"`
 		State                  string   `graphql:"state" json:"state,omitempty"`
 		StateSetAt             int64    `graphql:"stateSetAt" json:"stateSetAt,omitempty"`
@@ -310,6 +316,9 @@ func (c *showStackCommand[VC]) showStackTable(query showStackQuery[VC]) error {
 
 func (c *showStackCommand[VC]) outputStackNameSection(query showStackQuery[VC]) {
 	pterm.DefaultSection.WithLevel(1).Print(query.Stack.Name)
+
+	pterm.DefaultSection.WithLevel(2).Println("Space")
+	pterm.DefaultParagraph.Println(fmt.Sprintf("%s (%s)", query.Stack.SpaceDetails.Name, query.Stack.SpaceDetails.ID))
 
 	if len(query.Stack.Labels) > 0 {
 		pterm.DefaultSection.WithLevel(2).Println("Labels")
