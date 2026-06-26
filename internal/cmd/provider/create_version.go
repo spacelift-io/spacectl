@@ -14,7 +14,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 )
 
-func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
+func createVersion(useHeadersFromAPI, verifyVersion bool) cli.ActionFunc {
 	return func(ctx context.Context, cliCmd *cli.Command) error {
 		// Assuming that spacectl is ran from the root of the repository,
 		// containing the release artifacts in the "dist" directory.
@@ -149,7 +149,37 @@ func createVersion(useHeadersFromAPI bool) cli.ActionFunc {
 				}
 			}
 		}
-		log("Draft version %s created\n", versionID)
+
+		// The terraformProviderVersionVerify mutation was only introduced in newer
+		// backend versions, so we skip verification when running against older ones.
+		if verifyVersion {
+			var verifyMutation struct {
+				Version struct {
+					ID                  string  `graphql:"id"`
+					VerificationFailure *string `graphql:"verificationFailure"`
+				} `graphql:"terraformProviderVersionVerify(version: $version)"`
+			}
+
+			log("Verifying the signature and checksums: ")
+
+			var verification string
+			if err = authenticated.Client().Mutate(ctx, &verifyMutation, map[string]any{
+				"version": graphql.ID(versionID),
+			}); err != nil {
+				verification = "verified: failed"
+				log("%s\n", err)
+			} else if vf := verifyMutation.Version.VerificationFailure; vf != nil && *vf != "" {
+				verification = "verified: failed"
+				log("%s\n", *vf)
+			} else {
+				verification = "verified: valid"
+				log("OK\n")
+			}
+
+			log("Draft version %s created (%s)\n", versionID, verification)
+		} else {
+			log("Draft version %s created\n", versionID)
+		}
 
 		if versionData.Changelog == nil {
 			if quiet {
