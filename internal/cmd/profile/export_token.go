@@ -2,12 +2,13 @@ package profile
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/spacelift-io/spacectl/client/session"
 	"github.com/spacelift-io/spacectl/internal/cmd"
 )
 
@@ -18,17 +19,12 @@ func exportTokenCommand() *cli.Command {
 			"we suggest piping it to your OS pastebin",
 		ArgsUsage: cmd.EmptyArgsUsage,
 		Action: func(ctx context.Context, _ *cli.Command) error {
-			currentProfile := manager.Current()
-			if currentProfile == nil {
-				return errors.New("no account is currently selected")
-			}
-
-			session, err := currentProfile.Credentials.Session(ctx, http.DefaultClient)
+			sess, err := resolveSession(ctx, manager, http.DefaultClient, os.LookupEnv)
 			if err != nil {
 				return fmt.Errorf("could not get session: %w", err)
 			}
 
-			token, err := session.BearerToken(ctx)
+			token, err := sess.BearerToken(ctx)
 			if err != nil {
 				return fmt.Errorf("could not get bearer token: %w", err)
 			}
@@ -40,4 +36,20 @@ func exportTokenCommand() *cli.Command {
 			return nil
 		},
 	}
+}
+
+// resolveSession returns the session to export a token from. It prefers the
+// currently selected profile, falling back to credentials from the environment
+// when none is set (e.g. in CI, where SPACELIFT_API_KEY_ID and
+// SPACELIFT_API_KEY_SECRET - the latter possibly an OIDC token - are provided
+// directly). The fallback lets `export-token` exchange those for a session token
+// without anyone having to hand-roll the apiKeyUser GraphQL mutation.
+func resolveSession(ctx context.Context, m *session.ProfileManager, httpClient *http.Client, lookup func(string) (string, bool)) (session.Session, error) {
+	if m != nil {
+		if current := m.Current(); current != nil {
+			return current.Credentials.Session(ctx, httpClient)
+		}
+	}
+
+	return session.FromEnvironment(ctx, httpClient)(lookup)
 }

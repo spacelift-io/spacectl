@@ -71,6 +71,46 @@ steps:
     run: spacectl stack deploy --id my-infra-stack
 ```
 
+<details>
+<summary><strong>Authenticating with GitHub OIDC instead</strong> (no long-lived secret)</summary>
+
+<br>
+
+Instead of storing a long-lived secret, let GitHub mint a short-lived OIDC token and exchange it for a Spacelift session token. This needs an [API key configured for OIDC](https://docs.spacelift.io/integrations/api#spacelift-api-key-via-oidc) and `id-token: write` permission on the job.
+
+The OIDC token GitHub issues is short-lived (~5 minutes), so exchange it **once** for a Spacelift session token (valid up to ~10 hours) and reuse that for the rest of the job. `spacectl profile export-token` does the exchange for you, picking up the OIDC token straight from the environment so you don't have to hand-roll the `apiKeyUser` GraphQL mutation:
+
+```yaml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Install spacectl
+        uses: spacelift-io/setup-spacectl@main
+
+      - name: Authenticate to Spacelift
+        env:
+          SPACELIFT_API_KEY_ENDPOINT: https://mycorp.app.spacelift.io
+          SPACELIFT_API_KEY_ID: ${{ secrets.SPACELIFT_API_KEY_ID }}
+        run: |
+          set -euo pipefail
+          # Mint the GitHub OIDC token and hand it to spacectl as the key secret.
+          export SPACELIFT_API_KEY_SECRET=$(curl -sH "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=mycorp.app.spacelift.io" | jq -r '.value')
+          # Exchange it once for a longer-lived session token and reuse it everywhere.
+          JWT=$(spacectl profile export-token)
+          echo "::add-mask::$JWT"
+          echo "SPACELIFT_API_TOKEN=${JWT}" >> "$GITHUB_ENV"
+
+      - name: Deploy infrastructure
+        run: spacectl stack deploy --id my-infra-stack
+```
+
+</details>
+
 ---
 
 ### Community supported packages
