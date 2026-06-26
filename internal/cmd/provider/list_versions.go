@@ -12,7 +12,10 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 )
 
-func listVersions() cli.ActionFunc {
+// listVersions lists the versions of a provider. It is generic over the
+// version type so that the verification related fields are only queried
+// against backends new enough to support them (see internal.VerifiedVersion).
+func listVersions[V internal.Versioned]() cli.ActionFunc {
 	return func(ctx context.Context, cliCmd *cli.Command) (err error) {
 		outputFormat, err := cmd.GetOutputFormat(cliCmd)
 		if err != nil {
@@ -21,7 +24,7 @@ func listVersions() cli.ActionFunc {
 
 		var query struct {
 			TerraformProvider *struct {
-				Versions internal.Versions `graphql:"versions"`
+				Versions internal.Versions[V] `graphql:"versions"`
 			} `graphql:"terraformProvider(id: $id)"`
 		}
 

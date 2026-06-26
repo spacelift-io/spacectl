@@ -28,17 +28,73 @@ func (v Version) Row() []string {
 	}
 }
 
-// Versions is a slice of provider versions.
-type Versions []Version
-
-// Headers returns a collection of versions table headers.
-func (v Versions) Headers() []string {
+// Headers returns the table headers matching Row.
+func (v Version) Headers() []string {
 	return []string{
 		"ID",
 		"Number",
 		"Status",
 		"Platforms",
 	}
+}
+
+// VerifiedVersion is a provider version that also exposes the verification-related fields.
+type VerifiedVersion struct {
+	Version
+	VerifiedAt          *int64  `graphql:"verifiedAt" json:"verifiedAt"`
+	VerificationFailure *string `graphql:"verificationFailure" json:"verificationFailure"`
+}
+
+func (vv VerifiedVersion) verificationStatus() string {
+	if vv.VerificationFailure != nil {
+		return "failed"
+	}
+
+	if vv.VerifiedAt != nil {
+		return "valid"
+	}
+
+	return "pending"
+}
+
+// Row returns a slice of strings representing a row in a table of provider
+// versions, including the verification status.
+func (vv VerifiedVersion) Row() []string {
+	return []string{
+		vv.ID,
+		vv.Number,
+		vv.Status,
+		vv.verificationStatus(),
+		vv.Platforms.String(),
+	}
+}
+
+// Headers returns the table headers matching Row.
+func (vv VerifiedVersion) Headers() []string {
+	return []string{
+		"ID",
+		"Number",
+		"Status",
+		"Verified",
+		"Platforms",
+	}
+}
+
+// Versioned is implemented by the provider version types that can be
+// rendered as a table, with or without the verification-related fields.
+type Versioned interface {
+	Version | VerifiedVersion
+	Row() []string
+	Headers() []string
+}
+
+// Versions is a slice of provider versions.
+type Versions[V Versioned] []V
+
+// Headers returns a collection of versions table headers.
+func (Versions[V]) Headers() []string {
+	var version V
+	return version.Headers()
 }
 
 // VersionPlatforms is a slice of provider version platforms.

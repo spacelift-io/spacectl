@@ -5,6 +5,7 @@ import (
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
+	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 )
 
 // Command encapsulates the provider command subtree.
@@ -155,7 +156,19 @@ func Command() cmd.Command {
 								flagProviderType,
 								cmd.FlagOutputFormat,
 							},
-							Action:    listVersions(),
+							Action:    listVersions[internal.Version](),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
+					{
+						EarliestVersion: cmd.SupportedVersionLatest,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagProviderType,
+								cmd.FlagOutputFormat,
+							},
+							Action:    listVersions[internal.VerifiedVersion](),
 							Before:    authenticated.Ensure,
 							ArgsUsage: cmd.EmptyArgsUsage,
 						},
