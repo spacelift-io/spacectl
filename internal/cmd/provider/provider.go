@@ -226,6 +226,25 @@ func Command() cmd.Command {
 					},
 				},
 			},
+			{
+				Category: "Version management",
+				Name:     "verify-version",
+				Usage:    "Verify the signature and checksums of a provider version",
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionLatest,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagRequiredVersionID,
+								flagQuiet,
+							},
+							Action:    verifyVersion(),
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
+				},
+			},
 		},
 	}
 }
