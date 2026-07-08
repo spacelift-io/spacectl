@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
+	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/pkg/errors"
 	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v3"
@@ -14,6 +17,8 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/provider/internal"
 )
 
+const pgpArmorPrefix = "-----BEGIN PGP"
+
 func createVersion(useHeadersFromAPI, verifyVersion bool) cli.ActionFunc {
 	return func(ctx context.Context, cliCmd *cli.Command) error {
 		// Assuming that spacectl is ran from the root of the repository,
@@ -22,6 +27,7 @@ func createVersion(useHeadersFromAPI, verifyVersion bool) cli.ActionFunc {
 
 		providerType := cliCmd.String(flagProviderType.Name)
 		quiet := cliCmd.Bool(flagQuiet.Name)
+		signingKeyID := cliCmd.String(flagGPGKeyID.Name)
 
 		log := func(format string, a ...any) {
 			if !quiet {
@@ -52,6 +58,22 @@ func createVersion(useHeadersFromAPI, verifyVersion bool) cli.ActionFunc {
 			return err
 		}
 
+		extractedKeyID, err := getSignerKeyID(signatureFile.Path)
+		if err != nil {
+			if signingKeyID == "" {
+				return errors.Wrap(err, "could not determine signing key ID, specify it with --gpg-key-id to override the key ID")
+			}
+			log("Could not determine signing key ID, using the key ID specified with --gpg-key-id: %s\n", signingKeyID)
+		} else if signingKeyID != "" && !strings.EqualFold(signingKeyID, extractedKeyID) {
+			log("Extracted signing key ID %s does not match the key ID %s specified with --gpg-key-id, using %s\n",
+				extractedKeyID, signingKeyID, signingKeyID)
+		}
+
+		if signingKeyID == "" {
+			signingKeyID = extractedKeyID
+			log("Extracted signing key ID: %s\n", signingKeyID)
+		}
+
 		signatureFileChecksum, err := signatureFile.Checksum(dir)
 		if err != nil {
 			return errors.Wrap(err, "could not calculate checksum of signature file")
@@ -64,7 +86,7 @@ func createVersion(useHeadersFromAPI, verifyVersion bool) cli.ActionFunc {
 				ProtocolVersions: cliCmd.StringSlice(flagProviderVersionProtocols.Name),
 				SHASumsFileSHA:   checksumsFileChecksum,
 				SignatureFileSHA: signatureFileChecksum,
-				SigningKeyID:     cliCmd.String(flagGPGKeyID.Name),
+				SigningKeyID:     signingKeyID,
 			},
 		}
 
@@ -290,4 +312,29 @@ func registerPlatformV2(ctx context.Context, dir string, versionID string, artif
 	}
 
 	return nil
+}
+
+func getSignerKeyID(sigPath string) (string, error) {
+	// #nosec G304
+	data, err := os.ReadFile(sigPath)
+	if err != nil {
+		return "", err
+	}
+
+	var signature *crypto.PGPSignature
+	if strings.HasPrefix(strings.TrimSpace(string(data)), pgpArmorPrefix) {
+		if signature, err = crypto.NewPGPSignatureFromArmored(string(data)); err != nil {
+			return "", fmt.Errorf("failed to decode armored signature: %w", err)
+		}
+	} else {
+		signature = crypto.NewPGPSignature(data)
+	}
+
+	keyIDs, ok := signature.GetHexSignatureKeyIDs()
+	if !ok || len(keyIDs) == 0 {
+		return "", fmt.Errorf("no signature packet or key ID found in %s", sigPath)
+	}
+
+	// We only support long (16-character) uppercase key IDs.
+	return strings.ToUpper(keyIDs[0]), nil
 }
