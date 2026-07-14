@@ -67,7 +67,7 @@ var flagQuiet = &cli.BoolFlag{
 
 var flagGPGKeyID = &cli.StringFlag{
 	Name:     "gpg-key-id",
-	Usage:    "ID of the GPG key used to sign the provider version",
+	Usage:    "ID of the GPG key used to sign the provider version, overrides the key extracted from the release",
 	Sources:  cli.EnvVars("GPG_KEY_ID"),
-	Required: true,
+	Required: false,
 }
