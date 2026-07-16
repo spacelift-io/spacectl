@@ -14,7 +14,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mark3labs/mcp-go v0.56.0
-	github.com/mattn/go-isatty v0.0.22
+	github.com/mattn/go-isatty v0.0.23
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/onsi/gomega v1.42.1
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
