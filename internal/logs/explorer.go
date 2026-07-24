@@ -10,6 +10,7 @@ import (
 	"github.com/shurcooL/graphql"
 
 	"github.com/spacelift-io/spacectl/client/structs"
+	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 // Explorer allows you to explore run logs, either for a stack or a module.
@@ -101,12 +102,47 @@ func (e *Explorer) getHistory(ctx context.Context) ([]structs.RunStateTransition
 		"run": graphql.ID(e.run),
 	}
 
-	run, err := queryRun[runHistory](ctx, e, variables)
-	if err != nil {
+	if e.entity == entityModule {
+		var query struct {
+			Module *struct {
+				Run *runHistory `graphql:"run(id: $run)"`
+			} `graphql:"module(id: $id)"`
+		}
+
+		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
+			return nil, err
+		}
+
+		if query.Module == nil {
+			return nil, fmt.Errorf("%s %q not found", e.entity, e.id)
+		}
+
+		if query.Module.Run == nil {
+			return nil, fmt.Errorf("run %q in %s %q not found", e.run, e.entity, e.id)
+		}
+
+		return query.Module.Run.History, nil
+	}
+
+	var query struct {
+		Stack *struct {
+			Run *runHistory `graphql:"run(id: $run)"`
+		} `graphql:"stack(id: $id)"`
+	}
+
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
 		return nil, err
 	}
 
-	return run.History, nil
+	if query.Stack == nil {
+		return nil, fmt.Errorf("%s %q not found", e.entity, e.id)
+	}
+
+	if query.Stack.Run == nil {
+		return nil, fmt.Errorf("run %q in %s %q not found", e.run, e.entity, e.id)
+	}
+
+	return query.Stack.Run.History, nil
 }
 
 func (e *Explorer) processHistory(ctx context.Context, sink chan<- string, history []structs.RunStateTransition, reportedStates map[structs.RunState]struct{}) (*structs.RunStateTransition, bool, error) {
@@ -207,13 +243,4 @@ func (e *Explorer) actionFunc(state structs.RunState) error {
 	}
 
 	return nil
-}
-
-// label returns a human-readable name for the entity whose run is being explored.
-func (e *Explorer) label() string {
-	if e.entity == entityModule {
-		return "module"
-	}
-
-	return "stack"
 }

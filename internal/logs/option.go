@@ -13,6 +13,15 @@ const (
 	entityModule
 )
 
+// String returns a human-readable name for the entity whose run is being explored.
+func (e entity) String() string {
+	if e == entityModule {
+		return "module"
+	}
+
+	return "stack"
+}
+
 type ActionOnRunState func(state structs.RunState, stackID, runID string) error
 
 // WithModule indicates that the explored run belongs to a module rather than a stack.

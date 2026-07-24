@@ -21,55 +21,7 @@ type logsQuery struct {
 	NextToken *graphql.String `graphql:"nextToken"`
 }
 
-func queryRun[T any](ctx context.Context, e *Explorer, variables map[string]any) (*T, error) {
-	var run *T
-
-	if e.entity == entityModule {
-		var query struct {
-			Module *struct {
-				Run *T `graphql:"run(id: $run)"`
-			} `graphql:"module(id: $id)"`
-		}
-
-		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
-			return nil, err
-		}
-
-		if query.Module == nil {
-			return nil, fmt.Errorf("%s %q not found", e.label(), e.id)
-		}
-
-		run = query.Module.Run
-	} else {
-		var query struct {
-			Stack *struct {
-				Run *T `graphql:"run(id: $run)"`
-			} `graphql:"stack(id: $id)"`
-		}
-
-		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
-			return nil, err
-		}
-
-		if query.Stack == nil {
-			return nil, fmt.Errorf("%s %q not found", e.label(), e.id)
-		}
-
-		run = query.Stack.Run
-	}
-
-	if run == nil {
-		return nil, fmt.Errorf("run %q in %s %q not found", e.run, e.label(), e.id)
-	}
-
-	return run, nil
-}
-
 func (e *Explorer) runStateLogs(ctx context.Context, state structs.RunState, version int, sink chan<- string, stateTerminal bool) error {
-	type runLogs struct {
-		Logs *logsQuery `graphql:"logs(state: $state, token: $token, stateVersion: $stateVersion)"`
-	}
-
 	var token *graphql.String
 	variables := map[string]any{
 		"id":           graphql.ID(e.id),
@@ -82,16 +34,11 @@ func (e *Explorer) runStateLogs(ctx context.Context, state structs.RunState, ver
 	var backOff time.Duration
 
 	for {
-		run, err := queryRun[runLogs](ctx, e, variables)
+		logs, err := e.queryStateLogs(ctx, variables)
 		if err != nil {
 			return err
 		}
 
-		if run.Logs == nil {
-			return fmt.Errorf("logs for run %q in %s %q not found", e.run, e.label(), e.id)
-		}
-
-		logs := run.Logs
 		variables["token"] = logs.NextToken
 
 		for _, message := range logs.Messages {
@@ -112,4 +59,60 @@ func (e *Explorer) runStateLogs(ctx context.Context, state structs.RunState, ver
 	}
 
 	return nil
+}
+
+func (e *Explorer) queryStateLogs(ctx context.Context, variables map[string]any) (*logsQuery, error) {
+	type runLogs struct {
+		Logs *logsQuery `graphql:"logs(state: $state, token: $token, stateVersion: $stateVersion)"`
+	}
+
+	if e.entity == entityModule {
+		var query struct {
+			Module *struct {
+				Run *runLogs `graphql:"run(id: $run)"`
+			} `graphql:"module(id: $id)"`
+		}
+
+		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
+			return nil, err
+		}
+
+		if query.Module == nil {
+			return nil, fmt.Errorf("%s %q not found", e.entity, e.id)
+		}
+
+		if query.Module.Run == nil {
+			return nil, fmt.Errorf("run %q in %s %q not found", e.run, e.entity, e.id)
+		}
+
+		if query.Module.Run.Logs == nil {
+			return nil, fmt.Errorf("logs for run %q in %s %q not found", e.run, e.entity, e.id)
+		}
+
+		return query.Module.Run.Logs, nil
+	}
+
+	var query struct {
+		Stack *struct {
+			Run *runLogs `graphql:"run(id: $run)"`
+		} `graphql:"stack(id: $id)"`
+	}
+
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
+		return nil, err
+	}
+
+	if query.Stack == nil {
+		return nil, fmt.Errorf("%s %q not found", e.entity, e.id)
+	}
+
+	if query.Stack.Run == nil {
+		return nil, fmt.Errorf("run %q in %s %q not found", e.run, e.entity, e.id)
+	}
+
+	if query.Stack.Run.Logs == nil {
+		return nil, fmt.Errorf("logs for run %q in %s %q not found", e.run, e.entity, e.id)
+	}
+
+	return query.Stack.Run.Logs, nil
 }
