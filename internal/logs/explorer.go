@@ -10,16 +10,16 @@ import (
 	"github.com/shurcooL/graphql"
 
 	"github.com/spacelift-io/spacectl/client/structs"
-	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-// Explorer allows you to explore stack run logs.
+// Explorer allows you to explore run logs, either for a stack or a module.
 //
 // It's a single use object, which should be thrown away after use.
 type Explorer struct {
-	stack string
-	run   string
-	tail  bool
+	id     string
+	run    string
+	tail   bool
+	entity entity
 
 	acFn               ActionOnRunState
 	targetPhase        *structs.RunState
@@ -29,10 +29,11 @@ type Explorer struct {
 }
 
 // NewExplorer creates a new Explorer with the given options.
-// By default the explorer always tails the logs.
-func NewExplorer(stack, run string, opts ...Option) *Explorer {
+// By default the explorer explores a stack's run and always tails the logs;
+// use WithModule to explore a module's run instead.
+func NewExplorer(id, run string, opts ...Option) *Explorer {
 	e := &Explorer{
-		stack:   stack,
+		id:      id,
 		run:     run,
 		tail:    true,
 		backoff: 0,
@@ -91,32 +92,21 @@ func (e *Explorer) RunFilteredStates(ctx context.Context, sink chan<- string) (*
 }
 
 func (e *Explorer) getHistory(ctx context.Context) ([]structs.RunStateTransition, error) {
-	var query struct {
-		Stack *struct {
-			Run *struct {
-				History []structs.RunStateTransition `graphql:"history"`
-			} `graphql:"run(id: $run)"`
-		} `graphql:"stack(id: $stack)"`
+	type runHistory struct {
+		History []structs.RunStateTransition `graphql:"history"`
 	}
 
 	variables := map[string]any{
-		"stack": graphql.ID(e.stack),
-		"run":   graphql.ID(e.run),
+		"id":  graphql.ID(e.id),
+		"run": graphql.ID(e.run),
 	}
 
-	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
+	run, err := queryRun[runHistory](ctx, e, variables)
+	if err != nil {
 		return nil, err
 	}
 
-	if query.Stack == nil {
-		return nil, fmt.Errorf("stack %q not found", e.stack)
-	}
-
-	if query.Stack.Run == nil {
-		return nil, fmt.Errorf("run %q in stack %q not found", e.run, e.stack)
-	}
-
-	return query.Stack.Run.History, nil
+	return run.History, nil
 }
 
 func (e *Explorer) processHistory(ctx context.Context, sink chan<- string, history []structs.RunStateTransition, reportedStates map[structs.RunState]struct{}) (*structs.RunStateTransition, bool, error) {
@@ -181,7 +171,7 @@ func (e *Explorer) processTargetPhase(transition *structs.RunStateTransition, si
 
 func (e *Explorer) processTransition(ctx context.Context, transition *structs.RunStateTransition, sink chan<- string) (bool, error) {
 	if transition.HasLogs {
-		if err := runStateLogs(ctx, e.stack, e.run, transition.State, transition.StateVersion, sink, transition.Terminal); err != nil {
+		if err := e.runStateLogs(ctx, transition.State, transition.StateVersion, sink, transition.Terminal); err != nil {
 			return false, err
 		}
 	}
@@ -212,9 +202,18 @@ func (e *Explorer) actionFunc(state structs.RunState) error {
 		return nil
 	}
 
-	if err := e.acFn(state, e.stack, e.run); err != nil {
+	if err := e.acFn(state, e.id, e.run); err != nil {
 		return fmt.Errorf("failed to execute action on run state: %w", err)
 	}
 
 	return nil
+}
+
+// label returns a human-readable name for the entity whose run is being explored.
+func (e *Explorer) label() string {
+	if e.entity == entityModule {
+		return "module"
+	}
+
+	return "stack"
 }
