@@ -24,6 +24,23 @@ var flagCommitSHA = &cli.StringFlag{
 	Usage: "Commit `SHA` to use for the module version",
 }
 
+var flagRun = &cli.StringFlag{
+	Name:     "run",
+	Usage:    "[Required] `ID` of the run",
+	Required: true,
+}
+
+var flagPhase = &cli.StringFlag{
+	Name:  "phase",
+	Usage: "[Optional] Only show logs for a specific `PHASE` (e.g., QUEUED, PREPARING, PLANNING, APPLYING, FINISHED)",
+}
+
+var flagTail = &cli.BoolFlag{
+	Name:  "tail",
+	Usage: "Indicate whether to tail the run",
+	Value: false,
+}
+
 var flagNoFindRepositoryRoot = &cli.BoolFlag{
 	Name:  "no-find-repository-root",
 	Usage: "Indicate whether spacectl should avoid finding the repository root (containing a .git directory) before packaging it.",

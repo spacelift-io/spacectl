@@ -101,6 +101,27 @@ func Command() cmd.Command {
 				},
 			},
 			{
+				Category: "Run management",
+				Name:     "logs",
+				Usage:    "Show logs for a particular module run",
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionAll,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagModuleID,
+								flagRun,
+								flagPhase,
+								flagTail,
+							},
+							Action:    moduleLogs,
+							Before:    authenticated.Ensure,
+							ArgsUsage: cmd.EmptyArgsUsage,
+						},
+					},
+				},
+			},
+			{
 				Category: "Module management",
 				Name:     "list",
 				Usage:    "List all modules available and their current version",

@@ -34,7 +34,7 @@ func runPrioritize(ctx context.Context, cliCmd *cli.Command) error {
 		return nil
 	}
 
-	terminal, err := logs.NewExplorer(stackID, mutation.SetRunPriority.ID).RunFilteredLogs(ctx)
+	terminal, err := logs.NewStackExplorer(stackID, mutation.SetRunPriority.ID).RunFilteredLogs(ctx)
 	if err != nil {
 		return err
 	}

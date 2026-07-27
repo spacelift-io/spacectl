@@ -46,7 +46,7 @@ func runStop() cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := logs.NewExplorer(stackID, mutation.RunStop.ID).RunFilteredLogs(ctx)
+		terminal, err := logs.NewStackExplorer(stackID, mutation.RunStop.ID).RunFilteredLogs(ctx)
 		if err != nil {
 			return err
 		}

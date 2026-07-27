@@ -45,7 +45,7 @@ func runDiscard() cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := logs.NewExplorer(stackID, mutation.RunDiscard.ID).RunFilteredLogs(ctx)
+		terminal, err := logs.NewStackExplorer(stackID, mutation.RunDiscard.ID).RunFilteredLogs(ctx)
 		if err != nil {
 			return err
 		}

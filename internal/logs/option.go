@@ -5,6 +5,23 @@ import "github.com/spacelift-io/spacectl/client/structs"
 // Option is a functional option for configuring an Explorer
 type Option func(*Explorer)
 
+// entity identifies the parent type whose run logs are being explored.
+type entity int
+
+const (
+	entityStack entity = iota
+	entityModule
+)
+
+// String returns a human-readable name for the entity whose run is being explored.
+func (e entity) String() string {
+	if e == entityModule {
+		return "module"
+	}
+
+	return "stack"
+}
+
 type ActionOnRunState func(state structs.RunState, stackID, runID string) error
 
 // WithActionOnRunState sets an action to be executed on each run state

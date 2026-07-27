@@ -313,7 +313,7 @@ func registerGetStackRunLogsTool(s *server.MCPServer) {
 			}
 		}()
 
-		terminal, err = logs.NewExplorer(stackID, runID).RunFilteredStates(ctx, logLines)
+		terminal, err = logs.NewStackExplorer(stackID, runID).RunFilteredStates(ctx, logLines)
 		close(logLines)
 
 		if err != nil {
@@ -700,7 +700,7 @@ func registerLocalPreviewTool(s *server.MCPServer, options McpOptions) {
 			}
 		}()
 
-		terminal, err := logs.NewExplorer(stackID, runID).RunFilteredStates(ctx, logLines)
+		terminal, err := logs.NewStackExplorer(stackID, runID).RunFilteredStates(ctx, logLines)
 		close(logLines)
 
 		if err != nil {

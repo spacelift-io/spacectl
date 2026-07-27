@@ -52,7 +52,7 @@ func taskCommand(ctx context.Context, cliCmd *cli.Command) error {
 		return nil
 	}
 
-	terminal, err := logs.NewExplorer(stackID, mutation.TaskCreate.ID).RunFilteredLogs(ctx)
+	terminal, err := logs.NewStackExplorer(stackID, mutation.TaskCreate.ID).RunFilteredLogs(ctx)
 	if err != nil {
 		return err
 	}

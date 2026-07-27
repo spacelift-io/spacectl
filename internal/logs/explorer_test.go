@@ -93,7 +93,7 @@ func TestProcessTargetPhase(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			explorer := &Explorer{
-				stack:              "test-stack",
+				id:                 "test-stack",
 				run:                "test-run",
 				targetPhase:        tc.targetPhase,
 				targetPhaseReached: tc.targetPhaseReached,
@@ -174,7 +174,7 @@ func TestProcessTargetPhaseTerminalFlag(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			explorer := &Explorer{
-				stack:              "test-stack",
+				id:                 "test-stack",
 				run:                "test-run",
 				targetPhase:        &targetState,
 				targetPhaseReached: true, // Target already reached

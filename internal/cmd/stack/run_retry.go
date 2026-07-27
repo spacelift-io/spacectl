@@ -44,7 +44,7 @@ func runRetry(ctx context.Context, cliCmd *cli.Command) error {
 		return nil
 	}
 
-	terminal, err := logs.NewExplorer(stackID, mutation.RunRetry.ID).RunFilteredLogs(ctx)
+	terminal, err := logs.NewStackExplorer(stackID, mutation.RunRetry.ID).RunFilteredLogs(ctx)
 	if err != nil {
 		return err
 	}

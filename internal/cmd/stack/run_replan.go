@@ -70,7 +70,7 @@ func runReplan(ctx context.Context, cliCmd *cli.Command) error {
 		return nil
 	}
 
-	terminal, err := logs.NewExplorer(stackID, mutation.RunTargetedReplan.ID).RunFilteredLogs(ctx)
+	terminal, err := logs.NewStackExplorer(stackID, mutation.RunTargetedReplan.ID).RunFilteredLogs(ctx)
 	if err != nil {
 		return err
 	}

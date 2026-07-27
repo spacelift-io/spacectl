@@ -51,7 +51,7 @@ func runConfirm() cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := logs.NewExplorer(stackID, mutation.RunConfirm.ID).RunFilteredLogs(ctx)
+		terminal, err := logs.NewStackExplorer(stackID, mutation.RunConfirm.ID).RunFilteredLogs(ctx)
 		if err != nil {
 			return err
 		}

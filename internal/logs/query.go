@@ -11,27 +11,21 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-func runStateLogs(ctx context.Context, stack, run string, state structs.RunState, version int, sink chan<- string, stateTerminal bool) error {
-	var query struct {
-		Stack *struct {
-			Run *struct {
-				Logs *struct {
-					Exists   bool `graphql:"exists"`
-					Finished bool `graphql:"finished"`
-					HasMore  bool `graphql:"hasMore"`
-					Messages []struct {
-						Body string `graphql:"message"`
-					} `graphql:"messages"`
-					NextToken *graphql.String `graphql:"nextToken"`
-				} `graphql:"logs(state: $state, token: $token, stateVersion: $stateVersion)"`
-			} `graphql:"run(id: $run)"`
-		} `graphql:"stack(id: $stack)"`
-	}
+type logsQuery struct {
+	Exists   bool `graphql:"exists"`
+	Finished bool `graphql:"finished"`
+	HasMore  bool `graphql:"hasMore"`
+	Messages []struct {
+		Body string `graphql:"message"`
+	} `graphql:"messages"`
+	NextToken *graphql.String `graphql:"nextToken"`
+}
 
+func (e *Explorer) runStateLogs(ctx context.Context, state structs.RunState, version int, sink chan<- string, stateTerminal bool) error {
 	var token *graphql.String
 	variables := map[string]any{
-		"stack":        graphql.ID(stack),
-		"run":          graphql.ID(run),
+		"id":           graphql.ID(e.id),
+		"run":          graphql.ID(e.run),
 		"state":        state,
 		"token":        token,
 		"stateVersion": graphql.Int(version), //nolint: gosec
@@ -40,23 +34,11 @@ func runStateLogs(ctx context.Context, stack, run string, state structs.RunState
 	var backOff time.Duration
 
 	for {
-		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
+		logs, err := e.queryStateLogs(ctx, variables)
+		if err != nil {
 			return err
 		}
 
-		if query.Stack == nil {
-			return fmt.Errorf("stack %q not found", stack)
-		}
-
-		if query.Stack.Run == nil {
-			return fmt.Errorf("run %q in stack %q not found", run, stack)
-		}
-
-		if query.Stack.Run.Logs == nil {
-			return fmt.Errorf("logs for run %q in stack %q not found", run, stack)
-		}
-
-		logs := query.Stack.Run.Logs
 		variables["token"] = logs.NextToken
 
 		for _, message := range logs.Messages {
@@ -77,4 +59,60 @@ func runStateLogs(ctx context.Context, stack, run string, state structs.RunState
 	}
 
 	return nil
+}
+
+func (e *Explorer) queryStateLogs(ctx context.Context, variables map[string]any) (*logsQuery, error) {
+	type runLogs struct {
+		Logs *logsQuery `graphql:"logs(state: $state, token: $token, stateVersion: $stateVersion)"`
+	}
+
+	if e.entity == entityModule {
+		var query struct {
+			Module *struct {
+				Run *runLogs `graphql:"run(id: $run)"`
+			} `graphql:"module(id: $id)"`
+		}
+
+		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
+			return nil, err
+		}
+
+		if query.Module == nil {
+			return nil, fmt.Errorf("%s %q not found", e.entity, e.id)
+		}
+
+		if query.Module.Run == nil {
+			return nil, fmt.Errorf("run %q in %s %q not found", e.run, e.entity, e.id)
+		}
+
+		if query.Module.Run.Logs == nil {
+			return nil, fmt.Errorf("logs for run %q in %s %q not found", e.run, e.entity, e.id)
+		}
+
+		return query.Module.Run.Logs, nil
+	}
+
+	var query struct {
+		Stack *struct {
+			Run *runLogs `graphql:"run(id: $run)"`
+		} `graphql:"stack(id: $id)"`
+	}
+
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
+		return nil, err
+	}
+
+	if query.Stack == nil {
+		return nil, fmt.Errorf("%s %q not found", e.entity, e.id)
+	}
+
+	if query.Stack.Run == nil {
+		return nil, fmt.Errorf("run %q in %s %q not found", e.run, e.entity, e.id)
+	}
+
+	if query.Stack.Run.Logs == nil {
+		return nil, fmt.Errorf("logs for run %q in %s %q not found", e.run, e.entity, e.id)
+	}
+
+	return query.Stack.Run.Logs, nil
 }

@@ -45,7 +45,7 @@ func runPromote() cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := logs.NewExplorer(stackID, mutation.RunPromote.ID).RunFilteredLogs(ctx)
+		terminal, err := logs.NewStackExplorer(stackID, mutation.RunPromote.ID).RunFilteredLogs(ctx)
 		if err != nil {
 			return err
 		}

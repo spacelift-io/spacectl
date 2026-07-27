@@ -13,13 +13,14 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
-// Explorer allows you to explore stack run logs.
+// Explorer allows you to explore run logs, either for a stack or a module.
 //
 // It's a single use object, which should be thrown away after use.
 type Explorer struct {
-	stack string
-	run   string
-	tail  bool
+	id     string
+	run    string
+	tail   bool
+	entity entity
 
 	acFn               ActionOnRunState
 	targetPhase        *structs.RunState
@@ -28,13 +29,24 @@ type Explorer struct {
 	backoff time.Duration
 }
 
-// NewExplorer creates a new Explorer with the given options.
+// NewStackExplorer creates a new Explorer for a run belonging to a stack.
 // By default the explorer always tails the logs.
-func NewExplorer(stack, run string, opts ...Option) *Explorer {
+func NewStackExplorer(stackID, run string, opts ...Option) *Explorer {
+	return newExplorer(entityStack, stackID, run, opts...)
+}
+
+// NewModuleExplorer creates a new Explorer for a run belonging to a module.
+// By default the explorer always tails the logs.
+func NewModuleExplorer(moduleID, run string, opts ...Option) *Explorer {
+	return newExplorer(entityModule, moduleID, run, opts...)
+}
+
+func newExplorer(entity entity, id, run string, opts ...Option) *Explorer {
 	e := &Explorer{
-		stack:   stack,
+		id:      id,
 		run:     run,
 		tail:    true,
+		entity:  entity,
 		backoff: 0,
 	}
 
@@ -91,17 +103,41 @@ func (e *Explorer) RunFilteredStates(ctx context.Context, sink chan<- string) (*
 }
 
 func (e *Explorer) getHistory(ctx context.Context) ([]structs.RunStateTransition, error) {
-	var query struct {
-		Stack *struct {
-			Run *struct {
-				History []structs.RunStateTransition `graphql:"history"`
-			} `graphql:"run(id: $run)"`
-		} `graphql:"stack(id: $stack)"`
+	type runHistory struct {
+		History []structs.RunStateTransition `graphql:"history"`
 	}
 
 	variables := map[string]any{
-		"stack": graphql.ID(e.stack),
-		"run":   graphql.ID(e.run),
+		"id":  graphql.ID(e.id),
+		"run": graphql.ID(e.run),
+	}
+
+	if e.entity == entityModule {
+		var query struct {
+			Module *struct {
+				Run *runHistory `graphql:"run(id: $run)"`
+			} `graphql:"module(id: $id)"`
+		}
+
+		if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
+			return nil, err
+		}
+
+		if query.Module == nil {
+			return nil, fmt.Errorf("%s %q not found", e.entity, e.id)
+		}
+
+		if query.Module.Run == nil {
+			return nil, fmt.Errorf("run %q in %s %q not found", e.run, e.entity, e.id)
+		}
+
+		return query.Module.Run.History, nil
+	}
+
+	var query struct {
+		Stack *struct {
+			Run *runHistory `graphql:"run(id: $run)"`
+		} `graphql:"stack(id: $id)"`
 	}
 
 	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
@@ -109,11 +145,11 @@ func (e *Explorer) getHistory(ctx context.Context) ([]structs.RunStateTransition
 	}
 
 	if query.Stack == nil {
-		return nil, fmt.Errorf("stack %q not found", e.stack)
+		return nil, fmt.Errorf("%s %q not found", e.entity, e.id)
 	}
 
 	if query.Stack.Run == nil {
-		return nil, fmt.Errorf("run %q in stack %q not found", e.run, e.stack)
+		return nil, fmt.Errorf("run %q in %s %q not found", e.run, e.entity, e.id)
 	}
 
 	return query.Stack.Run.History, nil
@@ -181,7 +217,7 @@ func (e *Explorer) processTargetPhase(transition *structs.RunStateTransition, si
 
 func (e *Explorer) processTransition(ctx context.Context, transition *structs.RunStateTransition, sink chan<- string) (bool, error) {
 	if transition.HasLogs {
-		if err := runStateLogs(ctx, e.stack, e.run, transition.State, transition.StateVersion, sink, transition.Terminal); err != nil {
+		if err := e.runStateLogs(ctx, transition.State, transition.StateVersion, sink, transition.Terminal); err != nil {
 			return false, err
 		}
 	}
@@ -212,7 +248,7 @@ func (e *Explorer) actionFunc(state structs.RunState) error {
 		return nil
 	}
 
-	if err := e.acFn(state, e.stack, e.run); err != nil {
+	if err := e.acFn(state, e.id, e.run); err != nil {
 		return fmt.Errorf("failed to execute action on run state: %w", err)
 	}
 
