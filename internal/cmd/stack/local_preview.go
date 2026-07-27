@@ -102,7 +102,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 			return nil
 		}
 
-		terminal, err := logs.NewExplorer(s.ID, runID).RunFilteredLogs(ctx)
+		terminal, err := logs.NewStackExplorer(s.ID, runID).RunFilteredLogs(ctx)
 		if err != nil {
 			return err
 		}

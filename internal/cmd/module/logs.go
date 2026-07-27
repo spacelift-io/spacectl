@@ -20,8 +20,7 @@ func moduleLogs(ctx context.Context, cliCmd *cli.Command) error {
 		targetPhase = &phase
 	}
 
-	_, err := logs.NewExplorer(moduleID, runID,
-		logs.WithModule(),
+	_, err := logs.NewModuleExplorer(moduleID, runID,
 		logs.WithTail(cliCmd.Bool(flagTail.Name)),
 		logs.WithTargetPhase(targetPhase),
 	).RunFilteredLogs(ctx)

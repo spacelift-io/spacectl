@@ -24,13 +24,6 @@ func (e entity) String() string {
 
 type ActionOnRunState func(state structs.RunState, stackID, runID string) error
 
-// WithModule indicates that the explored run belongs to a module rather than a stack.
-func WithModule() Option {
-	return func(e *Explorer) {
-		e.entity = entityModule
-	}
-}
-
 // WithActionOnRunState sets an action to be executed on each run state
 func WithActionOnRunState(acFn ActionOnRunState) Option {
 	return func(e *Explorer) {

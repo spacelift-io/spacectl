@@ -66,7 +66,7 @@ func runLogs(ctx context.Context, cliCmd *cli.Command) error {
 		targetPhase = &phase
 	}
 
-	_, err = logs.NewExplorer(stackID, runID,
+	_, err = logs.NewStackExplorer(stackID, runID,
 		logs.WithTail(cliCmd.Bool(flagTail.Name)),
 		logs.WithTargetPhase(targetPhase),
 	).RunFilteredLogs(ctx)

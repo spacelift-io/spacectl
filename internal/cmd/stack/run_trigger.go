@@ -161,7 +161,7 @@ func finalizeRunTrigger(ctx context.Context, cliCmd *cli.Command, stackID, runID
 		return nil
 	}
 
-	terminal, err := logs.NewExplorer(stackID, runID, logs.WithActionOnRunState(actionFn)).RunFilteredLogs(ctx)
+	terminal, err := logs.NewStackExplorer(stackID, runID, logs.WithActionOnRunState(actionFn)).RunFilteredLogs(ctx)
 	if err != nil {
 		return err
 	}

@@ -29,14 +29,24 @@ type Explorer struct {
 	backoff time.Duration
 }
 
-// NewExplorer creates a new Explorer with the given options.
-// By default the explorer explores a stack's run and always tails the logs;
-// use WithModule to explore a module's run instead.
-func NewExplorer(id, run string, opts ...Option) *Explorer {
+// NewStackExplorer creates a new Explorer for a run belonging to a stack.
+// By default the explorer always tails the logs.
+func NewStackExplorer(stackID, run string, opts ...Option) *Explorer {
+	return newExplorer(entityStack, stackID, run, opts...)
+}
+
+// NewModuleExplorer creates a new Explorer for a run belonging to a module.
+// By default the explorer always tails the logs.
+func NewModuleExplorer(moduleID, run string, opts ...Option) *Explorer {
+	return newExplorer(entityModule, moduleID, run, opts...)
+}
+
+func newExplorer(entity entity, id, run string, opts ...Option) *Explorer {
 	e := &Explorer{
 		id:      id,
 		run:     run,
 		tail:    true,
+		entity:  entity,
 		backoff: 0,
 	}
 
