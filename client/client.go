@@ -101,7 +101,7 @@ func (c *client) Do(req *http.Request) (*http.Response, error) {
 	}
 
 	// prepend request URL with spacelift endpoint
-	endpoint := strings.TrimRight(c.session.Endpoint(), "/graphql")
+	endpoint := strings.TrimSuffix(c.session.Endpoint(), "/graphql")
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse endpoint: %w", err)
