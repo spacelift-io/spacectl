@@ -70,7 +70,7 @@ func TestClientDo_EndpointTrimming(t *testing.T) {
 
 			c := New(wraps, &fakeSession{endpoint: tt.endpoint})
 
-			req, err := http.NewRequest(http.MethodGet, "http://placeholder.invalid/some/path", nil)
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://placeholder.invalid/some/path", nil)
 			require.NoError(t, err)
 
 			resp, err := c.Do(req)
