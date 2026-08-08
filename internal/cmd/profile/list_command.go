@@ -29,9 +29,15 @@ func listCommand() *cli.Command {
 		ArgsUsage: cmd.EmptyArgsUsage,
 		Before:    cmd.HandleNoColor,
 		Action: func(_ context.Context, cliCmd *cli.Command) error {
-			profiles := manager.GetAll()
+			// Without the validated variant, a typo'd SPACELIFT_PROFILE just leaves every
+			// row unmarked - no answer at all from the command people use to ask which
+			// profile is active.
+			currentProfile, err := manager.CurrentValidated()
+			if err != nil {
+				return err
+			}
 
-			currentProfile := manager.Current()
+			profiles := manager.GetAll()
 
 			// Make sure we output the profiles in a consistent order
 			sort.SliceStable(profiles, func(i int, j int) bool {
@@ -39,7 +45,6 @@ func listCommand() *cli.Command {
 			})
 
 			var outputFormat cmd.OutputFormat
-			var err error
 			if outputFormat, err = cmd.GetOutputFormat(cliCmd); err != nil {
 				return err
 			}
