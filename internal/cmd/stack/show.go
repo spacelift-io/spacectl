@@ -25,6 +25,19 @@ const (
 	stackConfigVendorTerragrunt     = "StackConfigVendorTerragrunt"
 )
 
+type stackHooks struct {
+	AfterApply    []string `graphql:"afterApply" json:"afterApply,omitempty"`
+	BeforeApply   []string `graphql:"beforeApply" json:"beforeApply,omitempty"`
+	AfterInit     []string `graphql:"afterInit" json:"afterInit,omitempty"`
+	BeforeInit    []string `graphql:"beforeInit" json:"beforeInit,omitempty"`
+	AfterPlan     []string `graphql:"afterPlan" json:"afterPlan,omitempty"`
+	BeforePlan    []string `graphql:"beforePlan" json:"beforePlan,omitempty"`
+	AfterPerform  []string `graphql:"afterPerform" json:"afterPerform,omitempty"`
+	BeforePerform []string `graphql:"beforePerform" json:"beforePerform,omitempty"`
+	AfterDestroy  []string `graphql:"afterDestroy" json:"afterDestroy,omitempty"`
+	BeforeDestroy []string `graphql:"beforeDestroy" json:"beforeDestroy,omitempty"`
+}
+
 type stackConfigElement struct {
 	ID        string `graphql:"id" json:"id,omitempty"`
 	Checksum  string `graphql:"checksum" json:"checksum,omitempty"`
@@ -190,16 +203,7 @@ type showStackQuery[VC stackVendorConfig] struct {
 		Blocker    struct {
 			ID string `graphql:"id" json:"id,omitempty"`
 		} `graphql:"blocker"`
-		AfterApply          []string             `graphql:"afterApply" json:"afterApply,omitempty"`
-		BeforeApply         []string             `graphql:"beforeApply" json:"beforeApply,omitempty"`
-		AfterInit           []string             `graphql:"afterInit" json:"afterInit,omitempty"`
-		BeforeInit          []string             `graphql:"beforeInit" json:"beforeInit,omitempty"`
-		AfterPlan           []string             `graphql:"afterPlan" json:"afterPlan,omitempty"`
-		BeforePlan          []string             `graphql:"beforePlan" json:"beforePlan,omitempty"`
-		AfterPerform        []string             `graphql:"afterPerform" json:"afterPerform,omitempty"`
-		BeforePerform       []string             `graphql:"beforePerform" json:"beforePerform,omitempty"`
-		AfterDestroy        []string             `graphql:"afterDestroy" json:"afterDestroy,omitempty"`
-		BeforeDestroy       []string             `graphql:"beforeDestroy" json:"beforeDestroy,omitempty"`
+		Hooks               stackHooks           `graphql:"hooks" json:"hooks"`
 		Branch              string               `graphql:"branch" json:"branch,omitempty"`
 		CanWrite            bool                 `graphql:"canWrite" json:"canWrite"`
 		Config              []stackConfigElement `graphql:"config" json:"config,omitempty"`
@@ -368,43 +372,43 @@ func (c *showStackCommand[VC]) outputBehaviorSettings(query showStackQuery[VC]) 
 		return err
 	}
 
-	if err := c.outputScripts(query.Stack.BeforeInit, "Before init scripts"); err != nil {
+	if err := c.outputScripts(query.Stack.Hooks.BeforeInit, "Before init scripts"); err != nil {
 		return err
 	}
 
-	if err := c.outputScripts(query.Stack.AfterInit, "After init scripts"); err != nil {
+	if err := c.outputScripts(query.Stack.Hooks.AfterInit, "After init scripts"); err != nil {
 		return err
 	}
 
-	if err := c.outputScripts(query.Stack.BeforePlan, "Before plan scripts"); err != nil {
+	if err := c.outputScripts(query.Stack.Hooks.BeforePlan, "Before plan scripts"); err != nil {
 		return err
 	}
 
-	if err := c.outputScripts(query.Stack.AfterPlan, "After plan scripts"); err != nil {
+	if err := c.outputScripts(query.Stack.Hooks.AfterPlan, "After plan scripts"); err != nil {
 		return err
 	}
 
-	if err := c.outputScripts(query.Stack.BeforeApply, "Before apply scripts"); err != nil {
+	if err := c.outputScripts(query.Stack.Hooks.BeforeApply, "Before apply scripts"); err != nil {
 		return err
 	}
 
-	if err := c.outputScripts(query.Stack.AfterApply, "After apply scripts"); err != nil {
+	if err := c.outputScripts(query.Stack.Hooks.AfterApply, "After apply scripts"); err != nil {
 		return err
 	}
 
-	if err := c.outputScripts(query.Stack.BeforePerform, "Before perform scripts"); err != nil {
+	if err := c.outputScripts(query.Stack.Hooks.BeforePerform, "Before perform scripts"); err != nil {
 		return err
 	}
 
-	if err := c.outputScripts(query.Stack.AfterPerform, "After perform scripts"); err != nil {
+	if err := c.outputScripts(query.Stack.Hooks.AfterPerform, "After perform scripts"); err != nil {
 		return err
 	}
 
-	if err := c.outputScripts(query.Stack.BeforeDestroy, "Before destroy scripts"); err != nil {
+	if err := c.outputScripts(query.Stack.Hooks.BeforeDestroy, "Before destroy scripts"); err != nil {
 		return err
 	}
 
-	if err := c.outputScripts(query.Stack.AfterDestroy, "After destroy scripts"); err != nil {
+	if err := c.outputScripts(query.Stack.Hooks.AfterDestroy, "After destroy scripts"); err != nil {
 		return err
 	}
 
