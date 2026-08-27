@@ -44,7 +44,7 @@ func (c *deployCommand) deploy(ctx context.Context, cliCmd *cli.Command) error {
 
 	var mutation struct {
 		BlueprintCreateStack struct {
-			StackID string `graphql:"stackID"`
+			StackIDs []string `graphql:"stackIds"`
 		} `graphql:"blueprintCreateStack(id: $id, input: $input)"`
 	}
 
@@ -56,8 +56,9 @@ func (c *deployCommand) deploy(ctx context.Context, cliCmd *cli.Command) error {
 		return fmt.Errorf("failed to deploy stack from the blueprint: %w", err)
 	}
 
-	url := authenticated.Client().URL("/stack/%s", mutation.BlueprintCreateStack.StackID)
-	fmt.Printf("\nCreated stack: %q", url)
+	for _, stackID := range mutation.BlueprintCreateStack.StackIDs {
+		fmt.Printf("\nCreated stack: %q", authenticated.Client().URL("/stack/%s", stackID))
+	}
 
 	return nil
 }

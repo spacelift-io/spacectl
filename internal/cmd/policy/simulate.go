@@ -7,12 +7,18 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/shurcooL/graphql"
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/internal/cmd"
 	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
+
+// PolicySimulateInput represents the input for simulating a policy.
+type PolicySimulateInput struct {
+	Body  string     `json:"body"`
+	Input string     `json:"input"`
+	Type  PolicyType `json:"type"`
+}
 
 type simulateCommand struct{}
 
@@ -35,13 +41,15 @@ func (c *simulateCommand) simulate(ctx context.Context, cliCmd *cli.Command) err
 	}
 
 	var mutation struct {
-		PolicySimulate string `graphql:"policySimulate(body: $body, input: $input, type: $type)"`
+		PolicySimulate string `graphql:"policySimulatev2(input: $input)"`
 	}
 
 	variables := map[string]any{
-		"body":  graphql.String(b.Body),
-		"input": graphql.String(parsedInput),
-		"type":  b.Type,
+		"input": PolicySimulateInput{
+			Body:  b.Body,
+			Input: parsedInput,
+			Type:  b.Type,
+		},
 	}
 
 	if err := authenticated.Client().Mutate(ctx, &mutation, variables); err != nil {
