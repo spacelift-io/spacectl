@@ -14,7 +14,11 @@ func FromCurrentProfile(ctx context.Context, client *http.Client) (Session, erro
 		return nil, fmt.Errorf("could not access profile manager: %w", err)
 	}
 
-	currentProfile := manager.Current()
+	currentProfile, err := manager.CurrentValidated()
+	if err != nil {
+		return nil, err
+	}
+
 	if currentProfile == nil {
 		return nil, errors.New("no current profile is set - please login first")
 	}

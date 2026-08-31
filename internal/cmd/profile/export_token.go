@@ -46,7 +46,14 @@ func exportTokenCommand() *cli.Command {
 // without anyone having to hand-roll the apiKeyUser GraphQL mutation.
 func resolveSession(ctx context.Context, m *session.ProfileManager, httpClient *http.Client, lookup func(string) (string, bool)) (session.Session, error) {
 	if m != nil {
-		if current := m.Current(); current != nil {
+		// Naming a profile through SPACELIFT_PROFILE is an explicit choice, so a bad alias is
+		// an error rather than a reason to fall back and print a token for a different account.
+		current, err := m.CurrentValidated()
+		if err != nil {
+			return nil, err
+		}
+
+		if current != nil {
 			return current.Credentials.Session(ctx, httpClient)
 		}
 	}

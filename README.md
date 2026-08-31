@@ -317,6 +317,19 @@ By default the login process is interactive, however, if that does not fit your 
 
 You can switch between account profiles by using `spacectl profile select ${MY_ALIAS}`. What this does behind the scenes is point `${HOME}/.spacelift/current` to the new location. You can also delete stored credetials for a given profile by using the `spacectl profile logout ${MY_ALIAS}` command.
 
+#### Selecting a profile per command or shell
+
+`spacectl profile select` changes the profile for every shell, since the selection is stored in the config file. When you need one terminal on a different profile - a different organization, or a different API key within the same organization - set the `SPACELIFT_PROFILE` environment variable instead:
+
+```bash
+export SPACELIFT_PROFILE=my-other-account   # for the rest of this shell
+SPACELIFT_PROFILE=my-other-account spacectl stack list   # for a single command
+```
+
+The variable selects an existing profile by alias, so credentials stay in the config file rather than being exported into your environment. It never modifies the stored selection, so `spacectl profile select` in another shell is unaffected, and unsetting it returns you to the selected profile.
+
+`SPACELIFT_PROFILE` takes precedence over credentials supplied through the environment (`SPACELIFT_API_KEY_ID` and friends): naming a profile is deliberate, whereas those variables are easy to leave behind in a shell. If the named profile does not exist, `spacectl` reports that rather than falling back to another credential source.
+
 #### Overriding the config directory location
 
 By default profiles are stored in `${HOME}/.spacelift`. In containers or CI runners `$HOME` may not be set or writable, so you can point `spacectl` at a different directory with the `SPACELIFT_CONFIG_DIR` environment variable:

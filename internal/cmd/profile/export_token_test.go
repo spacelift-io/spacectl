@@ -2,9 +2,11 @@ package profile
 
 import (
 	"context"
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/spacelift-io/spacectl/client/session"
@@ -24,6 +26,11 @@ func envLookup(values map[string]string) func(string) (string, bool) {
 }
 
 func TestResolveSession(t *testing.T) {
+	// resolveSession rejects an unresolvable SPACELIFT_PROFILE, so a value left in the
+	// developer's own shell would fail the cases below. Subtests that want an override set
+	// it themselves after this.
+	t.Setenv(session.EnvSpaceliftProfile, "")
+
 	t.Run("falls back to the environment when no profile manager is set", func(t *testing.T) {
 		server := newExchangeServer(t, "EnvJWT")
 		defer server.Close()
@@ -99,6 +106,97 @@ func TestResolveSession(t *testing.T) {
 
 		assertBearerToken(t, sess, sampleAPIToken)
 	})
+
+	t.Run("uses the profile named by SPACELIFT_PROFILE", func(t *testing.T) {
+		t.Setenv(session.EnvSpaceliftProfile, "override")
+
+		manager := managerWithAPITokenProfiles(t, "selected", "override")
+
+		lookup := envLookup(map[string]string{
+			session.EnvSpaceliftAPIKeyEndpoint: "http://127.0.0.1:0",
+			session.EnvSpaceliftAPIKeyID:       "key-id",
+			session.EnvSpaceliftAPIKeySecret:   "oidc-token",
+		})
+
+		sess, err := resolveSession(context.Background(), manager, http.DefaultClient, lookup)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Each profile carries a token named after its alias, so the bearer token
+		// says which profile the session was actually built from.
+		assertBearerToken(t, sess, aliasToken("override"))
+	})
+
+	t.Run("does not fall back to the environment when SPACELIFT_PROFILE is unknown", func(t *testing.T) {
+		t.Setenv(session.EnvSpaceliftProfile, "typo")
+
+		manager := managerWithAPITokenProfiles(t, "selected")
+
+		// Valid credentials in the environment must not rescue a bad alias: exporting a
+		// token for a different account is worse than failing.
+		server := newExchangeServer(t, "EnvJWT")
+		defer server.Close()
+
+		lookup := envLookup(map[string]string{
+			session.EnvSpaceliftAPIKeyEndpoint: server.URL,
+			session.EnvSpaceliftAPIKeyID:       "key-id",
+			session.EnvSpaceliftAPIKeySecret:   "oidc-token",
+		})
+
+		sess, err := resolveSession(context.Background(), manager, server.Client(), lookup)
+		if err == nil {
+			t.Fatalf("expected an error, but a session was built instead: %v", sess)
+		}
+
+		if !strings.Contains(err.Error(), session.EnvSpaceliftProfile) {
+			t.Fatalf("error should name %s, got: %v", session.EnvSpaceliftProfile, err)
+		}
+	})
+}
+
+// aliasToken returns a JWT unique to a profile alias, so that assertions can tell
+// which profile a session came from.
+func aliasToken(alias string) string {
+	enc := func(segment string) string {
+		return base64.RawURLEncoding.EncodeToString([]byte(segment))
+	}
+
+	return strings.Join([]string{
+		enc(`{"alg":"HS256","typ":"JWT"}`),
+		enc(`{"aud":"` + alias + `","exp":1516239022}`),
+		enc("signature"),
+	}, ".")
+}
+
+// managerWithAPITokenProfiles creates an API token profile per alias in a temporary
+// directory. The first alias ends up selected, mirroring `spacectl profile select`.
+func managerWithAPITokenProfiles(t *testing.T, aliases ...string) *session.ProfileManager {
+	t.Helper()
+
+	manager, err := session.NewProfileManager(path.Join(t.TempDir(), "profiles"))
+	if err != nil {
+		t.Fatalf("could not create profile manager: %v", err)
+	}
+
+	for _, alias := range aliases {
+		if err := manager.Create(&session.Profile{
+			Alias: alias,
+			Credentials: &session.StoredCredentials{
+				Type:        session.CredentialsTypeAPIToken,
+				Endpoint:    "https://spacectl.app.spacelift.io",
+				AccessToken: aliasToken(alias),
+			},
+		}); err != nil {
+			t.Fatalf("could not create profile %q: %v", alias, err)
+		}
+	}
+
+	if err := manager.Select(aliases[0]); err != nil {
+		t.Fatalf("could not select profile %q: %v", aliases[0], err)
+	}
+
+	return manager
 }
 
 // newExchangeServer returns a mock GraphQL server that answers the apiKeyUser
