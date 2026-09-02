@@ -8,10 +8,8 @@ import (
 	"os"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/manifoldco/promptui"
-	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/term"
@@ -49,7 +47,7 @@ func loginAction(ctx context.Context, cliCmd *cli.Command) error {
 		storedCredentials.Type = apiTokenProfile.Credentials.Type
 		profileAlias = apiTokenProfile.Alias
 
-		return loginUsingWebBrowser(ctx, cliCmd, &storedCredentials)
+		return loginUsingWebBrowser(ctx, &storedCredentials)
 	}
 
 	reader := bufio.NewReader(os.Stdin)
@@ -76,7 +74,7 @@ func loginAction(ctx context.Context, cliCmd *cli.Command) error {
 			return err
 		}
 	case session.CredentialsTypeAPIToken:
-		return loginUsingWebBrowser(ctx, cliCmd, &storedCredentials)
+		return loginUsingWebBrowser(ctx, &storedCredentials)
 	default:
 		return fmt.Errorf("invalid selection (%s), please try again", storedCredentials.Type)
 	}
@@ -183,35 +181,11 @@ func loginUsingGitHubAccessToken(creds *session.StoredCredentials) error {
 	return nil
 }
 
-func loginUsingWebBrowser(ctx context.Context, _ *cli.Command, creds *session.StoredCredentials) error {
-	// Begin the interactive browser auth flow
-	handler, err := browserauth.BeginWithBindAddress(ctx, creds, bindHost, bindPort)
-	if err != nil {
+func loginUsingWebBrowser(ctx context.Context, creds *session.StoredCredentials) error {
+	if err := browserauth.Login(ctx, creds, bindHost, bindPort, noBrowser); err != nil {
 		return err
 	}
 
-	fmt.Printf("Waiting for login responses at %s:%d\n", handler.Host, handler.Port)
-	fmt.Printf("\nOpening browser to %s\n\n", handler.AuthenticationURL)
-
-	// Attempt to automatically open the URL in the user's browser
-	if noBrowser {
-		fmt.Printf("Please open the following URL in your browser to complete login:\n%s\n\n", handler.AuthenticationURL)
-	} else if err := browser.OpenURL(handler.AuthenticationURL); err != nil {
-		fmt.Printf("Failed to open the browser: %s\nPlease open the URL manually\n\n", err.Error())
-	}
-
-	fmt.Println("Waiting for login...")
-
-	// Create a context that will timeout after 2 minutes while we wait for auth completion
-	waitCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
-	defer cancel()
-
-	// Wait for the timeout or an auth callback
-	if err := handler.Wait(waitCtx); err != nil {
-		return err
-	}
-
-	// Save the shiny new token
 	if err := persistAccessCredentials(creds); err != nil {
 		return err
 	}

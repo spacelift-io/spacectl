@@ -122,14 +122,49 @@ func tryAuthMethod(ctx context.Context, client *http.Client, method string, look
 }
 
 func getEndpoint(lookup func(string) (string, bool)) (string, error) {
+	endpoint, deprecated, err := endpointFromEnvironment(lookup)
+	if err != nil {
+		return "", err
+	}
+	if deprecated {
+		fmt.Printf("Environment variable %q is deprecated, please use %q\n", EnvSpaceliftAPIEndpoint, EnvSpaceliftAPIKeyEndpoint)
+	}
+	return endpoint, nil
+}
+
+func endpointFromEnvironment(lookup func(string) (string, bool)) (string, bool, error) {
 	endpoint, ok := lookup(EnvSpaceliftAPIKeyEndpoint)
 	if !ok || endpoint == "" {
 		// Keep backwards compatibility with older version of spacectl.
 		endpoint, ok = lookup(EnvSpaceliftAPIEndpoint)
 		if !ok {
-			return "", errEnvSpaceliftAPIKeyEndpoint
+			return "", false, errEnvSpaceliftAPIKeyEndpoint
 		}
-		fmt.Printf("Environment variable %q is deprecated, please use %q\n", EnvSpaceliftAPIEndpoint, EnvSpaceliftAPIKeyEndpoint)
+		return strings.TrimSuffix(endpoint, "/"), true, nil
 	}
-	return strings.TrimSuffix(endpoint, "/"), nil
+	return strings.TrimSuffix(endpoint, "/"), false, nil
+}
+
+func EnvironmentConfigured() bool {
+	return environmentConfigured(os.LookupEnv)
+}
+
+func environmentConfigured(lookup func(string) (string, bool)) bool {
+	if token, ok := lookup(EnvSpaceliftAPIToken); ok && token != "" {
+		return true
+	}
+
+	endpoint, _, err := endpointFromEnvironment(lookup)
+	if err != nil || endpoint == "" {
+		return false
+	}
+
+	if token, ok := lookup(EnvSpaceliftAPIGitHubToken); ok && token != "" {
+		return true
+	}
+
+	keyID, idOK := lookup(EnvSpaceliftAPIKeyID)
+	keySecret, secretOK := lookup(EnvSpaceliftAPIKeySecret)
+
+	return idOK && keyID != "" && secretOK && keySecret != ""
 }
