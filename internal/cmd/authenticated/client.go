@@ -64,6 +64,10 @@ func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
 		return ctx, err
 	}
 
+	if err := maybeReloginExpiredBrowserSession(ctx); err != nil {
+		return ctx, err
+	}
+
 	session, err := session.New(ctx, httpClient)
 	if err != nil {
 		return ctx, err
