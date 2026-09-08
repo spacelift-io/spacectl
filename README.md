@@ -239,23 +239,16 @@ We refer to each method of providing credentials as "credential providers" (like
 The CLI supports the following authentication methods via the environment:
 
 - [Spacelift API tokens](#spacelift-api-tokens).
-- [GitHub tokens](#github-tokens).
 - [Spacelift API keys](#spacelift-api-keys).
+- [GitHub tokens](#github-tokens).
 
-`spacectl` looks for authentication configurations in the order specified above, and will stop as soon as it finds a valid configuration. For example, if a Spacelift API token is specified, GitHub tokens and Spacelift API keys will be ignored, even if their environment variables are specified.
+`spacectl` looks for authentication configurations in the order specified above, and will stop as soon as it finds a valid configuration. For example, if a Spacelift API token is specified, Spacelift API keys and GitHub tokens will be ignored, even if their environment variables are specified.
 
 #### Spacelift API tokens
 
 Spacelift API tokens can be specified using the `SPACELIFT_API_TOKEN` environment variable. When this variable is found, the CLI ignores all the other authentication environment variables because the token contains all the information needed to authenticate.
 
 NOTE: API tokens are generally short-lived and will need to be re-created often.
-
-#### GitHub tokens
-
-GitHub tokens are only available to accounts that use GitHub as their identity provider, but are very convenient for use in GitHub actions. To use a GitHub token, set the following environment variables:
-
-- `SPACELIFT_API_KEY_ENDPOINT` - the URL to your Spacelift account, for example `https://mycorp.app.spacelift.io`.
-- `SPACELIFT_API_GITHUB_TOKEN` - a GitHub personal access token.
 
 #### Spacelift API keys
 
@@ -264,6 +257,13 @@ To use a Spacelift API key, set the following environment variables:
 - `SPACELIFT_API_KEY_ENDPOINT` - the URL to your Spacelift account, for example `https://mycorp.app.spacelift.io`.
 - `SPACELIFT_API_KEY_ID` - the ID of your Spacelift API key. Available via the Spacelift application.
 - `SPACELIFT_API_KEY_SECRET` - the secret for your API key. Only available when the secret is created.
+
+#### GitHub tokens
+
+GitHub tokens are only available to accounts that use GitHub as their identity provider. To use a GitHub token, set the following environment variables:
+
+- `SPACELIFT_API_KEY_ENDPOINT` - the URL to your Spacelift account, for example `https://mycorp.app.spacelift.io`.
+- `SPACELIFT_API_GITHUB_TOKEN` - a GitHub personal access token.
 
 More information about API authentication can be found at <https://docs.spacelift.io/integrations/api#authenticating-with-the-api>.
 

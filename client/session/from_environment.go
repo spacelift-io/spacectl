@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	stderrors "errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -69,17 +70,20 @@ func FromEnvironment(ctx context.Context, client *http.Client) func(func(string)
 			return tryAuthMethod(ctx, client, preferredMethod, lookup)
 		}
 
-		var lastErr error
-		for _, method := range []string{authMethodToken, authMethodGitHub, authMethodAPIKey} {
+		// All failures are reported: the method the caller meant to use is
+		// indistinguishable from the ones they left unset, so surfacing a
+		// single reason would often be the wrong one.
+		var errs []error
+		for _, method := range []string{authMethodToken, authMethodAPIKey, authMethodGitHub} {
 			session, err := tryAuthMethod(ctx, client, method, lookup)
 			if err != nil {
-				lastErr = err
+				errs = append(errs, err)
 			}
 			if session != nil {
 				return session, nil
 			}
 		}
-		return nil, lastErr
+		return nil, stderrors.Join(errs...)
 	}
 }
 
