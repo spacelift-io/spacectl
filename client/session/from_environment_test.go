@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -42,7 +43,7 @@ func TestFromEnvironment(t *testing.T) {
 			l := lookupWithEnv("", "", "abc123", "SuperSecret")
 			g.It("expect an error to find api endpoint in environment", func() {
 				_, err := FromEnvironment(context.TODO(), nil)(l)
-				g.Assert(err).Equal(errEnvSpaceliftAPIKeyEndpoint)
+				g.Assert(errors.Is(err, errEnvSpaceliftAPIKeyEndpoint)).IsTrue("expected the api endpoint error to be reported")
 			})
 		})
 
@@ -88,7 +89,7 @@ func TestFromEnvironment(t *testing.T) {
 				g.It("expect an error to find api key id in environment", func() {
 					l := lookupWithEnv("https://spacectl.app.spacelift.io", "", "", "SuperSecret")
 					_, err := FromEnvironment(context.TODO(), nil)(l)
-					g.Assert(err).Equal(errEnvSpaceliftAPIKeyID)
+					g.Assert(errors.Is(err, errEnvSpaceliftAPIKeyID)).IsTrue("expected the api key id error to be reported")
 				})
 			})
 
@@ -96,7 +97,7 @@ func TestFromEnvironment(t *testing.T) {
 				g.It("expect an error to find api key secret in environment", func() {
 					l := lookupWithEnv("https://spacectl.app.spacelift.io", "", "abc123", "")
 					_, err := FromEnvironment(context.TODO(), nil)(l)
-					g.Assert(err).Equal(errEnvSpaceliftAPIKeySecret)
+					g.Assert(errors.Is(err, errEnvSpaceliftAPIKeySecret)).IsTrue("expected the api key secret error to be reported")
 				})
 			})
 		})
