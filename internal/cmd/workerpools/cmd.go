@@ -126,6 +126,75 @@ func Command() cmd.Command {
 							},
 						},
 					},
+					{
+						Name:  "queue",
+						Usage: "Inspect and manage runs waiting in this worker pool's scheduler queue.",
+						Versions: []cmd.VersionedCommand{
+							{
+								EarliestVersion: cmd.SupportedVersionAll,
+								Command:         &cli.Command{},
+							},
+						},
+						Subcommands: []cmd.Command{
+							{
+								Name:  "list",
+								Usage: "Lists runs currently scheduled for the worker pool.",
+								Versions: []cmd.VersionedCommand{
+									{
+										EarliestVersion: cmd.SupportedVersionAll,
+										Command: &cli.Command{
+											Flags: []cli.Flag{
+												flagWorkerPoolIDOptional,
+												flagQueueLimit,
+												flagQueueAfter,
+												flagQueueSearch,
+												flagQueueState,
+												flagQueueExcludeState,
+												flagQueueStack,
+												flagQueueRunType,
+												flagQueueDriftDetection,
+												flagQueuePrioritized,
+												flagQueueCommit,
+												cmd.FlagOutputFormat,
+											},
+											Action:    (&listQueueCommand{}).listQueue,
+											Before:    authenticated.Ensure,
+											ArgsUsage: cmd.EmptyArgsUsage,
+										},
+									},
+								},
+							},
+							{
+								Name:  "discard",
+								Usage: "Discards queued runs for the worker pool.",
+								Versions: []cmd.VersionedCommand{
+									{
+										EarliestVersion: cmd.SupportedVersionAll,
+										Command: &cli.Command{
+											Flags: []cli.Flag{
+												flagWorkerPoolIDOptional,
+												flagQueueLimit,
+												flagQueueAfter,
+												flagQueueSearch,
+												flagQueueState,
+												flagQueueExcludeState,
+												flagQueueStack,
+												flagQueueRunType,
+												flagQueueDriftDetection,
+												flagQueuePrioritized,
+												flagQueueCommit,
+												flagQueueRun,
+												flagQueueYes,
+											},
+											Action:    (&discardQueueCommand{}).discardQueue,
+											Before:    authenticated.Ensure,
+											ArgsUsage: cmd.EmptyArgsUsage,
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
