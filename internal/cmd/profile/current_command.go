@@ -16,7 +16,10 @@ func currentCommand() *cli.Command {
 		Usage:     "Outputs your currently selected profile",
 		ArgsUsage: cmd.EmptyArgsUsage,
 		Action: func(_ context.Context, _ *cli.Command) error {
-			currentProfile := manager.Current()
+			currentProfile, err := manager.CurrentValidated()
+			if err != nil {
+				return err
+			}
 
 			if currentProfile == nil {
 				return errors.New("no account is currently selected")
