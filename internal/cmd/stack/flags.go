@@ -165,7 +165,12 @@ var flagResources = &cli.StringSliceFlag{
 
 var flagPrioritizeRun = &cli.BoolFlag{
 	Name:  "prioritize-run",
-	Usage: "[Optional] Indicate whether to prioritize the run",
+	Usage: "[Deprecated] Use --priority high instead",
+}
+
+var flagRunPriority = &cli.StringFlag{
+	Name:  "priority",
+	Usage: "[Optional] Scheduling tier for the run: high, normal or low",
 }
 
 var flagInteractive = &cli.BoolFlag{

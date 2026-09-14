@@ -281,6 +281,7 @@ func Command() cmd.Command {
 								flagOverrideEnvVarsTF,
 								flagDisregardGitignore,
 								flagPrioritizeRun,
+								flagRunPriority,
 								flagWithGitDir,
 								flagTarget,
 								flagOnlyEnabled,
@@ -304,6 +305,7 @@ func Command() cmd.Command {
 								flagOverrideEnvVarsTF,
 								flagDisregardGitignore,
 								flagPrioritizeRun,
+								flagRunPriority,
 								flagWithGitDir,
 								flagTarget,
 								flagOnlyEnabled,
@@ -382,7 +384,7 @@ func Command() cmd.Command {
 			{
 				Category: "Run management",
 				Name:     "prioritize",
-				Usage:    "Prioritize a run",
+				Usage:    "Prioritize a run (deprecated: use `priority high`)",
 				Versions: []cmd.VersionedCommand{
 					{
 						EarliestVersion: cmd.SupportedVersionAll,
@@ -401,8 +403,28 @@ func Command() cmd.Command {
 			},
 			{
 				Category: "Run management",
+				Name:     "priority",
+				Usage:    "Set the scheduling level of a run: high, normal or low",
+				Versions: []cmd.VersionedCommand{
+					{
+						EarliestVersion: cmd.SupportedVersionLatest,
+						Command: &cli.Command{
+							Flags: []cli.Flag{
+								flagStackID,
+								flagRequiredRun,
+								flagTail,
+							},
+							Action:    runPriority,
+							Before:    authenticated.Ensure,
+							ArgsUsage: "LEVEL",
+						},
+					},
+				},
+			},
+			{
+				Category: "Run management",
 				Name:     "deprioritize",
-				Usage:    "Deprioritize a run",
+				Usage:    "Deprioritize a run (deprecated: use `priority normal`)",
 				Versions: []cmd.VersionedCommand{
 					{
 						EarliestVersion: cmd.SupportedVersionAll,
