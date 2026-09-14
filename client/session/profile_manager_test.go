@@ -71,6 +71,119 @@ func TestProfileManager(t *testing.T) {
 					gomega.Expect(profile).To(gomega.BeNil())
 				})
 			})
+
+			g.Describe("SPACELIFT_PROFILE is set", func() {
+				// The manager reads the variable at construction, so each case creates its
+				// own manager after setting it.
+				newManagerWithOverride := func(alias string) *session.ProfileManager {
+					gomega.Expect(os.Setenv(session.EnvSpaceliftProfile, alias)).To(gomega.Succeed())
+
+					overriddenManager, err := session.NewProfileManager(profilesDirectory)
+					gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+					return overriddenManager
+				}
+
+				g.AfterEach(func() {
+					_ = os.Unsetenv(session.EnvSpaceliftProfile)
+				})
+
+				g.It("takes precedence over the selected profile", func() {
+					gomega.Expect(manager.Create(createValidProfile("profile1"))).To(gomega.Succeed())
+					gomega.Expect(manager.Create(createValidProfile("profile2"))).To(gomega.Succeed())
+					gomega.Expect(manager.Select("profile1")).To(gomega.Succeed())
+
+					overriddenManager := newManagerWithOverride("profile2")
+
+					current := overriddenManager.Current()
+					gomega.Expect(current).ToNot(gomega.BeNil())
+					gomega.Expect(current.Alias).To(gomega.Equal("profile2"))
+					gomega.Expect(overriddenManager.ValidateProfileOverride()).To(gomega.Succeed())
+				})
+
+				g.It("does not persist the override to the configuration", func() {
+					gomega.Expect(manager.Create(createValidProfile("profile1"))).To(gomega.Succeed())
+					gomega.Expect(manager.Create(createValidProfile("profile2"))).To(gomega.Succeed())
+					gomega.Expect(manager.Select("profile1")).To(gomega.Succeed())
+
+					overriddenManager := newManagerWithOverride("profile2")
+					// Any write must leave the stored selection alone.
+					gomega.Expect(overriddenManager.Create(createValidProfile("profile3"))).To(gomega.Succeed())
+
+					gomega.Expect(os.Unsetenv(session.EnvSpaceliftProfile)).To(gomega.Succeed())
+					reloaded, err := session.NewProfileManager(profilesDirectory)
+					gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+					// profile3 was just created, so it legitimately becomes the selected profile;
+					// what matters is that profile2 never leaked into the stored configuration.
+					gomega.Expect(reloaded.Configuration.CurrentProfileAlias).To(gomega.Equal("profile3"))
+				})
+
+				g.It("does not persist the override when re-authenticating it", func() {
+					// `spacectl profile login` with no alias re-authenticates the profile in
+					// use - which is the override - and must not turn it into the selection
+					// every other shell then picks up.
+					gomega.Expect(manager.Create(createValidProfile("profile1"))).To(gomega.Succeed())
+					gomega.Expect(manager.Create(createValidProfile("profile2"))).To(gomega.Succeed())
+					gomega.Expect(manager.Select("profile1")).To(gomega.Succeed())
+
+					overriddenManager := newManagerWithOverride("profile2")
+					gomega.Expect(overriddenManager.Create(createValidProfile("profile2"))).To(gomega.Succeed())
+
+					gomega.Expect(os.Unsetenv(session.EnvSpaceliftProfile)).To(gomega.Succeed())
+					reloaded, err := session.NewProfileManager(profilesDirectory)
+					gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+					gomega.Expect(reloaded.Configuration.CurrentProfileAlias).To(gomega.Equal("profile1"))
+					// The credentials were still rewritten, so the re-auth itself took effect.
+					gomega.Expect(reloaded.Configuration.Profiles).To(gomega.HaveKey("profile2"))
+				})
+
+				g.It("selects a profile that is not the one stored as current", func() {
+					gomega.Expect(manager.Create(createValidProfile("profile1"))).To(gomega.Succeed())
+					gomega.Expect(manager.Create(createValidProfile("profile2"))).To(gomega.Succeed())
+
+					overriddenManager := newManagerWithOverride("profile1")
+
+					// Select writes profile2, but the override still wins for reads.
+					gomega.Expect(overriddenManager.Select("profile2")).To(gomega.Succeed())
+
+					current := overriddenManager.Current()
+					gomega.Expect(current).ToNot(gomega.BeNil())
+					gomega.Expect(current.Alias).To(gomega.Equal("profile1"))
+				})
+
+				g.It("reports the override alias", func() {
+					gomega.Expect(manager.Create(createValidProfile("profile1"))).To(gomega.Succeed())
+
+					override, ok := newManagerWithOverride("profile1").ProfileOverride()
+
+					gomega.Expect(ok).To(gomega.BeTrue())
+					gomega.Expect(override).To(gomega.Equal("profile1"))
+				})
+
+				g.It("returns a descriptive error when the profile does not exist", func() {
+					gomega.Expect(manager.Create(createValidProfile("profile1"))).To(gomega.Succeed())
+
+					overriddenManager := newManagerWithOverride("typo")
+
+					gomega.Expect(overriddenManager.Current()).To(gomega.BeNil())
+					gomega.Expect(overriddenManager.ValidateProfileOverride()).Should(gomega.MatchError(
+						"SPACELIFT_PROFILE is set to 'typo', but no profile with that alias exists - " +
+							"run `spacectl profile login typo`, or unset SPACELIFT_PROFILE to use the selected profile",
+					))
+				})
+			})
+
+			g.Describe("SPACELIFT_PROFILE is not set", func() {
+				g.It("reports no override and validates successfully", func() {
+					override, ok := manager.ProfileOverride()
+
+					gomega.Expect(ok).To(gomega.BeFalse())
+					gomega.Expect(override).To(gomega.BeEmpty())
+					gomega.Expect(manager.ValidateProfileOverride()).To(gomega.Succeed())
+				})
+			})
 		})
 
 		g.Describe("Create", func() {

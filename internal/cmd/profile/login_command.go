@@ -222,13 +222,33 @@ func loginUsingWebBrowser(ctx context.Context, _ *cli.Command, creds *session.St
 }
 
 func persistAccessCredentials(creds *session.StoredCredentials) error {
-	return manager.Create(&session.Profile{
+	if err := manager.Create(&session.Profile{
 		Alias:       profileAlias,
 		Credentials: creds,
-	})
+	}); err != nil {
+		return err
+	}
+
+	// Create leaves the stored selection alone when it is re-authenticating the profile
+	// SPACELIFT_PROFILE names, so that a per-shell choice is never persisted. An alias typed
+	// on the command line is a different thing entirely, and still selects.
+	if aliasFromArgs && manager.Configuration.CurrentProfileAlias != profileAlias {
+		return manager.Select(profileAlias)
+	}
+
+	return nil
 }
 
 func printEnvWarning() {
+	override := os.Getenv(session.EnvSpaceliftProfile)
+
+	// SPACELIFT_PROFILE selects a profile rather than supplying credentials, so it gets its own
+	// warning - but only when it names a profile other than the one just logged into.
+	if override != "" && override != profileAlias {
+		fmt.Printf("WARNING: %s is set to '%s', and takes precedence over the profile selected by logging in.\n",
+			session.EnvSpaceliftProfile, override)
+	}
+
 	envVars := checkEnvironmentVariables()
 	if len(envVars) == 0 {
 		return
@@ -238,6 +258,14 @@ func printEnvWarning() {
 	for _, envVar := range envVars {
 		fmt.Printf("   - %s\n", envVar)
 	}
+
+	// Naming a profile skips the environment entirely, so the usual precedence advice would
+	// be backwards here.
+	if override != "" {
+		fmt.Printf("\nThese are ignored while %s is set.\n", session.EnvSpaceliftProfile)
+		return
+	}
+
 	fmt.Println("\nEnvironment variables take precedence over profile credentials.")
 	fmt.Println("If these credentials are expired or invalid, commands will fail even after successful login.")
 }

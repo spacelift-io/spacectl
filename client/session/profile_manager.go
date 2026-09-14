@@ -20,6 +20,12 @@ const (
 	// when set, overrides the directory spacectl uses to store its profiles and
 	// configuration. When unset, spacectl falls back to ${HOME}/.spacelift.
 	EnvSpaceliftConfigDirectory = "SPACELIFT_CONFIG_DIR"
+
+	// EnvSpaceliftProfile is the name of the environment variable that, when set,
+	// selects the profile to use for the current process, without modifying the
+	// profile selected by `spacectl profile select`. When unset, the selected
+	// profile stored in the configuration is used.
+	EnvSpaceliftProfile = "SPACELIFT_PROFILE"
 )
 
 // invalidProfileAliases contains a list of strings that cannot be used as profile aliases.
@@ -51,6 +57,11 @@ type ProfileManager struct {
 
 	// The spacectl configuration.
 	Configuration *configuration
+
+	// The alias of the profile selected via SPACELIFT_PROFILE, if any. It takes
+	// precedence over the selected profile stored in the configuration, but is
+	// never persisted to it.
+	profileOverride string
 }
 
 // UserProfileManager creates a new ProfileManager using the user home directory to store the profile data.
@@ -92,6 +103,7 @@ func NewProfileManager(profilesDirectory string) (*ProfileManager, error) {
 
 	manager := &ProfileManager{
 		ConfigurationFile: filepath.Join(profilesDirectory, ConfigFileName),
+		profileOverride:   os.Getenv(EnvSpaceliftProfile),
 	}
 
 	if err := manager.loadConfiguration(); err != nil {
@@ -111,12 +123,49 @@ func (m *ProfileManager) Get(profileAlias string) (*Profile, error) {
 }
 
 // Current gets the user's currently selected profile, and returns nil if no profile is selected.
+// A profile selected via SPACELIFT_PROFILE takes precedence over the one stored in the configuration.
 func (m *ProfileManager) Current() *Profile {
-	if m.Configuration.CurrentProfileAlias == "" {
+	alias := m.Configuration.CurrentProfileAlias
+	if m.profileOverride != "" {
+		alias = m.profileOverride
+	}
+
+	if alias == "" {
 		return nil
 	}
 
-	return m.Configuration.Profiles[m.Configuration.CurrentProfileAlias]
+	return m.Configuration.Profiles[alias]
+}
+
+// CurrentValidated returns the same profile as Current, but reports an error when
+// SPACELIFT_PROFILE names a profile that does not exist - the one case Current cannot
+// distinguish from "no profile is selected". Prefer it over Current wherever a nil profile
+// would otherwise be reported to the user as a missing login.
+func (m *ProfileManager) CurrentValidated() (*Profile, error) {
+	if err := m.ValidateProfileOverride(); err != nil {
+		return nil, err
+	}
+
+	return m.Current(), nil
+}
+
+// ProfileOverride returns the profile alias set via SPACELIFT_PROFILE, and whether it was set at all.
+func (m *ProfileManager) ProfileOverride() (string, bool) {
+	return m.profileOverride, m.profileOverride != ""
+}
+
+// ValidateProfileOverride returns a descriptive error if SPACELIFT_PROFILE names a profile that does
+// not exist, so that a typo surfaces as such instead of looking like a missing login. It returns nil
+// if the variable is unset or names an existing profile.
+func (m *ProfileManager) ValidateProfileOverride() error {
+	if m.profileOverride == "" || m.Configuration.Profiles[m.profileOverride] != nil {
+		return nil
+	}
+
+	return fmt.Errorf(
+		"%s is set to '%s', but no profile with that alias exists - run `spacectl profile login %s`, or unset %s to use the selected profile",
+		EnvSpaceliftProfile, m.profileOverride, m.profileOverride, EnvSpaceliftProfile,
+	)
 }
 
 // Select sets the currently selected profile.
@@ -135,14 +184,22 @@ func (m *ProfileManager) Select(profileAlias string) error {
 	return m.writeConfigurationToFile()
 }
 
-// Create adds a new Spacelift profile.
+// Create adds a new Spacelift profile, and selects it unless doing so would persist the
+// profile named by SPACELIFT_PROFILE. Re-authenticating that profile - what `spacectl profile
+// login` with no alias does - must not turn a per-shell choice into the stored selection.
+// A brand new profile is still selected, so logging in for the first time behaves as before.
 func (m *ProfileManager) Create(profile *Profile) error {
 	if err := validateProfile(profile); err != nil {
 		return err
 	}
 
+	_, alreadyExists := m.Configuration.Profiles[profile.Alias]
+	reauthenticatingOverride := m.profileOverride == profile.Alias && alreadyExists
+
 	m.Configuration.Profiles[profile.Alias] = profile
-	m.Configuration.CurrentProfileAlias = profile.Alias
+	if !reauthenticatingOverride {
+		m.Configuration.CurrentProfileAlias = profile.Alias
+	}
 
 	return m.writeConfigurationToFile()
 }
