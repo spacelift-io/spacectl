@@ -44,6 +44,21 @@ func getStackForLocalPreview(ctx context.Context, cliCmd *cli.Command) (*stack, 
 
 func localPreview(useHeaders bool) cli.ActionFunc {
 	return func(ctx context.Context, cliCmd *cli.Command) error {
+		// Checked before anything reaches the network, so a bad flag combination
+		// costs nothing.
+		var priority *structs.RunPriorityPreset
+		if cliCmd.IsSet(flagRunPriority.Name) {
+			if cliCmd.Bool(flagPrioritizeRun.Name) {
+				return fmt.Errorf("--%s and --%s cannot be used together", flagRunPriority.Name, flagPrioritizeRun.Name)
+			}
+
+			parsed, err := parseRunPriorityPreset(cliCmd.String(flagRunPriority.Name))
+			if err != nil {
+				return err
+			}
+			priority = parsed
+		}
+
 		envVars, err := parseEnvVariablesForLocalPreview(cliCmd)
 		if err != nil {
 			return err
@@ -81,6 +96,7 @@ func localPreview(useHeaders bool) cli.ActionFunc {
 				NoUpload:           cliCmd.Bool(flagNoUpload.Name),
 				RunMetadata:        runMetadata,
 				PrioritizeRun:      cliCmd.Bool(flagPrioritizeRun.Name),
+				Priority:           priority,
 				ShowUploadProgress: true,
 				IncludeGitDir:      cliCmd.Bool(flagWithGitDir.Name),
 			},
@@ -167,6 +183,7 @@ type LocalPreviewOptions struct {
 	NoUpload           bool
 	RunMetadata        *string
 	PrioritizeRun      bool
+	Priority           *structs.RunPriorityPreset
 	ShowUploadProgress bool
 	IncludeGitDir      bool
 }
@@ -320,7 +337,17 @@ func createLocalPreviewRun(
 
 	fmt.Fprintln(writer, "You have successfully created a local preview run!")
 
-	if options.PrioritizeRun {
+	// The run already exists by this point, so a failure here only loses the
+	// priority setting, not the run, and the user can still set it by hand.
+	if options.Priority != nil {
+		_, err = setRunPriorityPreset(ctx, options.StackID, triggerMutation.RunProposeLocalWorkspace.ID, *options.Priority)
+		if err != nil {
+			fmt.Fprintln(writer, "Failed to set the priority of the run due to err:", err)
+			fmt.Fprintln(writer, "Resolve the issue and set the priority of the run manually")
+		} else {
+			fmt.Fprintf(writer, "The run has been set to %s priority!\n", *options.Priority)
+		}
+	} else if options.PrioritizeRun {
 		_, err = setRunPriority(ctx, options.StackID, triggerMutation.RunProposeLocalWorkspace.ID, true)
 		if err != nil {
 			fmt.Fprintln(writer, "Failed to prioritize the run due to err:", err)
