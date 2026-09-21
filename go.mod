@@ -1,6 +1,6 @@
 module github.com/spacelift-io/spacectl
 
-go 1.26.1
+go 1.27.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.5.0
@@ -9,14 +9,14 @@ require (
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834
 	github.com/cheggaaa/pb/v3 v3.2.1
-	github.com/cli/cli/v2 v2.100.0
+	github.com/cli/cli/v2 v2.101.0
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mark3labs/mcp-go v1.1.0
 	github.com/mattn/go-isatty v0.0.24
 	github.com/mholt/archiver/v3 v3.5.1
-	github.com/onsi/gomega v1.43.0
+	github.com/onsi/gomega v1.43.1
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
 	github.com/pterm/pterm v0.12.83
@@ -43,7 +43,7 @@ require (
 	github.com/charmbracelet/x/cellbuf v0.0.15 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
-	github.com/cli/go-gh/v2 v2.16.0 // indirect
+	github.com/cli/go-gh/v2 v2.16.1 // indirect
 	github.com/cli/safeexec v1.0.1 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
@@ -58,7 +58,7 @@ require (
 	github.com/google/jsonschema-go v0.4.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/color v1.6.0 // indirect
-	github.com/klauspost/compress v1.19.2 // indirect
+	github.com/klauspost/compress v1.20.0 // indirect
 	github.com/klauspost/pgzip v1.2.1 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.1 // indirect
@@ -78,10 +78,10 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.56.0 // indirect
+	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
