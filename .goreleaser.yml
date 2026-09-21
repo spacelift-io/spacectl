@@ -88,12 +88,16 @@ homebrew_casks:
       name: "homebrew-spacelift"
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: https://github.com/spacelift-io/spacectl
-    hooks:
-      post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/spacectl"]
-          end
+    # `hooks.post.install` renders Homebrew's deprecated `postflight` stanza
+    # (see https://github.com/goreleaser/goreleaser/issues/6870). Native
+    # `hooks.post.install_steps` support isn't released yet, so emit the
+    # `postflight_steps` stanza directly via custom_block until it lands.
+    custom_block: |
+      postflight_steps do
+        on_macos do
+          run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ "{{staged_path}}" }}/spacectl"]
+        end
+      end
     description: "Spacelift client and CLI"
     license: "MIT"
 
