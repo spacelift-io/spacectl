@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 // CredentialsType represents the type of credentials being used.
@@ -39,6 +40,25 @@ type StoredCredentials struct {
 	AccessToken string          `json:"access_token,omitempty"`
 	KeyID       string          `json:"key_id,omitempty"`
 	KeySecret   string          `json:"key_secret,omitempty"`
+}
+
+func (s *StoredCredentials) APITokenExpired() bool {
+	if s == nil || s.Type != CredentialsTypeAPIToken {
+		return false
+	}
+	if s.AccessToken == "" {
+		return true
+	}
+
+	claims, err := parseUnverifiedClaims(s.AccessToken)
+	if err != nil {
+		return true
+	}
+	if claims.ExpiresAt == nil {
+		return false
+	}
+
+	return tokenExpired(claims.ExpiresAt.Time, time.Now())
 }
 
 // Session creates a Spacelift Session from stored credentials.
