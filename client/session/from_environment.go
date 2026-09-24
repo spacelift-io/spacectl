@@ -42,6 +42,16 @@ const (
 	// that specifies the preferred authentication method. Valid values: AuthMethodToken, AuthMethodGitHub, AuthMethodAPIKey.
 	// If not set, the default priority is: token -> github -> apikey.
 	EnvSpaceliftAPIPreferredMethod = "SPACELIFT_API_PREFERRED_METHOD"
+
+	// EnvSpaceliftAPIKeyOIDCProvider represents the name of the environment variable
+	// naming the CI provider spacectl mints an OIDC token from, in place of
+	// SPACELIFT_API_KEY_SECRET, when using an OIDC API key. Valid values: github-actions.
+	EnvSpaceliftAPIKeyOIDCProvider = "SPACELIFT_API_KEY_OIDC_PROVIDER" //nolint: gosec
+
+	// EnvSpaceliftAPIKeyOIDCAudience represents the name of the environment variable
+	// overriding the audience of the minted OIDC token. It must match the API key's
+	// client ID. Defaults to the host of SPACELIFT_API_KEY_ENDPOINT.
+	EnvSpaceliftAPIKeyOIDCAudience = "SPACELIFT_API_KEY_OIDC_AUDIENCE" //nolint: gosec
 )
 
 const (
@@ -114,11 +124,24 @@ func tryAuthMethod(ctx context.Context, client *http.Client, method string, look
 		if !ok || keyID == "" {
 			return nil, errEnvSpaceliftAPIKeyID
 		}
-		keySecret, ok := lookup(EnvSpaceliftAPIKeySecret)
-		if !ok || keySecret == "" {
-			return nil, errEnvSpaceliftAPIKeySecret
+		keySecret, _ := lookup(EnvSpaceliftAPIKeySecret)
+		provider, _ := lookup(EnvSpaceliftAPIKeyOIDCProvider)
+		audience, _ := lookup(EnvSpaceliftAPIKeyOIDCAudience)
+
+		if provider == "" {
+			if audience != "" {
+				return nil, fmt.Errorf("%s is set but %s is not; set it to %q to mint an OIDC token", EnvSpaceliftAPIKeyOIDCAudience, EnvSpaceliftAPIKeyOIDCProvider, oidcProviderGitHubActions)
+			}
+			if keySecret == "" {
+				return nil, errEnvSpaceliftAPIKeySecret
+			}
+			return FromAPIKey(ctx, client)(endpoint, keyID, keySecret)
 		}
-		return FromAPIKey(ctx, client)(endpoint, keyID, keySecret)
+
+		if keySecret != "" {
+			return nil, fmt.Errorf("set either %s or %s, not both", EnvSpaceliftAPIKeySecret, EnvSpaceliftAPIKeyOIDCProvider)
+		}
+		return fromOIDCProvider(ctx, client, lookup, endpoint, keyID, provider, audience)
 
 	default:
 		return nil, fmt.Errorf("no such method %q", method)

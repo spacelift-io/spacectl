@@ -76,9 +76,9 @@ steps:
 
 <br>
 
-Instead of storing a long-lived secret, let GitHub mint a short-lived OIDC token and exchange it for a Spacelift session token. This needs an [API key configured for OIDC](https://docs.spacelift.io/integrations/api#spacelift-api-key-via-oidc) and `id-token: write` permission on the job.
+Instead of storing a long-lived secret, let `spacectl` mint a short-lived GitHub OIDC token and use it as the API key secret. This needs an [API key configured for OIDC](https://docs.spacelift.io/integrations/api#spacelift-api-key-via-oidc) and `id-token: write` permission on the job.
 
-The OIDC token GitHub issues is short-lived (~5 minutes), so exchange it **once** for a Spacelift session token (valid up to ~10 hours) and reuse that for the rest of the job. `spacectl profile export-token` does the exchange for you, picking up the OIDC token straight from the environment so you don't have to hand-roll the `apiKeyUser` GraphQL mutation:
+Set `SPACELIFT_API_KEY_OIDC_PROVIDER=github-actions` in place of `SPACELIFT_API_KEY_SECRET`. `spacectl` requests a new token from GitHub every time it exchanges the key for a Spacelift session, so long-running commands keep working after GitHub's ~5 minute token expires.
 
 ```yaml
 jobs:
@@ -91,23 +91,15 @@ jobs:
       - name: Install spacectl
         uses: spacelift-io/setup-spacectl@main
 
-      - name: Authenticate to Spacelift
+      - name: Deploy infrastructure
         env:
           SPACELIFT_API_KEY_ENDPOINT: https://mycorp.app.spacelift.io
-          SPACELIFT_API_KEY_ID: ${{ secrets.SPACELIFT_API_KEY_ID }}
-        run: |
-          set -euo pipefail
-          # Mint the GitHub OIDC token and hand it to spacectl as the key secret.
-          export SPACELIFT_API_KEY_SECRET=$(curl -sH "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=mycorp.app.spacelift.io" | jq -r '.value')
-          # Exchange it once for a longer-lived session token and reuse it everywhere.
-          JWT=$(spacectl profile export-token)
-          echo "::add-mask::$JWT"
-          echo "SPACELIFT_API_TOKEN=${JWT}" >> "$GITHUB_ENV"
-
-      - name: Deploy infrastructure
+          SPACELIFT_API_KEY_ID: ${{ vars.SPACELIFT_API_KEY_ID }}
+          SPACELIFT_API_KEY_OIDC_PROVIDER: github-actions
         run: spacectl stack deploy --id my-infra-stack
 ```
+
+The token's audience defaults to the endpoint host (`mycorp.app.spacelift.io` above), so set the API key's client ID to that host. If your key uses a different client ID, set `SPACELIFT_API_KEY_OIDC_AUDIENCE` to it.
 
 </details>
 
@@ -257,6 +249,13 @@ To use a Spacelift API key, set the following environment variables:
 - `SPACELIFT_API_KEY_ENDPOINT` - the URL to your Spacelift account, for example `https://mycorp.app.spacelift.io`.
 - `SPACELIFT_API_KEY_ID` - the ID of your Spacelift API key. Available via the Spacelift application.
 - `SPACELIFT_API_KEY_SECRET` - the secret for your API key. Only available when the secret is created.
+
+For an [OIDC API key](https://docs.spacelift.io/integrations/api#spacelift-api-key-via-oidc) used from GitHub Actions, `spacectl` can mint the token itself. Replace `SPACELIFT_API_KEY_SECRET` with:
+
+- `SPACELIFT_API_KEY_OIDC_PROVIDER` - set to `github-actions`. The job needs `permissions: id-token: write`.
+- `SPACELIFT_API_KEY_OIDC_AUDIENCE` - optional. The audience of the minted token, which must match the key's client ID. Defaults to the host of `SPACELIFT_API_KEY_ENDPOINT`.
+
+Setting both `SPACELIFT_API_KEY_SECRET` and `SPACELIFT_API_KEY_OIDC_PROVIDER` is an error.
 
 #### GitHub tokens
 
