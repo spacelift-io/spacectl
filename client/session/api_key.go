@@ -13,27 +13,37 @@ import (
 // ID and API key secret.
 func FromAPIKey(ctx context.Context, client *http.Client) func(string, string, string) (Session, error) {
 	return func(endpoint, keyID, keySecret string) (Session, error) {
-		out := &apiKey{
-			apiToken: apiToken{
-				client:   client,
-				endpoint: endpoint,
-				timer:    time.Now,
-			},
-			keyID:     keyID,
-			keySecret: keySecret,
-		}
-
-		if err := out.exchange(ctx); err != nil {
-			return nil, err
-		}
-
-		return out, nil
+		return fromAPIKeySecretSource(ctx, client, endpoint, keyID, func(context.Context) (string, error) {
+			return keySecret, nil
+		})
 	}
+}
+
+// fromAPIKeySecretSource builds an API key session that asks keySecret for the
+// secret on every exchange, so a short-lived secret like a CI OIDC token can be
+// minted again when the session goes stale.
+func fromAPIKeySecretSource(ctx context.Context, client *http.Client, endpoint, keyID string, keySecret func(context.Context) (string, error)) (Session, error) {
+	out := &apiKey{
+		apiToken: apiToken{
+			client:   client,
+			endpoint: endpoint,
+			timer:    time.Now,
+		},
+		keyID:     keyID,
+		keySecret: keySecret,
+	}
+
+	if err := out.exchange(ctx); err != nil {
+		return nil, err
+	}
+
+	return out, nil
 }
 
 type apiKey struct {
 	apiToken
-	keyID, keySecret string
+	keyID     string
+	keySecret func(context.Context) (string, error)
 }
 
 func (g *apiKey) BearerToken(ctx context.Context) (string, error) {
@@ -55,9 +65,14 @@ func (g *apiKey) exchange(ctx context.Context) error {
 		APIKeyUser user `graphql:"apiKeyUser(id: $id, secret: $secret)"`
 	}
 
+	secret, err := g.keySecret(ctx)
+	if err != nil {
+		return err
+	}
+
 	variables := map[string]any{
 		"id":     graphql.ID(g.keyID),
-		"secret": graphql.String(g.keySecret),
+		"secret": graphql.String(secret),
 	}
 
 	if err := g.mutate(ctx, &mutation, variables); err != nil {
