@@ -14,6 +14,11 @@ import (
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
+// sampleAPIToken is a JWT with header {"alg":"HS256","typ":"JWT"} and payload
+// {"aud":"spacectl","exp":1516239022}, generated at https://jwt.io. It only
+// needs to carry a single audience claim to be parseable by FromAPIToken.
+const sampleAPIToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzcGFjZWN0bCIsImV4cCI6MTUxNjIzOTAyMn0.fsKd_N2TKXpx83JSPPw47zYzQ8sbSzGVPZcyGpwp05U" //nolint:gosec // sample JWT for tests, not a real credential
+
 // newConfigDir points SPACELIFT_CONFIG_DIR at a temporary directory holding one API token
 // profile per alias, the first of which is selected.
 func newConfigDir(t *testing.T, aliases ...string) {
