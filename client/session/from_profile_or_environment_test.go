@@ -1,4 +1,4 @@
-package profile
+package session_test
 
 import (
 	"context"
@@ -25,8 +25,8 @@ func envLookup(values map[string]string) func(string) (string, bool) {
 	}
 }
 
-func TestResolveSession(t *testing.T) {
-	// resolveSession rejects an unresolvable SPACELIFT_PROFILE, so a value left in the
+func TestFromProfileOrEnvironment(t *testing.T) {
+	// FromProfileOrEnvironment rejects an unresolvable SPACELIFT_PROFILE, so a value left in the
 	// developer's own shell would fail the cases below. Subtests that want an override set
 	// it themselves after this.
 	t.Setenv(session.EnvSpaceliftProfile, "")
@@ -41,7 +41,7 @@ func TestResolveSession(t *testing.T) {
 			session.EnvSpaceliftAPIKeySecret:   "oidc-token",
 		})
 
-		sess, err := resolveSession(context.Background(), nil, server.Client(), lookup)
+		sess, err := session.FromProfileOrEnvironment(context.Background(), nil, server.Client(), lookup)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -66,7 +66,7 @@ func TestResolveSession(t *testing.T) {
 			session.EnvSpaceliftAPIKeySecret:   "oidc-token",
 		})
 
-		sess, err := resolveSession(context.Background(), manager, server.Client(), lookup)
+		sess, err := session.FromProfileOrEnvironment(context.Background(), manager, server.Client(), lookup)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -99,7 +99,7 @@ func TestResolveSession(t *testing.T) {
 			session.EnvSpaceliftAPIKeySecret:   "oidc-token",
 		})
 
-		sess, err := resolveSession(context.Background(), manager, http.DefaultClient, lookup)
+		sess, err := session.FromProfileOrEnvironment(context.Background(), manager, http.DefaultClient, lookup)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -118,7 +118,7 @@ func TestResolveSession(t *testing.T) {
 			session.EnvSpaceliftAPIKeySecret:   "oidc-token",
 		})
 
-		sess, err := resolveSession(context.Background(), manager, http.DefaultClient, lookup)
+		sess, err := session.FromProfileOrEnvironment(context.Background(), manager, http.DefaultClient, lookup)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -144,7 +144,7 @@ func TestResolveSession(t *testing.T) {
 			session.EnvSpaceliftAPIKeySecret:   "oidc-token",
 		})
 
-		sess, err := resolveSession(context.Background(), manager, server.Client(), lookup)
+		sess, err := session.FromProfileOrEnvironment(context.Background(), manager, server.Client(), lookup)
 		if err == nil {
 			t.Fatalf("expected an error, but a session was built instead: %v", sess)
 		}

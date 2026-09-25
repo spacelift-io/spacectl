@@ -355,6 +355,33 @@ If `SPACELIFT_API_TLS_CA` is not set, `spacectl` falls back to the standard `SSL
 > [!NOTE]
 > When a CA bundle is provided through either variable, it replaces the system trust store rather than extending it, so the file must contain the full chain needed to verify the endpoint.
 
+## Private module and provider registry
+
+`terraform init` and `tofu init` need a credential for Spacelift's private module and provider registry. `spacectl registry credentials` prints one for the current session. It resolves credentials the same way as `spacectl profile export-token`: the selected profile first, then the environment. That makes it work with an [OIDC API key](https://docs.spacelift.io/integrations/api#spacelift-api-key-via-oidc) in CI.
+
+```shell
+$ spacectl registry credentials
+TF_TOKEN_app_spacelift_io=eyJ...
+TF_TOKEN_spacelift_io=eyJ...
+```
+
+`--format terraformrc` prints `credentials` blocks for `~/.terraformrc` or `~/.tofurc` in place of env lines. The registry hosts come from the Spacelift endpoint: `mycorp.app.spacelift.io` gives `app.spacelift.io` and `spacelift.io`, and a self-hosted endpoint gives its own host. Use `--host` (repeatable) to set them yourself.
+
+On GitHub Actions:
+
+```yaml
+- name: Configure registry credentials
+  env:
+    SPACELIFT_API_KEY_ENDPOINT: https://mycorp.app.spacelift.io
+    SPACELIFT_API_KEY_ID: ${{ secrets.SPACELIFT_API_KEY_ID }}
+    SPACELIFT_API_KEY_SECRET: ${{ secrets.SPACELIFT_API_KEY_SECRET }}
+  run: spacectl registry credentials >> "$GITHUB_ENV"
+
+- run: terraform init
+```
+
+The output contains a secret, and values written to `$GITHUB_ENV` aren't masked automatically, so don't print them. The token is a Spacelift session token, valid for 1 to 10 hours, so run the command again in jobs that take longer.
+
 ## MCP Server
 
 Spacectl includes an MCP (Model Context Protocol) server that allows AI models to interact with Spacelift through a standardized interface. MCP is an open protocol that standardizes how applications provide context to LLMs, similar to how USB-C provides a standardized way to connect devices to peripherals.
