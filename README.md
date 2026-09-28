@@ -188,6 +188,7 @@ COMMANDS:
    template                 Manage Spacelift templates
    policy                   Manage Spacelift policies
    audit-trail              Manage Spacelift audit trail entries
+   ai                       Work with Spacelift Intelligence
    mcp                      Manage MCP server
    help, h                  Shows a list of commands or help for one command
 
