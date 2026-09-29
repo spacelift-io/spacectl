@@ -32,13 +32,33 @@ func (t CredentialsType) String() string {
 	return [...]string{"Invalid", "API Key", "GitHub", "API Token"}[t]
 }
 
+// ProxyAuthConfig configures a Proxy-Authorization header to be injected on
+// outgoing requests. This is useful when Spacelift sits behind a reverse proxy
+// (such as GCP Identity-Aware Proxy or Azure AD Application Proxy) that
+// requires its own authentication separate from Spacelift's bearer token.
+type ProxyAuthConfig struct {
+	// Command is the command (program + args) to run to obtain a proxy auth
+	// token. The token is read from stdout (trimmed).
+	Command []string `json:"command"`
+
+	// SetupHint is shown when Command is missing or returns empty AND the
+	// server rejects the request. It should tell the user how to install or
+	// initialize the auth tool.
+	SetupHint string `json:"setup_hint,omitempty"`
+
+	// RefreshHint is shown when Command returns a token but the server
+	// still rejects it (e.g. the token has expired).
+	RefreshHint string `json:"refresh_hint,omitempty"`
+}
+
 // StoredCredentials is a filesystem representation of the credentials.
 type StoredCredentials struct {
-	Type        CredentialsType `json:"type,omitempty"`
-	Endpoint    string          `json:"endpoint,omitempty"`
-	AccessToken string          `json:"access_token,omitempty"`
-	KeyID       string          `json:"key_id,omitempty"`
-	KeySecret   string          `json:"key_secret,omitempty"`
+	Type        CredentialsType  `json:"type,omitempty"`
+	Endpoint    string           `json:"endpoint,omitempty"`
+	AccessToken string           `json:"access_token,omitempty"`
+	KeyID       string           `json:"key_id,omitempty"`
+	KeySecret   string           `json:"key_secret,omitempty"`
+	ProxyAuth   *ProxyAuthConfig `json:"proxy_auth,omitempty"`
 }
 
 // Session creates a Spacelift Session from stored credentials.
