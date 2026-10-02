@@ -11,6 +11,7 @@ import (
 	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/client/session"
 	"github.com/spacelift-io/spacectl/internal/cmd"
+	"github.com/spacelift-io/spacectl/internal/cmd/ai"
 	"github.com/spacelift-io/spacectl/internal/cmd/api"
 	"github.com/spacelift-io/spacectl/internal/cmd/audittrail"
 	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
@@ -107,6 +108,7 @@ func main() {
 			template.Command(),
 			policy.Command(),
 			audittrail.Command(),
+			ai.Command(),
 			mcp.Command(),
 		})...),
 	}

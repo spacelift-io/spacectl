@@ -200,6 +200,19 @@ spacectl provider revoke-version --version-id 01JVER123
 spacectl provider delete-version --version-id 01JVER123
 ```
 
+### Infra Assistant sessions
+
+Sessions belong to the user who created them: the profile must be logged in as that user (`spacectl profile login`, web browser option). API key profiles can't read sessions: `get` reports the session as not found.
+
+```bash
+spacectl ai sessions list
+spacectl ai sessions list --search "vpc" --limit 20 -o json
+# print a session's markdown transcript to stdout
+spacectl ai sessions get 01JSESSION123
+# only messages 10-19 (offset is the index of the first message)
+spacectl ai sessions get 01JSESSION123 --offset 10 --limit 10
+```
+
 ### Other
 
 ```bash
