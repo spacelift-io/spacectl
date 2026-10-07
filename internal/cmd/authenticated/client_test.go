@@ -46,6 +46,19 @@ func TestConfigureTLS_SpaceliftCA(t *testing.T) {
 	assert.NotNil(t, transport.TLSClientConfig.RootCAs, "RootCAs should be set when SPACELIFT_API_TLS_CA is provided")
 }
 
+func TestHTTPClient_AppliesTLSFromEnvironment(t *testing.T) {
+	caFile := writeTempCA(t)
+
+	t.Setenv(EnvSpaceliftAPIClientCA, caFile)
+	t.Setenv("SSL_CERT_FILE", "")
+
+	httpClient, err := HTTPClient()
+	require.NoError(t, err)
+
+	transport := httpClient.Transport.(*http.Transport)
+	assert.NotNil(t, transport.TLSClientConfig.RootCAs, "RootCAs should be set when SPACELIFT_API_TLS_CA is provided")
+}
+
 func TestConfigureTLS_SSLCertFileFallback(t *testing.T) {
 	caFile := writeTempCA(t)
 
