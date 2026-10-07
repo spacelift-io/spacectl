@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -96,7 +97,7 @@ func fetchTokenFromCommand(command []string, setupHint string) (string, string) 
 	if len(command) > 1 {
 		args = command[1:]
 	}
-	out, err := exec.Command(binPath, args...).Output()
+	out, err := exec.CommandContext(context.Background(), binPath, args...).Output()
 	if err != nil {
 		return "", fmt.Sprintf(
 			"%s failed: %v. %s",

@@ -1,11 +1,10 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/spacelift-io/spacectl/client/session"
@@ -21,7 +20,16 @@ func (rt *recordingTransport) RoundTrip(req *http.Request) (*http.Response, erro
 	if rt.resp != nil {
 		return rt.resp, nil
 	}
-	return &http.Response{StatusCode: 200, Header: http.Header{}}, nil
+	return &http.Response{StatusCode: 200, Header: http.Header{}, Body: http.NoBody}, nil
+}
+
+func newTestRequest(t *testing.T) *http.Request {
+	t.Helper()
+	req, err := http.NewRequestWithContext(context.Background(), "GET", "https://spacelift.example.com/graphql", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return req
 }
 
 func testConfig() *session.ProxyAuthConfig {
@@ -55,12 +63,13 @@ func TestProxyAuthTransport_WithToken_HeaderSet(t *testing.T) {
 		fetchToken: func() (string, string) { return "test-proxy-token", "" },
 	}
 
-	req := httptest.NewRequest("GET", "https://spacelift.example.com/graphql", nil)
+	req := newTestRequest(t)
 	req.Header.Set("Authorization", "Bearer spacelift-jwt")
-	_, err := transport.RoundTrip(req)
+	resp, err := transport.RoundTrip(req)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer resp.Body.Close()
 	if got := inner.req.Header.Get("Proxy-Authorization"); got != "Bearer test-proxy-token" {
 		t.Errorf("expected Proxy-Authorization 'Bearer test-proxy-token', got %q", got)
 	}
@@ -76,11 +85,12 @@ func TestProxyAuthTransport_NoToken_NoHeader(t *testing.T) {
 		fetchToken: func() (string, string) { return "", "auth tool missing" },
 	}
 
-	req := httptest.NewRequest("GET", "https://spacelift.example.com/graphql", nil)
-	_, err := transport.RoundTrip(req)
+	req := newTestRequest(t)
+	resp, err := transport.RoundTrip(req)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer resp.Body.Close()
 	if got := inner.req.Header.Get("Proxy-Authorization"); got != "" {
 		t.Errorf("expected no Proxy-Authorization when token is empty, got %q", got)
 	}
@@ -93,12 +103,13 @@ func TestProxyAuthTransport_DoesNotMutateOriginalRequest(t *testing.T) {
 		fetchToken: func() (string, string) { return "test-token", "" },
 	}
 
-	req := httptest.NewRequest("GET", "https://spacelift.example.com/graphql", nil)
+	req := newTestRequest(t)
 	origHeaders := req.Header.Clone()
-	_, err := transport.RoundTrip(req)
+	resp, err := transport.RoundTrip(req)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer resp.Body.Close()
 	if req.Header.Get("Proxy-Authorization") != origHeaders.Get("Proxy-Authorization") {
 		t.Error("original request was mutated")
 	}
@@ -123,7 +134,7 @@ func TestProxyAuthTransport_WarnsOnRejection(t *testing.T) {
 		fetchToken: func() (string, string) { return "", "auth tool has no cached token." },
 	}
 
-	req := httptest.NewRequest("GET", "https://spacelift.example.com/graphql", nil)
+	req := newTestRequest(t)
 	_, _ = transport.RoundTrip(req)
 
 	if len(warnings) != 1 {
@@ -151,7 +162,7 @@ func TestProxyAuthTransport_WarnsOnceOnly(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		req := httptest.NewRequest("GET", "https://spacelift.example.com/graphql", nil)
+		req := newTestRequest(t)
 		_, _ = transport.RoundTrip(req)
 	}
 
@@ -180,7 +191,7 @@ func TestProxyAuthTransport_ExpiredToken_UsesRefreshHint(t *testing.T) {
 		refreshHint: "Refresh with 'test-auth --refresh'.",
 	}
 
-	req := httptest.NewRequest("GET", "https://spacelift.example.com/graphql", nil)
+	req := newTestRequest(t)
 	_, _ = transport.RoundTrip(req)
 
 	if len(warnings) != 1 {
@@ -205,7 +216,7 @@ func TestProxyAuthTransport_NoWarnOn200(t *testing.T) {
 		fetchToken: func() (string, string) { return "", "auth tool missing" },
 	}
 
-	req := httptest.NewRequest("GET", "https://spacelift.example.com/graphql", nil)
+	req := newTestRequest(t)
 	_, _ = transport.RoundTrip(req)
 
 	if warnCount != 0 {
@@ -232,7 +243,7 @@ func TestProxyAuthTransport_RedirectToGoogleSSO(t *testing.T) {
 		fetchToken: func() (string, string) { return "", "no token" },
 	}
 
-	req := httptest.NewRequest("GET", "https://spacelift.example.com/graphql", nil)
+	req := newTestRequest(t)
 	_, _ = transport.RoundTrip(req)
 
 	if len(warnings) != 1 {
@@ -281,5 +292,3 @@ func TestMemoizeToken(t *testing.T) {
 	}
 }
 
-// Ensure the unused import doesn't cause issues.
-var _ sync.Once
