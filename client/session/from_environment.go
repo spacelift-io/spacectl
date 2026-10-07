@@ -133,7 +133,7 @@ func getEndpoint(lookup func(string) (string, bool)) (string, error) {
 		if !ok {
 			return "", errEnvSpaceliftAPIKeyEndpoint
 		}
-		fmt.Printf("Environment variable %q is deprecated, please use %q\n", EnvSpaceliftAPIEndpoint, EnvSpaceliftAPIKeyEndpoint)
+		fmt.Fprintf(os.Stderr, "Environment variable %q is deprecated, please use %q\n", EnvSpaceliftAPIEndpoint, EnvSpaceliftAPIKeyEndpoint)
 	}
 	return strings.TrimSuffix(endpoint, "/"), nil
 }
