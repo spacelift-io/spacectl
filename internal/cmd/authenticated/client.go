@@ -58,9 +58,8 @@ func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
 	m.Lock()
 	defer m.Unlock()
 
-	httpClient := client.GetHTTPClient()
-
-	if err := configureTLS(httpClient); err != nil {
+	httpClient, err := HTTPClient()
+	if err != nil {
 		return ctx, err
 	}
 
@@ -72,6 +71,19 @@ func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
 	auth = client.New(httpClient, session)
 
 	return ctx, nil
+}
+
+// HTTPClient returns the shared HTTP client with TLS settings from the environment.
+// Commands that create their own sessions need it to honor the same TLS settings
+// as commands using Ensure.
+func HTTPClient() (*http.Client, error) {
+	httpClient := client.GetHTTPClient()
+
+	if err := configureTLS(httpClient); err != nil {
+		return nil, err
+	}
+
+	return httpClient, nil
 }
 
 // configureTLS configures client TLS from the environment.

@@ -3,13 +3,13 @@ package profile
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client/session"
 	"github.com/spacelift-io/spacectl/internal/cmd"
+	"github.com/spacelift-io/spacectl/internal/cmd/authenticated"
 )
 
 func exportTokenCommand() *cli.Command {
@@ -19,7 +19,12 @@ func exportTokenCommand() *cli.Command {
 			"we suggest piping it to your OS pastebin",
 		ArgsUsage: cmd.EmptyArgsUsage,
 		Action: func(ctx context.Context, _ *cli.Command) error {
-			sess, err := session.FromProfileOrEnvironment(ctx, manager, http.DefaultClient, os.LookupEnv)
+			httpClient, err := authenticated.HTTPClient()
+			if err != nil {
+				return err
+			}
+
+			sess, err := session.FromProfileOrEnvironment(ctx, manager, httpClient, os.LookupEnv)
 			if err != nil {
 				return fmt.Errorf("could not get session: %w", err)
 			}
