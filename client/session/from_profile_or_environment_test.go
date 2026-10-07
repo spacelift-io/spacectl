@@ -1,4 +1,4 @@
-package profile
+package session_test
 
 import (
 	"context"
@@ -12,10 +12,8 @@ import (
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
-// sampleAPIToken is a JWT with header {"alg":"HS256","typ":"JWT"} and payload
-// {"aud":"spacectl","exp":1516239022}, generated at https://jwt.io. It only
-// needs to carry a single audience claim to be parseable by FromAPIToken.
-const sampleAPIToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzcGFjZWN0bCIsImV4cCI6MTUxNjIzOTAyMn0.fsKd_N2TKXpx83JSPPw47zYzQ8sbSzGVPZcyGpwp05U" //nolint:gosec // sample JWT for tests, not a real credential
+// sampleAPIToken expires in 2100 so these tests don't fail as time passes.
+var sampleAPIToken = aliasToken("spacectl")
 
 // envLookup builds an os.LookupEnv-style func from a map.
 func envLookup(values map[string]string) func(string) (string, bool) {
@@ -25,10 +23,9 @@ func envLookup(values map[string]string) func(string) (string, bool) {
 	}
 }
 
-func TestResolveSession(t *testing.T) {
-	// resolveSession rejects an unresolvable SPACELIFT_PROFILE, so a value left in the
-	// developer's own shell would fail the cases below. Subtests that want an override set
-	// it themselves after this.
+func TestFromProfileOrEnvironment(t *testing.T) {
+	// Clear the shell's profile override so local settings can't affect these tests.
+	// Subtests that need an override set their own.
 	t.Setenv(session.EnvSpaceliftProfile, "")
 
 	t.Run("falls back to the environment when no profile manager is set", func(t *testing.T) {
@@ -41,7 +38,7 @@ func TestResolveSession(t *testing.T) {
 			session.EnvSpaceliftAPIKeySecret:   "oidc-token",
 		})
 
-		sess, err := resolveSession(context.Background(), nil, server.Client(), lookup)
+		sess, err := session.FromProfileOrEnvironment(context.Background(), nil, server.Client(), lookup)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -66,7 +63,7 @@ func TestResolveSession(t *testing.T) {
 			session.EnvSpaceliftAPIKeySecret:   "oidc-token",
 		})
 
-		sess, err := resolveSession(context.Background(), manager, server.Client(), lookup)
+		sess, err := session.FromProfileOrEnvironment(context.Background(), manager, server.Client(), lookup)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -99,12 +96,37 @@ func TestResolveSession(t *testing.T) {
 			session.EnvSpaceliftAPIKeySecret:   "oidc-token",
 		})
 
-		sess, err := resolveSession(context.Background(), manager, http.DefaultClient, lookup)
+		sess, err := session.FromProfileOrEnvironment(context.Background(), manager, http.DefaultClient, lookup)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
 		assertBearerToken(t, sess, sampleAPIToken)
+	})
+
+	t.Run("rejects an expired stored token", func(t *testing.T) {
+		manager, err := session.NewProfileManager(path.Join(t.TempDir(), "profiles"))
+		if err != nil {
+			t.Fatalf("could not create profile manager: %v", err)
+		}
+
+		// The JWT expired in 2018, so this test doesn't depend on the current date.
+		expired := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzcGFjZWN0bCIsImV4cCI6MTUxNjIzOTAyMn0.fsKd_N2TKXpx83JSPPw47zYzQ8sbSzGVPZcyGpwp05U"
+		if err := manager.Create(&session.Profile{
+			Alias: "default",
+			Credentials: &session.StoredCredentials{
+				Type:        session.CredentialsTypeAPIToken,
+				Endpoint:    "https://spacectl.app.spacelift.io",
+				AccessToken: expired,
+			},
+		}); err != nil {
+			t.Fatalf("could not create profile: %v", err)
+		}
+
+		_, err = session.FromProfileOrEnvironment(context.Background(), manager, http.DefaultClient, envLookup(nil))
+		if err == nil || !strings.Contains(err.Error(), "spacectl profile login") {
+			t.Fatalf("expected an expired token error pointing at `spacectl profile login`, got %v", err)
+		}
 	})
 
 	t.Run("uses the profile named by SPACELIFT_PROFILE", func(t *testing.T) {
@@ -118,7 +140,7 @@ func TestResolveSession(t *testing.T) {
 			session.EnvSpaceliftAPIKeySecret:   "oidc-token",
 		})
 
-		sess, err := resolveSession(context.Background(), manager, http.DefaultClient, lookup)
+		sess, err := session.FromProfileOrEnvironment(context.Background(), manager, http.DefaultClient, lookup)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -144,7 +166,7 @@ func TestResolveSession(t *testing.T) {
 			session.EnvSpaceliftAPIKeySecret:   "oidc-token",
 		})
 
-		sess, err := resolveSession(context.Background(), manager, server.Client(), lookup)
+		sess, err := session.FromProfileOrEnvironment(context.Background(), manager, server.Client(), lookup)
 		if err == nil {
 			t.Fatalf("expected an error, but a session was built instead: %v", sess)
 		}
@@ -164,7 +186,7 @@ func aliasToken(alias string) string {
 
 	return strings.Join([]string{
 		enc(`{"alg":"HS256","typ":"JWT"}`),
-		enc(`{"aud":"` + alias + `","exp":1516239022}`),
+		enc(`{"aud":"` + alias + `","exp":4102444800}`),
 		enc("signature"),
 	}, ".")
 }
