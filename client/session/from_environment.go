@@ -42,6 +42,16 @@ const (
 	// that specifies the preferred authentication method. Valid values: AuthMethodToken, AuthMethodGitHub, AuthMethodAPIKey.
 	// If not set, the default priority is: token -> github -> apikey.
 	EnvSpaceliftAPIPreferredMethod = "SPACELIFT_API_PREFERRED_METHOD"
+
+	// EnvSpaceliftAPIKeyOIDCProvider represents the name of the environment variable
+	// naming the CI provider spacectl mints an OIDC token from, in place of
+	// SPACELIFT_API_KEY_SECRET, when using an OIDC API key. Valid values: github-actions.
+	EnvSpaceliftAPIKeyOIDCProvider = "SPACELIFT_API_KEY_OIDC_PROVIDER" //nolint: gosec
+
+	// EnvSpaceliftAPIKeyOIDCAudience represents the name of the environment variable
+	// overriding the audience of the minted OIDC token. It must match the API key's
+	// client ID. Defaults to the host of SPACELIFT_API_KEY_ENDPOINT.
+	EnvSpaceliftAPIKeyOIDCAudience = "SPACELIFT_API_KEY_OIDC_AUDIENCE" //nolint: gosec
 )
 
 const (
@@ -113,6 +123,13 @@ func tryAuthMethod(ctx context.Context, client *http.Client, method string, look
 		keyID, ok := lookup(EnvSpaceliftAPIKeyID)
 		if !ok || keyID == "" {
 			return nil, errEnvSpaceliftAPIKeyID
+		}
+		oidc, err := githubOIDCFromEnvironment(lookup, endpoint)
+		if err != nil {
+			return nil, err
+		}
+		if oidc != nil {
+			return oidc.session(ctx, client, endpoint, keyID)
 		}
 		keySecret, ok := lookup(EnvSpaceliftAPIKeySecret)
 		if !ok || keySecret == "" {
