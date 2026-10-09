@@ -63,12 +63,14 @@ func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
 		return ctx, err
 	}
 
-	session, err := session.New(ctx, httpClient)
+	configureProxyAuth(httpClient)
+
+	sess, err := session.New(ctx, httpClient)
 	if err != nil {
 		return ctx, err
 	}
 
-	auth = client.New(httpClient, session)
+	auth = client.New(httpClient, sess)
 
 	return ctx, nil
 }
@@ -135,4 +137,21 @@ func configureTLS(httpClient *http.Client) error {
 	httpClient.Transport = transport
 
 	return nil
+}
+
+// configureProxyAuth wraps the HTTP transport with proxy authentication if the
+// current profile has a proxy_auth configuration. This must be called after
+// configureTLS so that the proxy auth layer wraps the TLS-configured transport.
+func configureProxyAuth(httpClient *http.Client) {
+	manager, err := session.UserProfileManager()
+	if err != nil {
+		return
+	}
+	profile, err := manager.CurrentValidated()
+	if err != nil || profile == nil {
+		return
+	}
+	if profile.Credentials.ProxyAuth != nil {
+		httpClient.Transport = client.WrapWithProxyAuth(httpClient.Transport, profile.Credentials.ProxyAuth)
+	}
 }
