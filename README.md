@@ -135,7 +135,7 @@ Authenticate using `spacectl profile login`:
 
 ```bash
 > spacectl profile login my-account
-Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/): http://my-account.app.spacelift.tf
+Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/): https://unicorn.app.spacelift.io
 Select authentication flow:
   1) for API key,
   2) for GitHub access token,
@@ -170,6 +170,7 @@ VERSION:
 COMMANDS:
    profile                  Manage Spacelift profiles
    whoami                   Print out logged-in user's information
+   registry                 Work with Spacelift's private module and provider registry
    version                  Print out CLI version
    module                   Manage a Spacelift module
    stack                    Manage a Spacelift stack
@@ -354,6 +355,40 @@ If `SPACELIFT_API_TLS_CA` is not set, `spacectl` falls back to the standard `SSL
 
 > [!NOTE]
 > When a CA bundle is provided through either variable, it replaces the system trust store rather than extending it, so the file must contain the full chain needed to verify the endpoint.
+
+## Private module and provider registry
+
+`terraform init` and `tofu init` need a credential for Spacelift's private module and provider registry. `spacectl registry credentials` prints one for the current session. It resolves credentials the same way as `spacectl profile export-token`: the selected profile first, then the environment. That makes it work with an [OIDC API key](https://docs.spacelift.io/integrations/api#oidc-based-api-keys) in CI.
+
+```shell
+$ spacectl registry credentials
+TF_TOKEN_app_spacelift_io=eyJ...
+TF_TOKEN_spacelift_io=eyJ...
+```
+
+`--format terraformrc` prints `credentials` blocks for `~/.terraformrc` or `~/.tofurc` in place of env lines. The registry hosts come from the Spacelift endpoint: `unicorn.app.spacelift.io` gives `app.spacelift.io` and `spacelift.io`, and a self-hosted endpoint gives its own host, port included. `TF_TOKEN_*` names can't hold a port, so a self-hosted endpoint with a port needs `--format terraformrc`. Use `--host` (repeatable) to set the hosts yourself.
+
+To use it in your own shell, export the variables. A plain `eval` only sets shell variables, which Terraform doesn't see:
+
+```shell
+set -a; eval "$(spacectl registry credentials)"; set +a
+terraform init
+```
+
+On GitHub Actions, authenticate `spacectl` as in [Usage on GitHub Actions](#usage-on-github-actions), then write the credentials to a CLI config file:
+
+```yaml
+- name: Configure registry credentials
+  run: |
+    spacectl registry credentials --format terraformrc > "$RUNNER_TEMP/spacelift.tfrc"
+    echo "TF_CLI_CONFIG_FILE=$RUNNER_TEMP/spacelift.tfrc" >> "$GITHUB_ENV"
+
+- run: terraform init
+```
+
+Don't write the env format to `$GITHUB_ENV`. The runner lists those variables in the log of every later step, and it only masks values it knows are secret, which a freshly exchanged token isn't. `TF_CLI_CONFIG_FILE` points Terraform and OpenTofu at the file, so only its path ends up in the logs, and an existing `~/.terraformrc` is left alone.
+
+The command prints your current Spacelift token and doesn't extend it. Tokens exchanged from an API key or GitHub token last between 1 and 10 hours, so run the command again in jobs that take longer. A token stored by `spacectl profile login` keeps its original expiry, and the command fails once it has expired.
 
 ## MCP Server
 
