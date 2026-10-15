@@ -41,7 +41,10 @@ func getSpaceliftInstanceVersion(ctx context.Context) cmd.SpaceliftInstanceVersi
 		InstanceType: cmd.SpaceliftInstanceTypeUnknown,
 	}
 
-	httpClient := client.GetHTTPClient()
+	httpClient, err := client.GetHTTPClient()
+	if err != nil {
+		return instanceVersion
+	}
 
 	// Create a new session - this may fail if the user doesn't have valid credentials.
 	// In that case we just treat the version as unknown.

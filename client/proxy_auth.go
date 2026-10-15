@@ -2,26 +2,38 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
-// proxyAuthTransport injects a Proxy-Authorization Bearer token into outgoing
-// requests. The token is sourced from a configurable command. If the command
-// is unavailable or returns an empty token, the request proceeds without the
-// header; if the response then looks like a proxy auth rejection, a one-time
-// warning is emitted with the configured hint.
-type proxyAuthTransport struct {
-	base        http.RoundTripper
-	fetchToken  func() (token string, diagnostic string)
-	refreshHint string
-	warnOnce    sync.Once
+// proxyAuthCommandTimeout bounds how long a single run of the proxy auth
+// command may take. A helper that blocks (for example one that opens a browser
+// and waits for the user) must not hang spacectl indefinitely.
+const proxyAuthCommandTimeout = 30 * time.Second
+
+// ProxyAuthTransport injects a Proxy-Authorization Bearer token into outgoing
+// requests. The token is sourced from a configurable command and cached for
+// as long as the proxy keeps accepting it. When the proxy rejects a request,
+// the cached token is discarded, the command is run again, and the request is
+// retried once with the fresh token.
+type ProxyAuthTransport struct {
+	base       http.RoundTripper
+	command    string
+	fetchToken func(ctx context.Context) (string, error)
+
+	mu    sync.Mutex
+	token string
+
+	warnOnce sync.Once
 }
 
 var warnProxyAuth = func(format string, args ...interface{}) {
@@ -37,125 +49,181 @@ func WrapWithProxyAuth(base http.RoundTripper, cfg *session.ProxyAuthConfig) htt
 	return newProxyAuthTransport(base, cfg)
 }
 
-// IsWrappedWithProxyAuth reports whether rt is a proxy-auth transport.
-// Exposed for tests in other packages that wire the transport.
-func IsWrappedWithProxyAuth(rt http.RoundTripper) bool {
-	_, ok := rt.(*proxyAuthTransport)
-	return ok
-}
-
-// UnwrapProxyAuth returns the base transport inside the proxy-auth wrapper,
-// or rt itself if it is not wrapped. Exposed for tests that need to inspect
-// the underlying transport (e.g. TLS configuration).
-func UnwrapProxyAuth(rt http.RoundTripper) http.RoundTripper {
-	if t, ok := rt.(*proxyAuthTransport); ok {
-		return t.base
-	}
-	return rt
-}
-
-func newProxyAuthTransport(base http.RoundTripper, cfg *session.ProxyAuthConfig) *proxyAuthTransport {
-	setupHint := cfg.SetupHint
-	if setupHint == "" {
-		setupHint = fmt.Sprintf("proxy auth command %q not found or returned empty output", cfg.Command[0])
-	}
-	refreshHint := cfg.RefreshHint
-	if refreshHint == "" {
-		refreshHint = fmt.Sprintf("proxy auth token was rejected; try re-running %q", cfg.Command[0])
-	}
-	return &proxyAuthTransport{
-		base: base,
-		fetchToken: memoizeToken(func() (string, string) {
-			return fetchTokenFromCommand(cfg.Command, setupHint)
-		}),
-		refreshHint: refreshHint,
+func newProxyAuthTransport(base http.RoundTripper, cfg *session.ProxyAuthConfig) *ProxyAuthTransport {
+	command := append([]string(nil), cfg.Command...)
+	return &ProxyAuthTransport{
+		base:    base,
+		command: command[0],
+		fetchToken: func(ctx context.Context) (string, error) {
+			return fetchTokenFromCommand(ctx, command, cfg.SetupHint)
+		},
 	}
 }
 
-func memoizeToken(fetch func() (string, string)) func() (string, string) {
-	var (
-		once              sync.Once
-		token, diagnostic string
-	)
-	return func() (string, string) {
-		once.Do(func() {
-			token, diagnostic = fetch()
-		})
-		return token, diagnostic
+// Base returns the transport wrapped by t.
+func (t *ProxyAuthTransport) Base() http.RoundTripper {
+	return t.base
+}
+
+// RoundTrip implements http.RoundTripper.
+func (t *ProxyAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	token, err := t.getToken(req.Context())
+	if err != nil {
+		return nil, fmt.Errorf("proxy auth: %w", err)
+	}
+
+	resp, err := t.send(req, token, false)
+	if err != nil || !looksLikeProxyAuthRejection(req, resp) {
+		return resp, err
+	}
+
+	// The proxy rejected a token we sent, most likely because it expired
+	// between runs. Fetch a fresh one and retry once, provided the request
+	// body can be replayed.
+	if !isReplayable(req) {
+		t.warnRejected()
+		return resp, nil
+	}
+
+	t.invalidate(token)
+	fresh, err := t.getToken(req.Context())
+	if err != nil || fresh == token {
+		t.warnRejected()
+		return resp, nil
+	}
+
+	discardBody(resp)
+
+	resp, err = t.send(req, fresh, true)
+	if err == nil && looksLikeProxyAuthRejection(req, resp) {
+		t.warnRejected()
+	}
+	return resp, err
+}
+
+// send clones req, attaches the token and forwards it to the base transport.
+// When resetBody is set the body is re-created via GetBody, which is required
+// when the request is being retried.
+func (t *ProxyAuthTransport) send(req *http.Request, token string, resetBody bool) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	req.Header.Set("Proxy-Authorization", "Bearer "+token)
+	if resetBody && req.GetBody != nil {
+		body, err := req.GetBody()
+		if err != nil {
+			return nil, fmt.Errorf("proxy auth: could not replay request body: %w", err)
+		}
+		req.Body = body
+	}
+	return t.base.RoundTrip(req)
+}
+
+// getToken returns the cached token, running the command to obtain one if
+// none is cached. Failures are never cached.
+func (t *ProxyAuthTransport) getToken(ctx context.Context) (string, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if t.token != "" {
+		return t.token, nil
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, proxyAuthCommandTimeout)
+	defer cancel()
+
+	token, err := t.fetchToken(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	t.token = token
+	return token, nil
+}
+
+// invalidate drops the cached token, but only if it is still the one that was
+// rejected, so that a token refreshed concurrently by another request is kept.
+func (t *ProxyAuthTransport) invalidate(rejected string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if t.token == rejected {
+		t.token = ""
 	}
 }
 
-func fetchTokenFromCommand(command []string, setupHint string) (string, string) {
+func (t *ProxyAuthTransport) warnRejected() {
+	t.warnOnce.Do(func() {
+		warnProxyAuth("the request was rejected after sending the proxy auth token produced by %q; if the proxy is refusing it, re-run that command to obtain a fresh token", t.command)
+	})
+}
+
+func fetchTokenFromCommand(ctx context.Context, command []string, setupHint string) (string, error) {
 	binPath := command[0]
 	if _, err := os.Stat(binPath); err != nil {
-		if os.IsNotExist(err) {
-			return "", setupHint
+		if errors.Is(err, os.ErrNotExist) {
+			return "", withHint(fmt.Errorf("command %q not found", binPath), setupHint)
 		}
-		return "", ""
+		return "", fmt.Errorf("command %q: %w", binPath, err)
 	}
-	var args []string
-	if len(command) > 1 {
-		args = command[1:]
-	}
-	out, err := exec.CommandContext(context.Background(), binPath, args...).Output()
+
+	cmd := exec.CommandContext(ctx, binPath, command[1:]...)
+	cmd.Stderr = os.Stderr
+
+	out, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Sprintf(
-			"%s failed: %v. %s",
-			binPath, err, setupHint,
-		)
+		return "", withHint(fmt.Errorf("command %q failed: %w", binPath, err), setupHint)
 	}
+
 	token := strings.TrimSpace(string(out))
 	if token == "" {
-		return "", setupHint
+		return "", withHint(fmt.Errorf("command %q returned no token", binPath), setupHint)
 	}
-	return token, ""
+
+	return token, nil
 }
 
-// looksLikeProxyAuthRejection returns true when resp appears to be from a
-// reverse proxy rejecting the request because no valid token was supplied.
-// Checks for:
-//   - 3xx with Location pointing into accounts.google.com (GCP IAP SSO redirect)
-//   - 401 with WWW-Authenticate containing "cloud_iap" (GCP IAP challenge)
-//   - 401 with body containing "Invalid IAP credentials" (GCP IAP rejection)
-//
-// This is intentionally broad enough to catch common reverse proxy patterns.
-func looksLikeProxyAuthRejection(resp *http.Response) bool {
+func withHint(err error, hint string) error {
+	if hint == "" {
+		return err
+	}
+	return fmt.Errorf("%w. %s", err, hint)
+}
+
+// looksLikeProxyAuthRejection reports whether resp may come from a reverse
+// proxy refusing the request for lack of a valid proxy credential. It is
+// deliberately provider-agnostic and errs on the side of a false positive,
+// since the only consequence of one is a single token refresh and retry:
+//   - 407 Proxy Authentication Required
+//   - 401 Unauthorized (proxies such as GCP IAP answer API calls with a bare
+//     401 and no WWW-Authenticate challenge, so the header cannot be required)
+//   - a redirect to a different host (typically an SSO login page)
+func looksLikeProxyAuthRejection(req *http.Request, resp *http.Response) bool {
 	if resp == nil {
 		return false
 	}
-	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
-		if loc := resp.Header.Get("Location"); strings.Contains(loc, "accounts.google.com") {
-			return true
+
+	switch {
+	case resp.StatusCode == http.StatusProxyAuthRequired, resp.StatusCode == http.StatusUnauthorized:
+		return true
+	case resp.StatusCode >= 300 && resp.StatusCode < 400:
+		location, err := req.URL.Parse(resp.Header.Get("Location"))
+		if err != nil || location.Host == "" {
+			return false
 		}
+		return !strings.EqualFold(location.Hostname(), req.URL.Hostname())
 	}
-	if resp.StatusCode == http.StatusUnauthorized {
-		if wwwAuth := resp.Header.Get("Www-Authenticate"); strings.Contains(wwwAuth, "cloud_iap") {
-			return true
-		}
-	}
+
 	return false
 }
 
-func (t *proxyAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	var diagnostic string
-	var sentToken bool
-	token, d := t.fetchToken()
-	diagnostic = d
-	if token != "" {
-		req = req.Clone(req.Context())
-		req.Header.Set("Proxy-Authorization", "Bearer "+token)
-		sentToken = true
+// isReplayable reports whether req can be sent a second time.
+func isReplayable(req *http.Request) bool {
+	return req.Body == nil || req.Body == http.NoBody || req.GetBody != nil
+}
+
+func discardBody(resp *http.Response) {
+	if resp == nil || resp.Body == nil {
+		return
 	}
-	resp, err := t.base.RoundTrip(req)
-	if err == nil && looksLikeProxyAuthRejection(resp) {
-		t.warnOnce.Do(func() {
-			switch {
-			case sentToken:
-				warnProxyAuth("%s", t.refreshHint)
-			case diagnostic != "":
-				warnProxyAuth("%s", diagnostic)
-			}
-		})
-	}
-	return resp, err
+	_, _ = io.Copy(io.Discard, resp.Body)
+	_ = resp.Body.Close()
 }

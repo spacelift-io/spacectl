@@ -2,11 +2,6 @@ package authenticated
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
-	"fmt"
-	"net/http"
-	"os"
 	"sync"
 
 	"github.com/urfave/cli/v3"
@@ -18,19 +13,15 @@ import (
 const (
 	// EnvSpaceliftAPIClientTLSCert represents the path to a client certificate for
 	// communicating with the Spacelift API endpoint.
-	EnvSpaceliftAPIClientTLSCert = "SPACELIFT_API_TLS_CERT"
+	EnvSpaceliftAPIClientTLSCert = client.EnvSpaceliftAPIClientTLSCert
 
 	// EnvSpaceliftAPIClientTLSKey represents the path to a client key for
 	// communicating with the Spacelift API endpoint.
-	EnvSpaceliftAPIClientTLSKey = "SPACELIFT_API_TLS_KEY"
+	EnvSpaceliftAPIClientTLSKey = client.EnvSpaceliftAPIClientTLSKey
 
 	// EnvSpaceliftAPIClientCA represents the path to a CA bundle for
 	// verifying Spacelift API endpoint.
-	EnvSpaceliftAPIClientCA = "SPACELIFT_API_TLS_CA"
-)
-
-var (
-	errEnvSpaceliftAPIClientCAParse = fmt.Errorf("failed to parse %s", EnvSpaceliftAPIClientCA)
+	EnvSpaceliftAPIClientCA = client.EnvSpaceliftAPIClientCA
 )
 
 // Client is the authenticated client that can be used by all CLI commands.
@@ -58,13 +49,10 @@ func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
 	m.Lock()
 	defer m.Unlock()
 
-	httpClient := client.GetHTTPClient()
-
-	if err := configureTLS(httpClient); err != nil {
+	httpClient, err := client.GetHTTPClient()
+	if err != nil {
 		return ctx, err
 	}
-
-	configureProxyAuth(httpClient)
 
 	sess, err := session.New(ctx, httpClient)
 	if err != nil {
@@ -74,72 +62,4 @@ func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
 	auth = client.New(httpClient, sess)
 
 	return ctx, nil
-}
-
-// configureTLS configures client TLS from the environment.
-func configureTLS(httpClient *http.Client) error {
-	clientTLS := &tls.Config{
-		MinVersion: tls.VersionTLS12,
-	}
-
-	// Check SPACELIFT_API_TLS_CA first, then fall back to SSL_CERT_FILE.
-	// Setting RootCAs to a non-nil pool forces Go's pure-Go certificate
-	// verifier, bypassing Security.framework (which fails in sandboxed
-	// environments where macOS Keychain is inaccessible).
-	caFile := ""
-	if f, ok := os.LookupEnv(EnvSpaceliftAPIClientCA); ok && f != "" {
-		caFile = f
-	} else if f, ok := os.LookupEnv("SSL_CERT_FILE"); ok && f != "" {
-		caFile = f
-	}
-
-	if caFile != "" {
-		caCert, err := os.ReadFile(caFile)
-		if err != nil {
-			return err
-		}
-
-		caCertPool := x509.NewCertPool()
-		if !caCertPool.AppendCertsFromPEM(caCert) {
-			return errEnvSpaceliftAPIClientCAParse
-		}
-
-		clientTLS.RootCAs = caCertPool
-	}
-
-	keyFile, keyOk := os.LookupEnv(EnvSpaceliftAPIClientTLSKey)
-	certFile, certOk := os.LookupEnv(EnvSpaceliftAPIClientTLSCert)
-
-	if keyOk && keyFile != "" && certOk && certFile != "" {
-		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-		if err != nil {
-			return err
-		}
-
-		clientTLS.Certificates = []tls.Certificate{cert}
-	}
-
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.TLSClientConfig = clientTLS
-
-	httpClient.Transport = transport
-
-	return nil
-}
-
-// configureProxyAuth wraps the HTTP transport with proxy authentication if the
-// current profile has a proxy_auth configuration. This must be called after
-// configureTLS so that the proxy auth layer wraps the TLS-configured transport.
-func configureProxyAuth(httpClient *http.Client) {
-	manager, err := session.UserProfileManager()
-	if err != nil {
-		return
-	}
-	profile, err := manager.CurrentValidated()
-	if err != nil || profile == nil {
-		return
-	}
-	if profile.Credentials.ProxyAuth != nil {
-		httpClient.Transport = client.WrapWithProxyAuth(httpClient.Transport, profile.Credentials.ProxyAuth)
-	}
 }

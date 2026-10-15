@@ -1,4 +1,4 @@
-package authenticated
+package client
 
 import (
 	"crypto/ecdsa"
@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/json"
 	"encoding/pem"
 	"math/big"
 	"net/http"
@@ -18,7 +19,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
@@ -77,43 +77,6 @@ func TestConfigureTLS_SpaceliftCATakesPrecedence(t *testing.T) {
 	assert.NotNil(t, transport.TLSClientConfig.RootCAs)
 }
 
-// configureProxyAuth wraps the transport with proxy auth; verify it does when
-// Airbnb defaults apply to the endpoint.
-func TestConfigureProxyAuth_WrapsTransport(t *testing.T) {
-	httpClient := &http.Client{Transport: http.DefaultTransport}
-	cfg := &session.ProxyAuthConfig{
-		Command:   []string{"/usr/local/bin/iap-auth", "--cache-only"},
-		SetupHint: "Install iap-auth.",
-	}
-	httpClient.Transport = client.WrapWithProxyAuth(httpClient.Transport, cfg)
-	if !client.IsWrappedWithProxyAuth(httpClient.Transport) {
-		t.Errorf("expected outermost transport to be the proxy-auth wrapper, got %T", httpClient.Transport)
-	}
-}
-
-// Verify that configureProxyAuth wraps on top of configureTLS, not underneath.
-func TestConfigureTLS_ThenProxyAuth_CorrectOrder(t *testing.T) {
-	t.Setenv(EnvSpaceliftAPIClientCA, "")
-	t.Setenv("SSL_CERT_FILE", "")
-
-	httpClient := &http.Client{}
-	err := configureTLS(httpClient)
-	require.NoError(t, err)
-
-	cfg := &session.ProxyAuthConfig{
-		Command: []string{"/usr/local/bin/test-auth"},
-	}
-	httpClient.Transport = client.WrapWithProxyAuth(httpClient.Transport, cfg)
-
-	if !client.IsWrappedWithProxyAuth(httpClient.Transport) {
-		t.Fatal("expected proxy-auth as outermost wrapper")
-	}
-	inner := client.UnwrapProxyAuth(httpClient.Transport)
-	if _, ok := inner.(*http.Transport); !ok {
-		t.Errorf("expected *http.Transport inside proxy-auth wrapper, got %T", inner)
-	}
-}
-
 func TestConfigureTLS_InvalidCAPath(t *testing.T) {
 	t.Setenv(EnvSpaceliftAPIClientCA, "/nonexistent/ca.pem")
 
@@ -130,7 +93,75 @@ func TestConfigureTLS_InvalidCACert(t *testing.T) {
 
 	httpClient := &http.Client{}
 	err := configureTLS(httpClient)
-	assert.ErrorIs(t, err, errEnvSpaceliftAPIClientCAParse)
+	assert.ErrorIs(t, err, ErrEnvSpaceliftAPIClientCAParse)
+}
+
+func TestConfigureTransport_WithoutProxyAuth(t *testing.T) {
+	writeTestProfile(t, nil)
+
+	httpClient := &http.Client{}
+	require.NoError(t, configureTransport(httpClient))
+
+	_, ok := httpClient.Transport.(*http.Transport)
+	assert.True(t, ok, "expected a plain *http.Transport, got %T", httpClient.Transport)
+}
+
+func TestConfigureTransport_WithProxyAuth_WrapsTLSTransport(t *testing.T) {
+	writeTestProfile(t, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/test-auth", "--cached"}})
+
+	httpClient := &http.Client{}
+	require.NoError(t, configureTransport(httpClient))
+
+	proxy, ok := httpClient.Transport.(*ProxyAuthTransport)
+	require.True(t, ok, "expected proxy auth as the outermost transport, got %T", httpClient.Transport)
+
+	inner, ok := proxy.Base().(*http.Transport)
+	require.True(t, ok, "expected *http.Transport inside the proxy auth wrapper, got %T", proxy.Base())
+	assert.Equal(t, uint16(tls.VersionTLS12), inner.TLSClientConfig.MinVersion, "TLS settings must apply underneath proxy auth")
+}
+
+func TestConfigureTransport_NoProfile(t *testing.T) {
+	t.Setenv(session.EnvSpaceliftConfigDirectory, t.TempDir())
+	t.Setenv(session.EnvSpaceliftProfile, "")
+	t.Setenv(EnvSpaceliftAPIClientCA, "")
+	t.Setenv("SSL_CERT_FILE", "")
+
+	httpClient := &http.Client{}
+	require.NoError(t, configureTransport(httpClient))
+
+	_, ok := httpClient.Transport.(*http.Transport)
+	assert.True(t, ok, "expected a plain *http.Transport, got %T", httpClient.Transport)
+}
+
+// writeTestProfile points SPACELIFT_CONFIG_DIR at a temporary directory holding
+// a single, selected profile with the given proxy auth configuration.
+func writeTestProfile(t *testing.T, proxyAuth *session.ProxyAuthConfig) {
+	t.Helper()
+
+	dir := t.TempDir()
+	t.Setenv(session.EnvSpaceliftConfigDirectory, dir)
+	t.Setenv(session.EnvSpaceliftProfile, "")
+	t.Setenv(EnvSpaceliftAPIClientCA, "")
+	t.Setenv("SSL_CERT_FILE", "")
+
+	config := map[string]interface{}{
+		"currentProfileAlias": "test",
+		"profiles": map[string]*session.Profile{
+			"test": {
+				Alias: "test",
+				Credentials: &session.StoredCredentials{
+					Type:        session.CredentialsTypeAPIToken,
+					Endpoint:    "https://spacelift.example.com",
+					AccessToken: "token",
+					ProxyAuth:   proxyAuth,
+				},
+			},
+		},
+	}
+
+	data, err := json.Marshal(config)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(filepath.Join(dir, session.ConfigFileName), data, 0o600))
 }
 
 // writeTempCA generates a self-signed CA certificate and writes it to a temp file.
