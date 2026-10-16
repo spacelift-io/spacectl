@@ -97,7 +97,7 @@ var flagRuntimeConfig = &cli.StringFlag{
 
 var flagForceApply = &cli.StringFlag{
 	Name:     "force-apply",
-	Usage:    "[Optional] Force apply: `single` (this stack only) or `cascade` (this stack and all dependencies)",
+	Usage:    "[Optional] Force apply `MODE`: single (this stack only) or cascade (this stack and all dependents)",
 	Required: false,
 }
 

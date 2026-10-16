@@ -65,7 +65,7 @@ steps:
 
   - name: Deploy infrastructure
     env:
-      SPACELIFT_API_KEY_ENDPOINT: https://mycorp.app.spacelift.io
+      SPACELIFT_API_KEY_ENDPOINT: https://unicorn.app.spacelift.io
       SPACELIFT_API_KEY_ID: ${{ secrets.SPACELIFT_API_KEY_ID }}
       SPACELIFT_API_KEY_SECRET: ${{ secrets.SPACELIFT_API_KEY_SECRET }}
     run: spacectl stack deploy --id my-infra-stack
@@ -76,9 +76,9 @@ steps:
 
 <br>
 
-Instead of storing a long-lived secret, let GitHub mint a short-lived OIDC token and exchange it for a Spacelift session token. This needs an [API key configured for OIDC](https://docs.spacelift.io/integrations/api#spacelift-api-key-via-oidc) and `id-token: write` permission on the job.
+Instead of storing a long-lived secret, let `spacectl` mint a short-lived GitHub OIDC token and use it as the API key secret. This needs an [API key configured for OIDC](https://docs.spacelift.io/integrations/api#oidc-based-api-keys) and `id-token: write` permission on the job.
 
-The OIDC token GitHub issues is short-lived (~5 minutes), so exchange it **once** for a Spacelift session token (valid up to ~10 hours) and reuse that for the rest of the job. `spacectl profile export-token` does the exchange for you, picking up the OIDC token straight from the environment so you don't have to hand-roll the `apiKeyUser` GraphQL mutation:
+Set `SPACELIFT_API_KEY_OIDC_PROVIDER=github-actions` in place of `SPACELIFT_API_KEY_SECRET`. `spacectl` requests a new token from GitHub every time it exchanges the key for a Spacelift session, so long-running commands keep working after GitHub's ~5 minute token expires.
 
 ```yaml
 jobs:
@@ -91,23 +91,15 @@ jobs:
       - name: Install spacectl
         uses: spacelift-io/setup-spacectl@main
 
-      - name: Authenticate to Spacelift
-        env:
-          SPACELIFT_API_KEY_ENDPOINT: https://mycorp.app.spacelift.io
-          SPACELIFT_API_KEY_ID: ${{ secrets.SPACELIFT_API_KEY_ID }}
-        run: |
-          set -euo pipefail
-          # Mint the GitHub OIDC token and hand it to spacectl as the key secret.
-          export SPACELIFT_API_KEY_SECRET=$(curl -sH "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=mycorp.app.spacelift.io" | jq -r '.value')
-          # Exchange it once for a longer-lived session token and reuse it everywhere.
-          JWT=$(spacectl profile export-token)
-          echo "::add-mask::$JWT"
-          echo "SPACELIFT_API_TOKEN=${JWT}" >> "$GITHUB_ENV"
-
       - name: Deploy infrastructure
+        env:
+          SPACELIFT_API_KEY_ENDPOINT: https://unicorn.app.spacelift.io
+          SPACELIFT_API_KEY_ID: ${{ vars.SPACELIFT_API_KEY_ID }}
+          SPACELIFT_API_KEY_OIDC_PROVIDER: github-actions
         run: spacectl stack deploy --id my-infra-stack
 ```
+
+The token's audience defaults to the endpoint host (`unicorn.app.spacelift.io` above), so set the API key's client ID to that host. If your key uses a different client ID, set `SPACELIFT_API_KEY_OIDC_AUDIENCE` to it.
 
 </details>
 
@@ -143,7 +135,7 @@ Authenticate using `spacectl profile login`:
 
 ```bash
 > spacectl profile login my-account
-Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/): http://my-account.app.spacelift.tf
+Enter Spacelift endpoint (eg. https://unicorn.app.spacelift.io/): https://unicorn.app.spacelift.io
 Select authentication flow:
   1) for API key,
   2) for GitHub access token,
@@ -178,6 +170,7 @@ VERSION:
 COMMANDS:
    profile                  Manage Spacelift profiles
    whoami                   Print out logged-in user's information
+   registry                 Work with Spacelift's private module and provider registry
    version                  Print out CLI version
    module                   Manage a Spacelift module
    stack                    Manage a Spacelift stack
@@ -188,6 +181,7 @@ COMMANDS:
    template                 Manage Spacelift templates
    policy                   Manage Spacelift policies
    audit-trail              Manage Spacelift audit trail entries
+   ai                       Work with Spacelift Intelligence
    mcp                      Manage MCP server
    help, h                  Shows a list of commands or help for one command
 
@@ -254,15 +248,22 @@ NOTE: API tokens are generally short-lived and will need to be re-created often.
 
 To use a Spacelift API key, set the following environment variables:
 
-- `SPACELIFT_API_KEY_ENDPOINT` - the URL to your Spacelift account, for example `https://mycorp.app.spacelift.io`.
+- `SPACELIFT_API_KEY_ENDPOINT` - the URL to your Spacelift account, for example `https://unicorn.app.spacelift.io`.
 - `SPACELIFT_API_KEY_ID` - the ID of your Spacelift API key. Available via the Spacelift application.
 - `SPACELIFT_API_KEY_SECRET` - the secret for your API key. Only available when the secret is created.
+
+For an [OIDC API key](https://docs.spacelift.io/integrations/api#oidc-based-api-keys) used from GitHub Actions, `spacectl` can mint the token itself. Replace `SPACELIFT_API_KEY_SECRET` with:
+
+- `SPACELIFT_API_KEY_OIDC_PROVIDER` - set to `github-actions`. The job needs `permissions: id-token: write`.
+- `SPACELIFT_API_KEY_OIDC_AUDIENCE` - optional. The audience of the minted token, which must match the key's client ID. Defaults to the host of `SPACELIFT_API_KEY_ENDPOINT`.
+
+Setting both `SPACELIFT_API_KEY_SECRET` and `SPACELIFT_API_KEY_OIDC_PROVIDER` is an error.
 
 #### GitHub tokens
 
 GitHub tokens are only available to accounts that use GitHub as their identity provider. To use a GitHub token, set the following environment variables:
 
-- `SPACELIFT_API_KEY_ENDPOINT` - the URL to your Spacelift account, for example `https://mycorp.app.spacelift.io`.
+- `SPACELIFT_API_KEY_ENDPOINT` - the URL to your Spacelift account, for example `https://unicorn.app.spacelift.io`.
 - `SPACELIFT_API_GITHUB_TOKEN` - a GitHub personal access token.
 
 More information about API authentication can be found at <https://docs.spacelift.io/integrations/api#authenticating-with-the-api>.
@@ -354,6 +355,40 @@ If `SPACELIFT_API_TLS_CA` is not set, `spacectl` falls back to the standard `SSL
 
 > [!NOTE]
 > When a CA bundle is provided through either variable, it replaces the system trust store rather than extending it, so the file must contain the full chain needed to verify the endpoint.
+
+## Private module and provider registry
+
+`terraform init` and `tofu init` need a credential for Spacelift's private module and provider registry. `spacectl registry credentials` prints one for the current session. It resolves credentials the same way as `spacectl profile export-token`: the selected profile first, then the environment. That makes it work with an [OIDC API key](https://docs.spacelift.io/integrations/api#oidc-based-api-keys) in CI.
+
+```shell
+$ spacectl registry credentials
+TF_TOKEN_app_spacelift_io=eyJ...
+TF_TOKEN_spacelift_io=eyJ...
+```
+
+`--format terraformrc` prints `credentials` blocks for `~/.terraformrc` or `~/.tofurc` in place of env lines. The registry hosts come from the Spacelift endpoint: `unicorn.app.spacelift.io` gives `app.spacelift.io` and `spacelift.io`, and a self-hosted endpoint gives its own host, port included. `TF_TOKEN_*` names can't hold a port, so a self-hosted endpoint with a port needs `--format terraformrc`. Use `--host` (repeatable) to set the hosts yourself.
+
+To use it in your own shell, export the variables. A plain `eval` only sets shell variables, which Terraform doesn't see:
+
+```shell
+set -a; eval "$(spacectl registry credentials)"; set +a
+terraform init
+```
+
+On GitHub Actions, authenticate `spacectl` as in [Usage on GitHub Actions](#usage-on-github-actions), then write the credentials to a CLI config file:
+
+```yaml
+- name: Configure registry credentials
+  run: |
+    spacectl registry credentials --format terraformrc > "$RUNNER_TEMP/spacelift.tfrc"
+    echo "TF_CLI_CONFIG_FILE=$RUNNER_TEMP/spacelift.tfrc" >> "$GITHUB_ENV"
+
+- run: terraform init
+```
+
+Don't write the env format to `$GITHUB_ENV`. The runner lists those variables in the log of every later step, and it only masks values it knows are secret, which a freshly exchanged token isn't. `TF_CLI_CONFIG_FILE` points Terraform and OpenTofu at the file, so only its path ends up in the logs, and an existing `~/.terraformrc` is left alone.
+
+The command prints your current Spacelift token and doesn't extend it. Tokens exchanged from an API key or GitHub token last between 1 and 10 hours, so run the command again in jobs that take longer. A token stored by `spacectl profile login` keeps its original expiry, and the command fails once it has expired.
 
 ## MCP Server
 

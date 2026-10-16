@@ -14,6 +14,10 @@ import (
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
+// sampleAPIToken has one audience claim so FromAPIToken can parse it.
+// These tests exercise profile selection without checking token expiry or signatures.
+const sampleAPIToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzcGFjZWN0bCIsImV4cCI6MTUxNjIzOTAyMn0.fsKd_N2TKXpx83JSPPw47zYzQ8sbSzGVPZcyGpwp05U" //nolint:gosec // This JWT is a test fixture, not a secret.
+
 // newConfigDir points SPACELIFT_CONFIG_DIR at a temporary directory holding one API token
 // profile per alias, the first of which is selected.
 func newConfigDir(t *testing.T, aliases ...string) {

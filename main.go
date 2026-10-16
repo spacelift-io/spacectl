@@ -11,6 +11,7 @@ import (
 	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/client/session"
 	"github.com/spacelift-io/spacectl/internal/cmd"
+	"github.com/spacelift-io/spacectl/internal/cmd/ai"
 	"github.com/spacelift-io/spacectl/internal/cmd/api"
 	"github.com/spacelift-io/spacectl/internal/cmd/audittrail"
 	"github.com/spacelift-io/spacectl/internal/cmd/blueprint"
@@ -19,6 +20,7 @@ import (
 	"github.com/spacelift-io/spacectl/internal/cmd/policy"
 	"github.com/spacelift-io/spacectl/internal/cmd/profile"
 	"github.com/spacelift-io/spacectl/internal/cmd/provider"
+	"github.com/spacelift-io/spacectl/internal/cmd/registry"
 	runexternaldependency "github.com/spacelift-io/spacectl/internal/cmd/run_external_dependency"
 	"github.com/spacelift-io/spacectl/internal/cmd/stack"
 	"github.com/spacelift-io/spacectl/internal/cmd/template"
@@ -98,6 +100,7 @@ func main() {
 		Commands: append([]*cli.Command{
 			profile.Command(),
 			whoami.Command(),
+			registry.Command(),
 			versioncmd.Command(version, instanceVersion),
 		}, cmd.ResolveCommands(instanceVersion, []cmd.Command{
 			api.Command(),
@@ -110,6 +113,7 @@ func main() {
 			template.Command(),
 			policy.Command(),
 			audittrail.Command(),
+			ai.Command(),
 			mcp.Command(),
 		})...),
 	}

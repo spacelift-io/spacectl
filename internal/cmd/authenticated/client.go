@@ -2,6 +2,7 @@ package authenticated
 
 import (
 	"context"
+	"net/http"
 	"sync"
 
 	"github.com/urfave/cli/v3"
@@ -49,7 +50,7 @@ func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
 	m.Lock()
 	defer m.Unlock()
 
-	httpClient, err := client.GetHTTPClient()
+	httpClient, err := HTTPClient()
 	if err != nil {
 		return ctx, err
 	}
@@ -62,4 +63,12 @@ func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
 	auth = client.New(httpClient, sess)
 
 	return ctx, nil
+}
+
+// HTTPClient returns the shared HTTP client, configured with the TLS settings
+// from the environment and the proxy authentication from the current profile.
+// Commands that create their own sessions need it to honor the same settings
+// as commands using Ensure.
+func HTTPClient() (*http.Client, error) {
+	return client.GetHTTPClient()
 }
