@@ -82,7 +82,11 @@ func loginAction(ctx context.Context, cliCmd *cli.Command) error {
 	}
 
 	// Check if the credentials are valid before we try persisting them.
-	if _, err := storedCredentials.Session(ctx, client.GetHTTPClient()); err != nil {
+	httpClient, err := client.GetHTTPClient()
+	if err != nil {
+		return err
+	}
+	if _, err := storedCredentials.Session(ctx, httpClient); err != nil {
 		return fmt.Errorf("credentials look invalid: %w", err)
 	}
 
