@@ -58,9 +58,7 @@ func configureTransport(httpClient *http.Client) error {
 		return err
 	}
 
-	configureProxyAuth(httpClient)
-
-	return nil
+	return configureProxyAuth(httpClient)
 }
 
 // configureTLS configures client TLS from the environment.
@@ -114,20 +112,30 @@ func configureTLS(httpClient *http.Client) error {
 	return nil
 }
 
-// configureProxyAuth wraps the transport with proxy authentication when the
-// current profile carries a proxy_auth configuration. A missing or unreadable
-// profile is not treated as an error here: the session layer reports that
-// with a more helpful message.
-func configureProxyAuth(httpClient *http.Client) {
-	manager, err := session.UserProfileManager()
+// configureProxyAuth wraps the transport with proxy authentication when a
+// proxy token source is configured, either through the environment or the
+// current profile's proxy_auth configuration. A missing or unreadable profile
+// is not treated as an error here: the session layer reports that with a more
+// helpful message.
+func configureProxyAuth(httpClient *http.Client) error {
+	var (
+		cfg        *session.ProxyAuthConfig
+		configFile string
+	)
+
+	if manager, err := session.UserProfileManager(); err == nil {
+		if profile, err := manager.CurrentValidated(); err == nil && profile != nil && profile.Credentials != nil {
+			cfg = profile.Credentials.ProxyAuth
+			configFile = manager.ConfigurationFile
+		}
+	}
+
+	transport, err := WrapWithProxyAuth(httpClient.Transport, cfg, configFile)
 	if err != nil {
-		return
+		return err
 	}
 
-	profile, err := manager.CurrentValidated()
-	if err != nil || profile == nil || profile.Credentials == nil {
-		return
-	}
+	httpClient.Transport = transport
 
-	httpClient.Transport = WrapWithProxyAuth(httpClient.Transport, profile.Credentials.ProxyAuth)
+	return nil
 }

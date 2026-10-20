@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -103,22 +106,137 @@ func captureWarnings(t *testing.T) *[]string {
 }
 
 func TestWrapWithProxyAuth_NilConfig(t *testing.T) {
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
 	inner := &recordingTransport{}
-	assert.Same(t, inner, WrapWithProxyAuth(inner, nil))
+
+	wrapped, err := WrapWithProxyAuth(inner, nil, "")
+	require.NoError(t, err)
+	assert.Same(t, inner, wrapped)
 }
 
-func TestWrapWithProxyAuth_EmptyCommand(t *testing.T) {
+func TestWrapWithProxyAuth_EmptyConfig(t *testing.T) {
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
 	inner := &recordingTransport{}
-	assert.Same(t, inner, WrapWithProxyAuth(inner, &session.ProxyAuthConfig{}))
+
+	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{}, "")
+	require.NoError(t, err)
+	assert.Same(t, inner, wrapped)
 }
 
 func TestWrapWithProxyAuth_ExposesBase(t *testing.T) {
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
 	inner := &recordingTransport{}
-	wrapped := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{Command: []string{"/nonexistent/auth"}})
+
+	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{Command: []string{"/nonexistent/auth"}}, "")
+	require.NoError(t, err)
 
 	transport, ok := wrapped.(*ProxyAuthTransport)
 	require.True(t, ok, "expected *ProxyAuthTransport, got %T", wrapped)
 	assert.Same(t, inner, transport.Base())
+}
+
+func TestWrapWithProxyAuth_EnvironmentWinsOverConfig(t *testing.T) {
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, " env-token \n")
+	inner := &recordingTransport{}
+
+	// The command is relative and would be rejected if it were consulted.
+	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{Command: []string{"auth"}}, "")
+	require.NoError(t, err)
+
+	resp, err := wrapped.RoundTrip(newTestRequest(t, ""))
+	require.NoError(t, err)
+	closeIfPresent(resp)
+	assert.Equal(t, "Bearer env-token", inner.last().Header.Get("Proxy-Authorization"))
+}
+
+func TestWrapWithProxyAuth_EnvironmentWithoutConfig(t *testing.T) {
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "env-token")
+	inner := &recordingTransport{}
+
+	wrapped, err := WrapWithProxyAuth(inner, nil, "")
+	require.NoError(t, err)
+
+	resp, err := wrapped.RoundTrip(newTestRequest(t, ""))
+	require.NoError(t, err)
+	closeIfPresent(resp)
+	assert.Equal(t, "Bearer env-token", inner.last().Header.Get("Proxy-Authorization"))
+}
+
+func TestWrapWithProxyAuth_TokenFileWinsOverCommand(t *testing.T) {
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
+	tokenFile := writeTokenFile(t, "file-token\n")
+	inner := &recordingTransport{}
+
+	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{TokenFile: tokenFile, Command: []string{"auth"}}, "")
+	require.NoError(t, err)
+
+	resp, err := wrapped.RoundTrip(newTestRequest(t, ""))
+	require.NoError(t, err)
+	closeIfPresent(resp)
+	assert.Equal(t, "Bearer file-token", inner.last().Header.Get("Proxy-Authorization"))
+}
+
+func TestWrapWithProxyAuth_TokenFileIsReReadOnRejection(t *testing.T) {
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
+	tokenFile := writeTokenFile(t, "stale")
+	inner := &recordingTransport{resps: []responseSpec{iapChallenge()}}
+
+	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{TokenFile: tokenFile}, "")
+	require.NoError(t, err)
+
+	// Simulate an external refresher rewriting the file between the first
+	// attempt and the retry: the file transport reads it on every fetch.
+	inner.resps = []responseSpec{iapChallenge()}
+	rt := wrapped.(*ProxyAuthTransport)
+	original := rt.fetchToken
+	rt.fetchToken = func(ctx context.Context) (string, error) {
+		token, err := original(ctx)
+		require.NoError(t, os.WriteFile(tokenFile, []byte("fresh"), 0o600))
+		return token, err
+	}
+
+	resp, err := wrapped.RoundTrip(newTestRequest(t, "body"))
+	require.NoError(t, err)
+	closeIfPresent(resp)
+
+	require.Len(t, inner.reqs, 2)
+	assert.Equal(t, "Bearer stale", inner.reqs[0].Header.Get("Proxy-Authorization"))
+	assert.Equal(t, "Bearer fresh", inner.reqs[1].Header.Get("Proxy-Authorization"))
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestWrapWithProxyAuth_RelativeCommandIsRejected(t *testing.T) {
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
+
+	_, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"iap-auth"}}, "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "must be an absolute path")
+}
+
+func TestWrapWithProxyAuth_WritableConfigFileIsRejected(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("permission bits are not meaningful on Windows")
+	}
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
+
+	configFile := filepath.Join(t.TempDir(), session.ConfigFileName)
+	require.NoError(t, os.WriteFile(configFile, []byte("{}"), 0o600))
+	require.NoError(t, os.Chmod(configFile, 0o666))
+
+	_, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/auth"}}, configFile)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "writable by other users")
+}
+
+func TestWrapWithProxyAuth_PrivateConfigFileIsAccepted(t *testing.T) {
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
+
+	configFile := filepath.Join(t.TempDir(), session.ConfigFileName)
+	require.NoError(t, os.WriteFile(configFile, []byte("{}"), 0o600))
+
+	wrapped, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/auth"}}, configFile)
+	require.NoError(t, err)
+	assert.IsType(t, &ProxyAuthTransport{}, wrapped)
 }
 
 func TestProxyAuthTransport_SetsHeaderAndPreservesAuthorization(t *testing.T) {
@@ -240,7 +358,7 @@ func TestProxyAuthTransport_SameTokenAfterRejectionWarnsOnce(t *testing.T) {
 	warnings := captureWarnings(t)
 	inner := &recordingTransport{resps: []responseSpec{iapChallenge(), iapChallenge(), iapChallenge()}}
 	fetch, _ := tokenSequence("stale")
-	transport := &ProxyAuthTransport{base: inner, command: "/usr/local/bin/auth", fetchToken: fetch}
+	transport := &ProxyAuthTransport{base: inner, source: `command "/usr/local/bin/auth"`, fetchToken: fetch}
 
 	for i := 0; i < 3; i++ {
 		resp, err := transport.RoundTrip(newTestRequest(t, "body"))
@@ -387,6 +505,26 @@ func TestLooksLikeProxyAuthRejection(t *testing.T) {
 	}
 }
 
+func TestFetchTokenFromFile_TrimsContents(t *testing.T) {
+	token, err := fetchTokenFromFile(writeTokenFile(t, "  file-token \n"), "")
+	require.NoError(t, err)
+	assert.Equal(t, "file-token", token)
+}
+
+func TestFetchTokenFromFile_NotFoundIncludesSetupHint(t *testing.T) {
+	_, err := fetchTokenFromFile(filepath.Join(t.TempDir(), "missing"), "Run the refresher.")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+	assert.Contains(t, err.Error(), "Run the refresher.")
+}
+
+func TestFetchTokenFromFile_EmptyIsAnError(t *testing.T) {
+	_, err := fetchTokenFromFile(writeTokenFile(t, "\n"), "Run the refresher.")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "is empty")
+	assert.Contains(t, err.Error(), "Run the refresher.")
+}
+
 func TestFetchTokenFromCommand_NotFoundIncludesSetupHint(t *testing.T) {
 	_, err := fetchTokenFromCommand(context.Background(), []string{"/nonexistent/test-auth", "--cached"}, "Install test-auth first.")
 	require.Error(t, err)
@@ -429,6 +567,14 @@ func TestFetchTokenFromCommand_HonoursContextTimeout(t *testing.T) {
 	_, err := fetchTokenFromCommand(ctx, []string{sh, "-c", "sleep 5"}, "")
 	require.Error(t, err)
 	assert.Less(t, time.Since(start), 3*time.Second)
+}
+
+func writeTokenFile(t *testing.T, contents string) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), "proxy-token")
+	require.NoError(t, os.WriteFile(path, []byte(contents), 0o600))
+	return path
 }
 
 func closeIfPresent(resp *http.Response) {

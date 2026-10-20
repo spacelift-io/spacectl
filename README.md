@@ -356,6 +356,40 @@ If `SPACELIFT_API_TLS_CA` is not set, `spacectl` falls back to the standard `SSL
 > [!NOTE]
 > When a CA bundle is provided through either variable, it replaces the system trust store rather than extending it, so the file must contain the full chain needed to verify the endpoint.
 
+### Authenticating through a reverse proxy
+
+Some Spacelift deployments sit behind a reverse proxy that requires its own credential, such as GCP Identity-Aware Proxy or Azure AD Application Proxy. The proxy expects that credential in the `Proxy-Authorization` header, separate from the `Authorization` header that carries your Spacelift token. `spacectl` can supply it from one of three sources, checked in this order:
+
+1. The `SPACELIFT_PROXY_AUTH_TOKEN` environment variable. This suits CI and scripts, where another step has already obtained the proxy token.
+2. A `token_file` named in the profile. The file is re-read whenever the proxy rejects the current token, so an external process can keep it fresh.
+3. A `command` named in the profile. `spacectl` runs it to obtain a token, and runs it again if the proxy rejects the token it produced. This suits interactive use with short-lived proxy tokens, where re-running a helper is simpler than refreshing a file by hand.
+
+The first source that is set wins. The file and command sources are configured through an optional `proxy_auth` object in the profile's credentials in `config.json`:
+
+```json
+{
+    "proxy_auth": {
+        "token_file": "/run/secrets/proxy-token",
+        "setup_hint": "Run proxy-login to refresh the token."
+    }
+}
+```
+
+```json
+{
+    "proxy_auth": {
+        "command": ["/usr/local/bin/proxy-auth", "--cached"],
+        "setup_hint": "Install proxy-auth and run it once to log in."
+    }
+}
+```
+
+- `token_file` - path of a file whose contents, trimmed of whitespace, are sent as the bearer token.
+- `command` - program and arguments that print a bearer token on stdout. The program **must be an absolute path**; nothing is resolved against the working directory or `PATH`. The command runs with your privileges, so set it only in a configuration file you control. `spacectl` refuses to run it if the configuration file is writable by other users.
+- `setup_hint` (optional) - appended to the error when the file or command is missing, fails, or yields no token. Use it to tell users how to install or initialize the helper.
+
+The token is cached for the life of the process while the proxy accepts it. On a `401`, a `407`, or a redirect to another host, `spacectl` discards it, consults the source again, and retries the request once. If the retry is still rejected, a single warning names the source so you know which credential to refresh. When `proxy_auth` is not configured and the variable is unset, requests are sent unchanged.
+
 ## Private module and provider registry
 
 `terraform init` and `tofu init` need a credential for Spacelift's private module and provider registry. `spacectl registry credentials` prints one for the current session. It resolves credentials the same way as `spacectl profile export-token`: the selected profile first, then the environment. That makes it work with an [OIDC API key](https://docs.spacelift.io/integrations/api#oidc-based-api-keys) in CI.

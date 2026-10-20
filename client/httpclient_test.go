@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -131,9 +132,44 @@ func TestConfigureTransport_WithProxyAuth_WrapsTLSTransport(t *testing.T) {
 	assert.Equal(t, uint16(tls.VersionTLS12), inner.TLSClientConfig.MinVersion, "TLS settings must apply underneath proxy auth")
 }
 
+func TestConfigureTransport_RelativeCommandIsAnError(t *testing.T) {
+	writeTestProfile(t, &session.ProxyAuthConfig{Command: []string{"test-auth"}})
+
+	err := configureTransport(&http.Client{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "must be an absolute path")
+}
+
+func TestConfigureTransport_WorldWritableConfigIsAnError(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("permission bits are not meaningful on Windows")
+	}
+	configFile := writeTestProfile(t, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/test-auth"}})
+	require.NoError(t, os.Chmod(configFile, 0o666))
+
+	err := configureTransport(&http.Client{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "writable by other users")
+}
+
+func TestConfigureTransport_EnvironmentTokenWithoutProfile(t *testing.T) {
+	t.Setenv(session.EnvSpaceliftConfigDirectory, t.TempDir())
+	t.Setenv(session.EnvSpaceliftProfile, "")
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "env-token")
+	t.Setenv(EnvSpaceliftAPIClientCA, "")
+	t.Setenv("SSL_CERT_FILE", "")
+
+	httpClient := &http.Client{}
+	require.NoError(t, configureTransport(httpClient))
+
+	_, ok := httpClient.Transport.(*ProxyAuthTransport)
+	assert.True(t, ok, "expected proxy auth from the environment alone, got %T", httpClient.Transport)
+}
+
 func TestConfigureTransport_NoProfile(t *testing.T) {
 	t.Setenv(session.EnvSpaceliftConfigDirectory, t.TempDir())
 	t.Setenv(session.EnvSpaceliftProfile, "")
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
 	t.Setenv(EnvSpaceliftAPIClientCA, "")
 	t.Setenv("SSL_CERT_FILE", "")
 
@@ -145,13 +181,15 @@ func TestConfigureTransport_NoProfile(t *testing.T) {
 }
 
 // writeTestProfile points SPACELIFT_CONFIG_DIR at a temporary directory holding
-// a single, selected profile with the given proxy auth configuration.
-func writeTestProfile(t *testing.T, proxyAuth *session.ProxyAuthConfig) {
+// a single, selected profile with the given proxy auth configuration, and
+// returns the path of the configuration file it wrote.
+func writeTestProfile(t *testing.T, proxyAuth *session.ProxyAuthConfig) string {
 	t.Helper()
 
 	dir := t.TempDir()
 	t.Setenv(session.EnvSpaceliftConfigDirectory, dir)
 	t.Setenv(session.EnvSpaceliftProfile, "")
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
 	t.Setenv(EnvSpaceliftAPIClientCA, "")
 	t.Setenv("SSL_CERT_FILE", "")
 
@@ -172,7 +210,10 @@ func writeTestProfile(t *testing.T, proxyAuth *session.ProxyAuthConfig) {
 
 	data, err := json.Marshal(config)
 	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(filepath.Join(dir, session.ConfigFileName), data, 0o600))
+
+	configFile := filepath.Join(dir, session.ConfigFileName)
+	require.NoError(t, os.WriteFile(configFile, data, 0o600))
+	return configFile
 }
 
 // writeTempCA generates a self-signed CA certificate and writes it to a temp file.

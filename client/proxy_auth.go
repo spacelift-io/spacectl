@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -21,13 +23,15 @@ import (
 const proxyAuthCommandTimeout = 30 * time.Second
 
 // ProxyAuthTransport injects a Proxy-Authorization Bearer token into outgoing
-// requests. The token is sourced from a configurable command and cached for
-// as long as the proxy keeps accepting it. When the proxy rejects a request,
-// the cached token is discarded, the command is run again, and the request is
-// retried once with the fresh token.
+// requests. The token comes from a token source (environment variable, file
+// or command) and is cached for as long as the proxy keeps accepting it. When
+// the proxy rejects a request, the cached token is discarded, the source is
+// consulted again, and the request is retried once with the fresh token.
 type ProxyAuthTransport struct {
-	base       http.RoundTripper
-	command    string
+	base http.RoundTripper
+
+	// source describes where the token comes from, for diagnostics.
+	source     string
 	fetchToken func(ctx context.Context) (string, error)
 
 	mu    sync.Mutex
@@ -40,24 +44,53 @@ var warnProxyAuth = func(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "spacectl: warning: "+format+"\n", args...)
 }
 
-// WrapWithProxyAuth wraps base with a proxy-auth transport configured by cfg.
-// If cfg is nil or has no Command, base is returned unchanged.
-func WrapWithProxyAuth(base http.RoundTripper, cfg *session.ProxyAuthConfig) http.RoundTripper {
-	if cfg == nil || len(cfg.Command) == 0 {
-		return base
+// WrapWithProxyAuth wraps base with a proxy auth transport when a token source
+// is configured. Sources are checked in this order, and the first one set is
+// used:
+//
+//  1. the SPACELIFT_PROXY_AUTH_TOKEN environment variable
+//  2. cfg.TokenFile
+//  3. cfg.Command
+//
+// If none is configured, base is returned unchanged. configFile is the path
+// of the configuration file cfg was read from, or empty when cfg did not come
+// from a file; a command is only honoured when that file cannot be modified by
+// other users, since the command runs with the user's privileges.
+func WrapWithProxyAuth(base http.RoundTripper, cfg *session.ProxyAuthConfig, configFile string) (http.RoundTripper, error) {
+	if token, ok := os.LookupEnv(session.EnvSpaceliftProxyAuthToken); ok && strings.TrimSpace(token) != "" {
+		return newProxyAuthTransport(base, "the "+session.EnvSpaceliftProxyAuthToken+" environment variable", staticToken(token)), nil
 	}
-	return newProxyAuthTransport(base, cfg)
+
+	if cfg == nil {
+		return base, nil
+	}
+
+	if cfg.TokenFile != "" {
+		return newProxyAuthTransport(base, fmt.Sprintf("token file %q", cfg.TokenFile), func(context.Context) (string, error) {
+			return fetchTokenFromFile(cfg.TokenFile, cfg.SetupHint)
+		}), nil
+	}
+
+	if len(cfg.Command) > 0 {
+		command := append([]string(nil), cfg.Command...)
+		if err := validateProxyAuthCommand(command[0], configFile); err != nil {
+			return nil, err
+		}
+		return newProxyAuthTransport(base, fmt.Sprintf("command %q", command[0]), func(ctx context.Context) (string, error) {
+			return fetchTokenFromCommand(ctx, command, cfg.SetupHint)
+		}), nil
+	}
+
+	return base, nil
 }
 
-func newProxyAuthTransport(base http.RoundTripper, cfg *session.ProxyAuthConfig) *ProxyAuthTransport {
-	command := append([]string(nil), cfg.Command...)
-	return &ProxyAuthTransport{
-		base:    base,
-		command: command[0],
-		fetchToken: func(ctx context.Context) (string, error) {
-			return fetchTokenFromCommand(ctx, command, cfg.SetupHint)
-		},
-	}
+func newProxyAuthTransport(base http.RoundTripper, source string, fetch func(ctx context.Context) (string, error)) *ProxyAuthTransport {
+	return &ProxyAuthTransport{base: base, source: source, fetchToken: fetch}
+}
+
+func staticToken(token string) func(context.Context) (string, error) {
+	token = strings.TrimSpace(token)
+	return func(context.Context) (string, error) { return token, nil }
 }
 
 // Base returns the transport wrapped by t.
@@ -117,7 +150,7 @@ func (t *ProxyAuthTransport) send(req *http.Request, token string, resetBody boo
 	return t.base.RoundTrip(req)
 }
 
-// getToken returns the cached token, running the command to obtain one if
+// getToken returns the cached token, consulting the source to obtain one if
 // none is cached. Failures are never cached.
 func (t *ProxyAuthTransport) getToken(ctx context.Context) (string, error) {
 	t.mu.Lock()
@@ -152,8 +185,51 @@ func (t *ProxyAuthTransport) invalidate(rejected string) {
 
 func (t *ProxyAuthTransport) warnRejected() {
 	t.warnOnce.Do(func() {
-		warnProxyAuth("the request was rejected after sending the proxy auth token produced by %q; if the proxy is refusing it, re-run that command to obtain a fresh token", t.command)
+		warnProxyAuth("the request was rejected after sending the proxy auth token from %s; if the proxy is refusing it, the token may be stale or invalid", t.source)
 	})
+}
+
+// validateProxyAuthCommand enforces the conditions under which spacectl is
+// willing to run a program named in a configuration file: the program must be
+// an absolute path, so that nothing is resolved against the working directory
+// or PATH, and the file naming it must not be writable by other users.
+func validateProxyAuthCommand(binPath, configFile string) error {
+	if !filepath.IsAbs(binPath) {
+		return fmt.Errorf("proxy auth: command %q must be an absolute path", binPath)
+	}
+
+	// Permission bits do not carry the same meaning on Windows.
+	if configFile == "" || runtime.GOOS == "windows" {
+		return nil
+	}
+
+	info, err := os.Stat(configFile)
+	if err != nil {
+		return fmt.Errorf("proxy auth: could not check permissions of %s: %w", configFile, err)
+	}
+
+	if mode := info.Mode().Perm(); mode&0o022 != 0 {
+		return fmt.Errorf("proxy auth: refusing to run command %q because %s is writable by other users (mode %04o); restrict it with chmod go-w", binPath, configFile, mode)
+	}
+
+	return nil
+}
+
+func fetchTokenFromFile(path, setupHint string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", withHint(fmt.Errorf("token file %q not found", path), setupHint)
+		}
+		return "", fmt.Errorf("token file %q: %w", path, err)
+	}
+
+	token := strings.TrimSpace(string(data))
+	if token == "" {
+		return "", withHint(fmt.Errorf("token file %q is empty", path), setupHint)
+	}
+
+	return token, nil
 }
 
 func fetchTokenFromCommand(ctx context.Context, command []string, setupHint string) (string, error) {

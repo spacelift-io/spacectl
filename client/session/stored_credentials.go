@@ -27,6 +27,11 @@ const (
 	CredentialsTypeAPIToken
 )
 
+// EnvSpaceliftProxyAuthToken is the name of the environment variable that,
+// when set, supplies the token sent in the Proxy-Authorization header. It
+// takes precedence over any proxy_auth configuration in the profile.
+const EnvSpaceliftProxyAuthToken = "SPACELIFT_PROXY_AUTH_TOKEN" // #nosec G101
+
 // String returns the string representation of the type.
 func (t CredentialsType) String() string {
 	return [...]string{"Invalid", "API Key", "GitHub", "API Token"}[t]
@@ -36,14 +41,25 @@ func (t CredentialsType) String() string {
 // outgoing requests. This is useful when Spacelift sits behind a reverse proxy
 // (such as GCP Identity-Aware Proxy or Azure AD Application Proxy) that
 // requires its own authentication separate from Spacelift's bearer token.
+//
+// Sources are consulted in this order: the SPACELIFT_PROXY_AUTH_TOKEN
+// environment variable, then TokenFile, then Command. The first one that is
+// set wins.
 type ProxyAuthConfig struct {
-	// Command is the command (program + args) to run to obtain a proxy auth
-	// token. The token is read from stdout (trimmed).
-	Command []string `json:"command"`
+	// TokenFile is the path of a file whose contents (trimmed) are used as the
+	// proxy auth token. The file is re-read when the proxy rejects the token,
+	// so it can be refreshed by an external process.
+	TokenFile string `json:"token_file,omitempty"`
 
-	// SetupHint is appended to the error reported when Command is missing,
-	// fails, or produces no token. It should tell the user how to install or
-	// initialize the auth tool.
+	// Command is the command (program + args) to run to obtain a proxy auth
+	// token. The token is read from stdout (trimmed). The program must be given
+	// as an absolute path, and the configuration file that names it must not be
+	// writable by other users.
+	Command []string `json:"command,omitempty"`
+
+	// SetupHint is appended to the error reported when the token file or
+	// Command is missing, fails, or produces no token. It should tell the user
+	// how to install or initialize the auth tool.
 	SetupHint string `json:"setup_hint,omitempty"`
 }
 
