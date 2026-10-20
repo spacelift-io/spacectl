@@ -11,20 +11,6 @@ import (
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
-const (
-	// EnvSpaceliftAPIClientTLSCert represents the path to a client certificate for
-	// communicating with the Spacelift API endpoint.
-	EnvSpaceliftAPIClientTLSCert = client.EnvSpaceliftAPIClientTLSCert
-
-	// EnvSpaceliftAPIClientTLSKey represents the path to a client key for
-	// communicating with the Spacelift API endpoint.
-	EnvSpaceliftAPIClientTLSKey = client.EnvSpaceliftAPIClientTLSKey
-
-	// EnvSpaceliftAPIClientCA represents the path to a CA bundle for
-	// verifying Spacelift API endpoint.
-	EnvSpaceliftAPIClientCA = client.EnvSpaceliftAPIClientCA
-)
-
 // Client is the authenticated client that can be used by all CLI commands.
 var (
 	auth client.Client

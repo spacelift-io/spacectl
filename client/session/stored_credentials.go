@@ -56,11 +56,6 @@ type ProxyAuthConfig struct {
 	// as an absolute path, and the configuration file that names it must not be
 	// writable by other users.
 	Command []string `json:"command,omitempty"`
-
-	// SetupHint is appended to the error reported when the token file or
-	// Command is missing, fails, or produces no token. It should tell the user
-	// how to install or initialize the auth tool.
-	SetupHint string `json:"setup_hint,omitempty"`
 }
 
 // StoredCredentials is a filesystem representation of the credentials.

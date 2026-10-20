@@ -44,6 +44,17 @@ var warnProxyAuth = func(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "spacectl: warning: "+format+"\n", args...)
 }
 
+// ProxyAuthError reports that the proxy auth credential could not be obtained
+// or that its configuration was refused, as opposed to the request itself
+// failing. Callers can detect it with errors.As to explain the failure.
+type ProxyAuthError struct {
+	Err error
+}
+
+func (e *ProxyAuthError) Error() string { return "proxy auth: " + e.Err.Error() }
+
+func (e *ProxyAuthError) Unwrap() error { return e.Err }
+
 // WrapWithProxyAuth wraps base with a proxy auth transport when a token source
 // is configured. Sources are checked in this order, and the first one set is
 // used:
@@ -67,7 +78,7 @@ func WrapWithProxyAuth(base http.RoundTripper, cfg *session.ProxyAuthConfig, con
 
 	if cfg.TokenFile != "" {
 		return newProxyAuthTransport(base, fmt.Sprintf("token file %q", cfg.TokenFile), func(context.Context) (string, error) {
-			return fetchTokenFromFile(cfg.TokenFile, cfg.SetupHint)
+			return fetchTokenFromFile(cfg.TokenFile)
 		}), nil
 	}
 
@@ -77,7 +88,7 @@ func WrapWithProxyAuth(base http.RoundTripper, cfg *session.ProxyAuthConfig, con
 			return nil, err
 		}
 		return newProxyAuthTransport(base, fmt.Sprintf("command %q", command[0]), func(ctx context.Context) (string, error) {
-			return fetchTokenFromCommand(ctx, command, cfg.SetupHint)
+			return fetchTokenFromCommand(ctx, command)
 		}), nil
 	}
 
@@ -102,7 +113,7 @@ func (t *ProxyAuthTransport) Base() http.RoundTripper {
 func (t *ProxyAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	token, err := t.getToken(req.Context())
 	if err != nil {
-		return nil, fmt.Errorf("proxy auth: %w", err)
+		return nil, &ProxyAuthError{Err: err}
 	}
 
 	resp, err := t.send(req, token, false)
@@ -195,7 +206,7 @@ func (t *ProxyAuthTransport) warnRejected() {
 // or PATH, and the file naming it must not be writable by other users.
 func validateProxyAuthCommand(binPath, configFile string) error {
 	if !filepath.IsAbs(binPath) {
-		return fmt.Errorf("proxy auth: command %q must be an absolute path", binPath)
+		return &ProxyAuthError{Err: fmt.Errorf("command %q must be an absolute path", binPath)}
 	}
 
 	// Permission bits do not carry the same meaning on Windows.
@@ -205,38 +216,38 @@ func validateProxyAuthCommand(binPath, configFile string) error {
 
 	info, err := os.Stat(configFile)
 	if err != nil {
-		return fmt.Errorf("proxy auth: could not check permissions of %s: %w", configFile, err)
+		return &ProxyAuthError{Err: fmt.Errorf("could not check permissions of %s: %w", configFile, err)}
 	}
 
 	if mode := info.Mode().Perm(); mode&0o022 != 0 {
-		return fmt.Errorf("proxy auth: refusing to run command %q because %s is writable by other users (mode %04o); restrict it with chmod go-w", binPath, configFile, mode)
+		return &ProxyAuthError{Err: fmt.Errorf("refusing to run command %q because %s is writable by other users (mode %04o); restrict it with chmod go-w", binPath, configFile, mode)}
 	}
 
 	return nil
 }
 
-func fetchTokenFromFile(path, setupHint string) (string, error) {
+func fetchTokenFromFile(path string) (string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return "", withHint(fmt.Errorf("token file %q not found", path), setupHint)
+			return "", fmt.Errorf("token file %q not found", path)
 		}
 		return "", fmt.Errorf("token file %q: %w", path, err)
 	}
 
 	token := strings.TrimSpace(string(data))
 	if token == "" {
-		return "", withHint(fmt.Errorf("token file %q is empty", path), setupHint)
+		return "", fmt.Errorf("token file %q is empty", path)
 	}
 
 	return token, nil
 }
 
-func fetchTokenFromCommand(ctx context.Context, command []string, setupHint string) (string, error) {
+func fetchTokenFromCommand(ctx context.Context, command []string) (string, error) {
 	binPath := command[0]
 	if _, err := os.Stat(binPath); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return "", withHint(fmt.Errorf("command %q not found", binPath), setupHint)
+			return "", fmt.Errorf("command %q not found", binPath)
 		}
 		return "", fmt.Errorf("command %q: %w", binPath, err)
 	}
@@ -246,22 +257,15 @@ func fetchTokenFromCommand(ctx context.Context, command []string, setupHint stri
 
 	out, err := cmd.Output()
 	if err != nil {
-		return "", withHint(fmt.Errorf("command %q failed: %w", binPath, err), setupHint)
+		return "", fmt.Errorf("command %q failed: %w", binPath, err)
 	}
 
 	token := strings.TrimSpace(string(out))
 	if token == "" {
-		return "", withHint(fmt.Errorf("command %q returned no token", binPath), setupHint)
+		return "", fmt.Errorf("command %q returned no token", binPath)
 	}
 
 	return token, nil
-}
-
-func withHint(err error, hint string) error {
-	if hint == "" {
-		return err
-	}
-	return fmt.Errorf("%w. %s", err, hint)
 }
 
 // looksLikeProxyAuthRejection reports whether resp may come from a reverse

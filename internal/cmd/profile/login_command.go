@@ -226,6 +226,15 @@ func loginUsingWebBrowser(ctx context.Context, _ *cli.Command, creds *session.St
 }
 
 func persistAccessCredentials(creds *session.StoredCredentials) error {
+	// Logging in replaces the stored credentials wholesale, but proxy_auth is
+	// configuration rather than a credential, and the login itself may have
+	// depended on it to reach Spacelift. Carry it over from the existing profile.
+	if creds.ProxyAuth == nil {
+		if existing, _ := manager.Get(profileAlias); existing != nil && existing.Credentials != nil {
+			creds.ProxyAuth = existing.Credentials.ProxyAuth
+		}
+	}
+
 	if err := manager.Create(&session.Profile{
 		Alias:       profileAlias,
 		Credentials: creds,

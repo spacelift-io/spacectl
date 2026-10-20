@@ -285,6 +285,9 @@ func TestProxyAuthTransport_FetchFailureIsAnError(t *testing.T) {
 	assert.Contains(t, err.Error(), "proxy auth: ")
 	assert.Contains(t, err.Error(), "Install x first.")
 	assert.Empty(t, inner.reqs, "no request should be sent without a token")
+
+	var proxyErr *ProxyAuthError
+	assert.True(t, errors.As(fmt.Errorf("wrapped: %w", err), &proxyErr), "callers must be able to recognise a proxy auth failure")
 }
 
 func TestProxyAuthTransport_FailuresAreNotCached(t *testing.T) {
@@ -506,36 +509,33 @@ func TestLooksLikeProxyAuthRejection(t *testing.T) {
 }
 
 func TestFetchTokenFromFile_TrimsContents(t *testing.T) {
-	token, err := fetchTokenFromFile(writeTokenFile(t, "  file-token \n"), "")
+	token, err := fetchTokenFromFile(writeTokenFile(t, "  file-token \n"))
 	require.NoError(t, err)
 	assert.Equal(t, "file-token", token)
 }
 
-func TestFetchTokenFromFile_NotFoundIncludesSetupHint(t *testing.T) {
-	_, err := fetchTokenFromFile(filepath.Join(t.TempDir(), "missing"), "Run the refresher.")
+func TestFetchTokenFromFile_NotFound(t *testing.T) {
+	_, err := fetchTokenFromFile(filepath.Join(t.TempDir(), "missing"))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
-	assert.Contains(t, err.Error(), "Run the refresher.")
 }
 
 func TestFetchTokenFromFile_EmptyIsAnError(t *testing.T) {
-	_, err := fetchTokenFromFile(writeTokenFile(t, "\n"), "Run the refresher.")
+	_, err := fetchTokenFromFile(writeTokenFile(t, "\n"))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "is empty")
-	assert.Contains(t, err.Error(), "Run the refresher.")
 }
 
-func TestFetchTokenFromCommand_NotFoundIncludesSetupHint(t *testing.T) {
-	_, err := fetchTokenFromCommand(context.Background(), []string{"/nonexistent/test-auth", "--cached"}, "Install test-auth first.")
+func TestFetchTokenFromCommand_NotFound(t *testing.T) {
+	_, err := fetchTokenFromCommand(context.Background(), []string{"/nonexistent/test-auth", "--cached"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `"/nonexistent/test-auth" not found`)
-	assert.Contains(t, err.Error(), "Install test-auth first.")
 }
 
 func TestFetchTokenFromCommand_TrimsOutput(t *testing.T) {
 	sh := requireShell(t)
 
-	token, err := fetchTokenFromCommand(context.Background(), []string{sh, "-c", "printf '  my-token \\n'"}, "")
+	token, err := fetchTokenFromCommand(context.Background(), []string{sh, "-c", "printf '  my-token \\n'"})
 	require.NoError(t, err)
 	assert.Equal(t, "my-token", token)
 }
@@ -543,16 +543,15 @@ func TestFetchTokenFromCommand_TrimsOutput(t *testing.T) {
 func TestFetchTokenFromCommand_EmptyOutputIsAnError(t *testing.T) {
 	sh := requireShell(t)
 
-	_, err := fetchTokenFromCommand(context.Background(), []string{sh, "-c", "true"}, "Run setup.")
+	_, err := fetchTokenFromCommand(context.Background(), []string{sh, "-c", "true"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "returned no token")
-	assert.Contains(t, err.Error(), "Run setup.")
 }
 
 func TestFetchTokenFromCommand_NonZeroExitIsAnError(t *testing.T) {
 	sh := requireShell(t)
 
-	_, err := fetchTokenFromCommand(context.Background(), []string{sh, "-c", "exit 3"}, "")
+	_, err := fetchTokenFromCommand(context.Background(), []string{sh, "-c", "exit 3"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed")
 }
@@ -564,7 +563,7 @@ func TestFetchTokenFromCommand_HonoursContextTimeout(t *testing.T) {
 	defer cancel()
 
 	start := time.Now()
-	_, err := fetchTokenFromCommand(ctx, []string{sh, "-c", "sleep 5"}, "")
+	_, err := fetchTokenFromCommand(ctx, []string{sh, "-c", "sleep 5"})
 	require.Error(t, err)
 	assert.Less(t, time.Since(start), 3*time.Second)
 }
