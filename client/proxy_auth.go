@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,6 +30,13 @@ const proxyAuthCommandTimeout = 30 * time.Second
 // consulted again, and the request is retried once with the fresh token.
 type ProxyAuthTransport struct {
 	base http.RoundTripper
+
+	// endpoint is the Spacelift endpoint the token is meant for. The token is
+	// only attached to requests for this host; anything else, such as a
+	// redirect the HTTP client decided to follow, is forwarded untouched so the
+	// credential cannot leak to a third party. A nil endpoint disables the
+	// restriction.
+	endpoint *url.URL
 
 	// source describes where the token comes from, for diagnostics.
 	source     string
@@ -66,10 +74,17 @@ func (e *ProxyAuthError) Unwrap() error { return e.Err }
 // If none is configured, base is returned unchanged. configFile is the path
 // of the configuration file cfg was read from, or empty when cfg did not come
 // from a file; a command is only honoured when that file cannot be modified by
-// other users, since the command runs with the user's privileges.
-func WrapWithProxyAuth(base http.RoundTripper, cfg *session.ProxyAuthConfig, configFile string) (http.RoundTripper, error) {
+// other users, since the command runs with the user's privileges. endpoint is
+// the Spacelift endpoint the token is for; the token is only ever attached to
+// requests for that host. An empty endpoint leaves requests unrestricted.
+func WrapWithProxyAuth(base http.RoundTripper, cfg *session.ProxyAuthConfig, configFile, endpoint string) (http.RoundTripper, error) {
+	endpointURL, err := parseEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
 	if token, ok := os.LookupEnv(session.EnvSpaceliftProxyAuthToken); ok && strings.TrimSpace(token) != "" {
-		return newProxyAuthTransport(base, "the "+session.EnvSpaceliftProxyAuthToken+" environment variable", staticToken(token)), nil
+		return newProxyAuthTransport(base, endpointURL, "the "+session.EnvSpaceliftProxyAuthToken+" environment variable", staticToken(token)), nil
 	}
 
 	if cfg == nil {
@@ -77,7 +92,7 @@ func WrapWithProxyAuth(base http.RoundTripper, cfg *session.ProxyAuthConfig, con
 	}
 
 	if cfg.TokenFile != "" {
-		return newProxyAuthTransport(base, fmt.Sprintf("token file %q", cfg.TokenFile), func(context.Context) (string, error) {
+		return newProxyAuthTransport(base, endpointURL, fmt.Sprintf("token file %q", cfg.TokenFile), func(context.Context) (string, error) {
 			return fetchTokenFromFile(cfg.TokenFile)
 		}), nil
 	}
@@ -87,7 +102,7 @@ func WrapWithProxyAuth(base http.RoundTripper, cfg *session.ProxyAuthConfig, con
 		if err := validateProxyAuthCommand(command[0], configFile); err != nil {
 			return nil, err
 		}
-		return newProxyAuthTransport(base, fmt.Sprintf("command %q", command[0]), func(ctx context.Context) (string, error) {
+		return newProxyAuthTransport(base, endpointURL, fmt.Sprintf("command %q", command[0]), func(ctx context.Context) (string, error) {
 			return fetchTokenFromCommand(ctx, command)
 		}), nil
 	}
@@ -95,8 +110,21 @@ func WrapWithProxyAuth(base http.RoundTripper, cfg *session.ProxyAuthConfig, con
 	return base, nil
 }
 
-func newProxyAuthTransport(base http.RoundTripper, source string, fetch func(ctx context.Context) (string, error)) *ProxyAuthTransport {
-	return &ProxyAuthTransport{base: base, source: source, fetchToken: fetch}
+func newProxyAuthTransport(base http.RoundTripper, endpoint *url.URL, source string, fetch func(ctx context.Context) (string, error)) *ProxyAuthTransport {
+	return &ProxyAuthTransport{base: base, endpoint: endpoint, source: source, fetchToken: fetch}
+}
+
+func parseEndpoint(endpoint string) (*url.URL, error) {
+	if endpoint == "" {
+		return nil, nil
+	}
+
+	u, err := url.Parse(endpoint)
+	if err != nil || u.Hostname() == "" {
+		return nil, &ProxyAuthError{Err: fmt.Errorf("endpoint %q is not a valid URL", endpoint)}
+	}
+
+	return u, nil
 }
 
 func staticToken(token string) func(context.Context) (string, error) {
@@ -111,6 +139,13 @@ func (t *ProxyAuthTransport) Base() http.RoundTripper {
 
 // RoundTrip implements http.RoundTripper.
 func (t *ProxyAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Never hand the proxy credential to anyone but the configured endpoint.
+	// This is what protects it when the HTTP client follows a redirect: the
+	// redirected request comes back through here with the other host's URL.
+	if !t.forEndpoint(req.URL) {
+		return t.base.RoundTrip(req)
+	}
+
 	token, err := t.getToken(req.Context())
 	if err != nil {
 		return nil, &ProxyAuthError{Err: err}
@@ -161,6 +196,32 @@ func (t *ProxyAuthTransport) send(req *http.Request, token string, resetBody boo
 	return t.base.RoundTrip(req)
 }
 
+// forEndpoint reports whether u addresses the configured endpoint. Hosts are
+// compared case-insensitively along with their effective ports, so that an
+// explicit default port still matches.
+func (t *ProxyAuthTransport) forEndpoint(u *url.URL) bool {
+	if t.endpoint == nil {
+		return true
+	}
+
+	return strings.EqualFold(u.Hostname(), t.endpoint.Hostname()) && effectivePort(u) == effectivePort(t.endpoint)
+}
+
+func effectivePort(u *url.URL) string {
+	if port := u.Port(); port != "" {
+		return port
+	}
+
+	switch strings.ToLower(u.Scheme) {
+	case "https":
+		return "443"
+	case "http":
+		return "80"
+	}
+
+	return ""
+}
+
 // getToken returns the cached token, consulting the source to obtain one if
 // none is cached. Failures are never cached.
 func (t *ProxyAuthTransport) getToken(ctx context.Context) (string, error) {
@@ -203,20 +264,31 @@ func (t *ProxyAuthTransport) warnRejected() {
 // validateProxyAuthCommand enforces the conditions under which spacectl is
 // willing to run a program named in a configuration file: the program must be
 // an absolute path, so that nothing is resolved against the working directory
-// or PATH, and the file naming it must not be writable by other users.
+// or PATH, and the file naming it must be a regular file, not a symbolic link,
+// that is not writable by other users.
 func validateProxyAuthCommand(binPath, configFile string) error {
 	if !filepath.IsAbs(binPath) {
 		return &ProxyAuthError{Err: fmt.Errorf("command %q must be an absolute path", binPath)}
 	}
 
-	// Permission bits do not carry the same meaning on Windows.
-	if configFile == "" || runtime.GOOS == "windows" {
+	if configFile == "" {
 		return nil
 	}
 
-	info, err := os.Stat(configFile)
+	// Lstat, not Stat: a symlink would let someone redirect the checks below
+	// at a file they do control, so the link itself is what gets inspected.
+	info, err := os.Lstat(configFile)
 	if err != nil {
 		return &ProxyAuthError{Err: fmt.Errorf("could not check permissions of %s: %w", configFile, err)}
+	}
+
+	if info.Mode()&os.ModeSymlink != 0 {
+		return &ProxyAuthError{Err: fmt.Errorf("refusing to run command %q because %s is a symbolic link", binPath, configFile)}
+	}
+
+	// Permission bits do not carry the same meaning on Windows.
+	if runtime.GOOS == "windows" {
+		return nil
 	}
 
 	if mode := info.Mode().Perm(); mode&0o022 != 0 {

@@ -121,16 +121,18 @@ func configureProxyAuth(httpClient *http.Client) error {
 	var (
 		cfg        *session.ProxyAuthConfig
 		configFile string
+		endpoint   = os.Getenv(session.EnvSpaceliftAPIKeyEndpoint)
 	)
 
 	if manager, err := session.UserProfileManager(); err == nil {
 		if profile, err := manager.CurrentValidated(); err == nil && profile != nil && profile.Credentials != nil {
 			cfg = profile.Credentials.ProxyAuth
 			configFile = manager.ConfigurationFile
+			endpoint = profile.Credentials.Endpoint
 		}
 	}
 
-	transport, err := WrapWithProxyAuth(httpClient.Transport, cfg, configFile)
+	transport, err := WrapWithProxyAuth(httpClient.Transport, cfg, configFile, endpoint)
 	if err != nil {
 		return err
 	}

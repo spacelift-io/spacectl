@@ -383,11 +383,11 @@ The first source that is set wins. The file and command sources are configured t
 ```
 
 - `token_file` - path of a file whose contents, trimmed of whitespace, are sent as the bearer token.
-- `command` - program and arguments that print a bearer token on stdout. The program **must be an absolute path**; nothing is resolved against the working directory or `PATH`. The command runs with your privileges, so set it only in a configuration file you control. `spacectl` refuses to run it if the configuration file is writable by other users.
+- `command` - program and arguments that print a bearer token on stdout. The program **must be an absolute path**; nothing is resolved against the working directory or `PATH`. The command runs with your privileges, so set it only in a configuration file you control. `spacectl` refuses to run it if the configuration file is a symbolic link or is writable by other users.
 
 `spacectl profile login` keeps the `proxy_auth` settings of an existing profile when it re-authenticates it, so a browser login does not have to be followed by editing `config.json` again.
 
-The token is cached for the life of the process while the proxy accepts it. On a `401`, a `407`, or a redirect to another host, `spacectl` discards it, consults the source again, and retries the request once. If the retry is still rejected, a single warning names the source so you know which credential to refresh. When `proxy_auth` is not configured and the variable is unset, requests are sent unchanged.
+The token is only ever sent to the profile's Spacelift endpoint. If a response redirects somewhere else, the redirected request goes out without it. The token is cached for the life of the process while the proxy accepts it. On a `401`, a `407`, or a redirect to another host, `spacectl` discards it, consults the source again, and retries the request once. If the retry is still rejected, a single warning names the source so you know which credential to refresh. When `proxy_auth` is not configured and the variable is unset, requests are sent unchanged.
 
 ## Private module and provider registry
 

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -60,6 +62,9 @@ func (rt *recordingTransport) last() *http.Request {
 	return rt.reqs[len(rt.reqs)-1]
 }
 
+// testEndpoint is the Spacelift endpoint the test requests are addressed to.
+const testEndpoint = "https://spacelift.example.com"
+
 func newTestRequest(t *testing.T, body string) *http.Request {
 	t.Helper()
 
@@ -109,7 +114,7 @@ func TestWrapWithProxyAuth_NilConfig(t *testing.T) {
 	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
 	inner := &recordingTransport{}
 
-	wrapped, err := WrapWithProxyAuth(inner, nil, "")
+	wrapped, err := WrapWithProxyAuth(inner, nil, "", testEndpoint)
 	require.NoError(t, err)
 	assert.Same(t, inner, wrapped)
 }
@@ -118,7 +123,7 @@ func TestWrapWithProxyAuth_EmptyConfig(t *testing.T) {
 	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
 	inner := &recordingTransport{}
 
-	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{}, "")
+	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{}, "", testEndpoint)
 	require.NoError(t, err)
 	assert.Same(t, inner, wrapped)
 }
@@ -127,7 +132,7 @@ func TestWrapWithProxyAuth_ExposesBase(t *testing.T) {
 	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
 	inner := &recordingTransport{}
 
-	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{Command: []string{"/nonexistent/auth"}}, "")
+	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{Command: []string{"/nonexistent/auth"}}, "", testEndpoint)
 	require.NoError(t, err)
 
 	transport, ok := wrapped.(*ProxyAuthTransport)
@@ -140,7 +145,7 @@ func TestWrapWithProxyAuth_EnvironmentWinsOverConfig(t *testing.T) {
 	inner := &recordingTransport{}
 
 	// The command is relative and would be rejected if it were consulted.
-	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{Command: []string{"auth"}}, "")
+	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{Command: []string{"auth"}}, "", testEndpoint)
 	require.NoError(t, err)
 
 	resp, err := wrapped.RoundTrip(newTestRequest(t, ""))
@@ -153,7 +158,7 @@ func TestWrapWithProxyAuth_EnvironmentWithoutConfig(t *testing.T) {
 	t.Setenv(session.EnvSpaceliftProxyAuthToken, "env-token")
 	inner := &recordingTransport{}
 
-	wrapped, err := WrapWithProxyAuth(inner, nil, "")
+	wrapped, err := WrapWithProxyAuth(inner, nil, "", testEndpoint)
 	require.NoError(t, err)
 
 	resp, err := wrapped.RoundTrip(newTestRequest(t, ""))
@@ -167,7 +172,7 @@ func TestWrapWithProxyAuth_TokenFileWinsOverCommand(t *testing.T) {
 	tokenFile := writeTokenFile(t, "file-token\n")
 	inner := &recordingTransport{}
 
-	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{TokenFile: tokenFile, Command: []string{"auth"}}, "")
+	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{TokenFile: tokenFile, Command: []string{"auth"}}, "", testEndpoint)
 	require.NoError(t, err)
 
 	resp, err := wrapped.RoundTrip(newTestRequest(t, ""))
@@ -181,7 +186,7 @@ func TestWrapWithProxyAuth_TokenFileIsReReadOnRejection(t *testing.T) {
 	tokenFile := writeTokenFile(t, "stale")
 	inner := &recordingTransport{resps: []responseSpec{iapChallenge()}}
 
-	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{TokenFile: tokenFile}, "")
+	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{TokenFile: tokenFile}, "", testEndpoint)
 	require.NoError(t, err)
 
 	// Simulate an external refresher rewriting the file between the first
@@ -208,7 +213,7 @@ func TestWrapWithProxyAuth_TokenFileIsReReadOnRejection(t *testing.T) {
 func TestWrapWithProxyAuth_RelativeCommandIsRejected(t *testing.T) {
 	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
 
-	_, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"iap-auth"}}, "")
+	_, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"iap-auth"}}, "", testEndpoint)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "must be an absolute path")
 }
@@ -223,9 +228,34 @@ func TestWrapWithProxyAuth_WritableConfigFileIsRejected(t *testing.T) {
 	require.NoError(t, os.WriteFile(configFile, []byte("{}"), 0o600))
 	require.NoError(t, os.Chmod(configFile, 0o666))
 
-	_, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/auth"}}, configFile)
+	_, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/auth"}}, configFile, testEndpoint)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "writable by other users")
+}
+
+func TestWrapWithProxyAuth_SymlinkedConfigFileIsRejected(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("creating symlinks needs extra privileges on Windows")
+	}
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "real-config.json")
+	require.NoError(t, os.WriteFile(target, []byte("{}"), 0o600))
+	link := filepath.Join(dir, session.ConfigFileName)
+	require.NoError(t, os.Symlink(target, link))
+
+	_, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/auth"}}, link, testEndpoint)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "is a symbolic link")
+}
+
+func TestWrapWithProxyAuth_InvalidEndpointIsRejected(t *testing.T) {
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "env-token")
+
+	_, err := WrapWithProxyAuth(&recordingTransport{}, nil, "", "not a url")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "is not a valid URL")
 }
 
 func TestWrapWithProxyAuth_PrivateConfigFileIsAccepted(t *testing.T) {
@@ -234,7 +264,7 @@ func TestWrapWithProxyAuth_PrivateConfigFileIsAccepted(t *testing.T) {
 	configFile := filepath.Join(t.TempDir(), session.ConfigFileName)
 	require.NoError(t, os.WriteFile(configFile, []byte("{}"), 0o600))
 
-	wrapped, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/auth"}}, configFile)
+	wrapped, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/auth"}}, configFile, testEndpoint)
 	require.NoError(t, err)
 	assert.IsType(t, &ProxyAuthTransport{}, wrapped)
 }
@@ -254,6 +284,94 @@ func TestProxyAuthTransport_SetsHeaderAndPreservesAuthorization(t *testing.T) {
 	assert.Equal(t, "Bearer proxy-token", inner.last().Header.Get("Proxy-Authorization"))
 	assert.Equal(t, "Bearer spacelift-jwt", inner.last().Header.Get("Authorization"))
 	assert.Equal(t, `{"query":"{ viewer { id } }"}`, inner.bodies[0])
+}
+
+func TestProxyAuthTransport_OnlySendsTokenToTheEndpoint(t *testing.T) {
+	cases := []struct {
+		name     string
+		endpoint string
+		url      string
+		want     bool
+	}{
+		{"same host", "https://spacelift.example.com", "https://spacelift.example.com/graphql", true},
+		{"same host, different case", "https://spacelift.example.com", "https://SPACELIFT.example.com/graphql", true},
+		{"explicit default port", "https://spacelift.example.com", "https://spacelift.example.com:443/graphql", true},
+		{"other host", "https://spacelift.example.com", "https://accounts.google.com/o/oauth2/v2/auth", false},
+		{"other port", "https://spacelift.example.com", "https://spacelift.example.com:8443/graphql", false},
+		{"other scheme", "https://spacelift.example.com", "http://spacelift.example.com/graphql", false},
+		{"no endpoint configured", "", "https://anything.example.net/", true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			endpoint, err := parseEndpoint(tc.endpoint)
+			require.NoError(t, err)
+
+			inner := &recordingTransport{}
+			fetch, calls := tokenSequence("tok")
+			transport := newProxyAuthTransport(inner, endpoint, "test", fetch)
+
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, tc.url, nil)
+			require.NoError(t, err)
+
+			resp, err := transport.RoundTrip(req)
+			closeIfPresent(resp)
+			require.NoError(t, err)
+			require.Len(t, inner.reqs, 1)
+
+			if tc.want {
+				assert.Equal(t, "Bearer tok", inner.last().Header.Get("Proxy-Authorization"))
+				assert.Equal(t, 1, *calls)
+			} else {
+				assert.Empty(t, inner.last().Header.Get("Proxy-Authorization"), "the token must not reach another host")
+				assert.Equal(t, 0, *calls, "no token should be fetched for another host")
+			}
+		})
+	}
+}
+
+// TestProxyAuthTransport_FollowedRedirectDoesNotLeakToken covers the case the
+// endpoint host check exists for: the API (or something in front of it) answers
+// with a redirect to another host, and http.Client follows it through this
+// transport. The other host must not receive the proxy credential.
+func TestProxyAuthTransport_FollowedRedirectDoesNotLeakToken(t *testing.T) {
+	var elsewhereHeaders []http.Header
+	elsewhere := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		elsewhereHeaders = append(elsewhereHeaders, r.Header.Clone())
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer elsewhere.Close()
+
+	var endpointHeaders []http.Header
+	endpoint := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		endpointHeaders = append(endpointHeaders, r.Header.Clone())
+		http.Redirect(w, r, elsewhere.URL+"/login", http.StatusFound)
+	}))
+	defer endpoint.Close()
+
+	endpointURL, err := url.Parse(endpoint.URL)
+	require.NoError(t, err)
+
+	fetch, _ := tokenSequence("tok")
+	client := &http.Client{Transport: newProxyAuthTransport(http.DefaultTransport, endpointURL, "test", fetch)}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint.URL+"/graphql", nil)
+	require.NoError(t, err)
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	closeIfPresent(resp)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	// The endpoint saw the token on the original request and, since the
+	// redirect counts as a rejection, on the retry too.
+	require.NotEmpty(t, endpointHeaders)
+	for _, h := range endpointHeaders {
+		assert.Equal(t, "Bearer tok", h.Get("Proxy-Authorization"))
+	}
+
+	// The host we were redirected to never did.
+	require.Len(t, elsewhereHeaders, 1)
+	assert.Empty(t, elsewhereHeaders[0].Get("Proxy-Authorization"), "the proxy credential leaked to the redirect target")
 }
 
 func TestProxyAuthTransport_DoesNotMutateOriginalRequest(t *testing.T) {
