@@ -132,7 +132,7 @@ func TestWrapWithProxyAuth_ExposesBase(t *testing.T) {
 	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
 	inner := &recordingTransport{}
 
-	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{Command: []string{"/nonexistent/auth"}}, "", testEndpoint)
+	wrapped, err := WrapWithProxyAuth(inner, &session.ProxyAuthConfig{Command: []string{fakeCommandPath(t)}}, "", testEndpoint)
 	require.NoError(t, err)
 
 	transport, ok := wrapped.(*ProxyAuthTransport)
@@ -228,7 +228,7 @@ func TestWrapWithProxyAuth_WritableConfigFileIsRejected(t *testing.T) {
 	require.NoError(t, os.WriteFile(configFile, []byte("{}"), 0o600))
 	require.NoError(t, os.Chmod(configFile, 0o666))
 
-	_, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/auth"}}, configFile, testEndpoint)
+	_, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{fakeCommandPath(t)}}, configFile, testEndpoint)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "writable by other users")
 }
@@ -245,7 +245,7 @@ func TestWrapWithProxyAuth_SymlinkedConfigFileIsRejected(t *testing.T) {
 	link := filepath.Join(dir, session.ConfigFileName)
 	require.NoError(t, os.Symlink(target, link))
 
-	_, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/auth"}}, link, testEndpoint)
+	_, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{fakeCommandPath(t)}}, link, testEndpoint)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "is a symbolic link")
 }
@@ -264,7 +264,7 @@ func TestWrapWithProxyAuth_PrivateConfigFileIsAccepted(t *testing.T) {
 	configFile := filepath.Join(t.TempDir(), session.ConfigFileName)
 	require.NoError(t, os.WriteFile(configFile, []byte("{}"), 0o600))
 
-	wrapped, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/auth"}}, configFile, testEndpoint)
+	wrapped, err := WrapWithProxyAuth(&recordingTransport{}, &session.ProxyAuthConfig{Command: []string{fakeCommandPath(t)}}, configFile, testEndpoint)
 	require.NoError(t, err)
 	assert.IsType(t, &ProxyAuthTransport{}, wrapped)
 }
@@ -681,9 +681,19 @@ func TestFetchTokenFromCommand_HonoursContextTimeout(t *testing.T) {
 	defer cancel()
 
 	start := time.Now()
-	_, err := fetchTokenFromCommand(ctx, []string{sh, "-c", "sleep 5"})
+	// The shell must stay alive to run echo, so killing sh alone does not
+	// release stdout; the orphaned sleep would hold it without cmd.WaitDelay.
+	_, err := fetchTokenFromCommand(ctx, []string{sh, "-c", "sleep 5; echo token"})
 	require.Error(t, err)
 	assert.Less(t, time.Since(start), 3*time.Second)
+}
+
+// fakeCommandPath returns an absolute path that is valid on every platform
+// for tests that configure a command without ever running it.
+func fakeCommandPath(t *testing.T) string {
+	t.Helper()
+
+	return filepath.Join(t.TempDir(), "auth")
 }
 
 func writeTokenFile(t *testing.T, contents string) string {

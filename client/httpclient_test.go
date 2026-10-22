@@ -119,7 +119,7 @@ func TestConfigureTransport_WithoutProxyAuth(t *testing.T) {
 }
 
 func TestConfigureTransport_WithProxyAuth_WrapsTLSTransport(t *testing.T) {
-	writeTestProfile(t, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/test-auth", "--cached"}})
+	writeTestProfile(t, &session.ProxyAuthConfig{Command: []string{fakeCommandPath(t), "--cached"}})
 
 	httpClient := &http.Client{}
 	require.NoError(t, configureTransport(httpClient))
@@ -144,7 +144,7 @@ func TestConfigureTransport_WorldWritableConfigIsAnError(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("permission bits are not meaningful on Windows")
 	}
-	configFile := writeTestProfile(t, &session.ProxyAuthConfig{Command: []string{"/usr/local/bin/test-auth"}})
+	configFile := writeTestProfile(t, &session.ProxyAuthConfig{Command: []string{fakeCommandPath(t)}})
 	require.NoError(t, os.Chmod(configFile, 0o666))
 
 	err := configureTransport(&http.Client{})

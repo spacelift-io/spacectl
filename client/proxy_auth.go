@@ -326,6 +326,10 @@ func fetchTokenFromCommand(ctx context.Context, command []string) (string, error
 
 	cmd := exec.CommandContext(ctx, binPath, command[1:]...)
 	cmd.Stderr = os.Stderr
+	// Token helpers are often wrapper scripts that spawn children. Cancelling
+	// the context kills only the direct child, and an orphaned grandchild
+	// holding stdout open would otherwise keep Output blocked indefinitely.
+	cmd.WaitDelay = time.Second
 
 	out, err := cmd.Output()
 	if err != nil {
