@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
 	"os"
 
@@ -38,18 +40,24 @@ type debugInfoQuery struct {
 	} `graphql:"debugInfo"`
 }
 
-func getSpaceliftInstanceVersion(ctx context.Context) cmd.SpaceliftInstanceVersion {
+// getSpaceliftInstanceVersion detects the type and version of the Spacelift
+// instance the current credentials point at. When detection fails the type is
+// unknown and the returned error says why.
+func getSpaceliftInstanceVersion(ctx context.Context) (cmd.SpaceliftInstanceVersion, error) {
 	instanceVersion := cmd.SpaceliftInstanceVersion{
 		InstanceType: cmd.SpaceliftInstanceTypeUnknown,
 	}
 
-	httpClient := client.GetHTTPClient()
+	httpClient, err := client.GetHTTPClient()
+	if err != nil {
+		return instanceVersion, err
+	}
 
 	// Create a new session - this may fail if the user doesn't have valid credentials.
 	// In that case we just treat the version as unknown.
 	sess, err := session.New(ctx, httpClient)
 	if err != nil {
-		return instanceVersion
+		return instanceVersion, err
 	}
 
 	c := client.New(httpClient, sess)
@@ -58,7 +66,7 @@ func getSpaceliftInstanceVersion(ctx context.Context) cmd.SpaceliftInstanceVersi
 	// version as unknown.
 	var query debugInfoQuery
 	if err := c.Query(context.Background(), &query, nil); err != nil {
-		return instanceVersion
+		return instanceVersion, err
 	}
 
 	// If the query succeeds, determine if this is a SaaS or Self-Hosted instance
@@ -78,15 +86,28 @@ func getSpaceliftInstanceVersion(ctx context.Context) cmd.SpaceliftInstanceVersi
 		}
 	}
 
-	return instanceVersion
+	return instanceVersion, nil
+}
+
+// instanceTypeWarning explains why the instance type could not be determined.
+// Most causes come down to not being logged in, but a proxy auth failure is
+// configuration the user has to fix, so it is reported as such rather than
+// being mistaken for missing credentials.
+func instanceTypeWarning(err error) string {
+	var proxyErr *client.ProxyAuthError
+	if errors.As(err, &proxyErr) {
+		return fmt.Sprintf("Warning: Unable to determine Spacelift instance type: %v. Some commands may be unavailable until the proxy auth configuration of the current profile is fixed.", err)
+	}
+
+	return "Warning: Unable to determine Spacelift instance type. Some commands may be unavailable until you authenticate with Spacelift."
 }
 
 func main() {
 	ctx := context.Background()
-	instanceVersion := getSpaceliftInstanceVersion(ctx)
+	instanceVersion, err := getSpaceliftInstanceVersion(ctx)
 
 	if instanceVersion.InstanceType == cmd.SpaceliftInstanceTypeUnknown {
-		log.Println("Warning: Unable to determine Spacelift instance type. Some commands may be unavailable until you authenticate with Spacelift.")
+		log.Println(instanceTypeWarning(err))
 	}
 
 	app := &cli.Command{

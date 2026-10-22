@@ -2,35 +2,13 @@ package authenticated
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
-	"fmt"
 	"net/http"
-	"os"
 	"sync"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/spacelift-io/spacectl/client"
 	"github.com/spacelift-io/spacectl/client/session"
-)
-
-const (
-	// EnvSpaceliftAPIClientTLSCert represents the path to a client certificate for
-	// communicating with the Spacelift API endpoint.
-	EnvSpaceliftAPIClientTLSCert = "SPACELIFT_API_TLS_CERT"
-
-	// EnvSpaceliftAPIClientTLSKey represents the path to a client key for
-	// communicating with the Spacelift API endpoint.
-	EnvSpaceliftAPIClientTLSKey = "SPACELIFT_API_TLS_KEY"
-
-	// EnvSpaceliftAPIClientCA represents the path to a CA bundle for
-	// verifying Spacelift API endpoint.
-	EnvSpaceliftAPIClientCA = "SPACELIFT_API_TLS_CA"
-)
-
-var (
-	errEnvSpaceliftAPIClientCAParse = fmt.Errorf("failed to parse %s", EnvSpaceliftAPIClientCA)
 )
 
 // Client is the authenticated client that can be used by all CLI commands.
@@ -63,76 +41,20 @@ func Ensure(ctx context.Context, _ *cli.Command) (context.Context, error) {
 		return ctx, err
 	}
 
-	session, err := session.New(ctx, httpClient)
+	sess, err := session.New(ctx, httpClient)
 	if err != nil {
 		return ctx, err
 	}
 
-	auth = client.New(httpClient, session)
+	auth = client.New(httpClient, sess)
 
 	return ctx, nil
 }
 
-// HTTPClient returns the shared HTTP client with TLS settings from the environment.
-// Commands that create their own sessions need it to honor the same TLS settings
+// HTTPClient returns the shared HTTP client, configured with the TLS settings
+// from the environment and the proxy authentication from the current profile.
+// Commands that create their own sessions need it to honor the same settings
 // as commands using Ensure.
 func HTTPClient() (*http.Client, error) {
-	httpClient := client.GetHTTPClient()
-
-	if err := configureTLS(httpClient); err != nil {
-		return nil, err
-	}
-
-	return httpClient, nil
-}
-
-// configureTLS configures client TLS from the environment.
-func configureTLS(httpClient *http.Client) error {
-	clientTLS := &tls.Config{
-		MinVersion: tls.VersionTLS12,
-	}
-
-	// Check SPACELIFT_API_TLS_CA first, then fall back to SSL_CERT_FILE.
-	// Setting RootCAs to a non-nil pool forces Go's pure-Go certificate
-	// verifier, bypassing Security.framework (which fails in sandboxed
-	// environments where macOS Keychain is inaccessible).
-	caFile := ""
-	if f, ok := os.LookupEnv(EnvSpaceliftAPIClientCA); ok && f != "" {
-		caFile = f
-	} else if f, ok := os.LookupEnv("SSL_CERT_FILE"); ok && f != "" {
-		caFile = f
-	}
-
-	if caFile != "" {
-		caCert, err := os.ReadFile(caFile)
-		if err != nil {
-			return err
-		}
-
-		caCertPool := x509.NewCertPool()
-		if !caCertPool.AppendCertsFromPEM(caCert) {
-			return errEnvSpaceliftAPIClientCAParse
-		}
-
-		clientTLS.RootCAs = caCertPool
-	}
-
-	keyFile, keyOk := os.LookupEnv(EnvSpaceliftAPIClientTLSKey)
-	certFile, certOk := os.LookupEnv(EnvSpaceliftAPIClientTLSCert)
-
-	if keyOk && keyFile != "" && certOk && certFile != "" {
-		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-		if err != nil {
-			return err
-		}
-
-		clientTLS.Certificates = []tls.Certificate{cert}
-	}
-
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.TLSClientConfig = clientTLS
-
-	httpClient.Transport = transport
-
-	return nil
+	return client.GetHTTPClient()
 }
