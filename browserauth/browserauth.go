@@ -167,6 +167,14 @@ func (h *Handler) serveHTTP(listener net.Listener) {
 // interactive browser authentication and save the token. It will send the token extraction
 // result back to Handler.Wait() via the callbackChannel.
 func (h *Handler) authCallback(w http.ResponseWriter, r *http.Request) {
+	// Ignore anything that isn't an auth callback, such as health probes from local security
+	// agents or a browser fetching /favicon.ico. Treating these as a failed callback would end
+	// the login before the user has had a chance to authenticate.
+	if !isAuthCallback(r) {
+		http.NotFound(w, r)
+		return
+	}
+
 	// Extract and decrypt the token
 	err := h.extractToken(r)
 	if err != nil {
@@ -179,6 +187,17 @@ func (h *Handler) authCallback(w http.ResponseWriter, r *http.Request) {
 
 	// Regardless of success or failure, send the error back upstream
 	h.callbackChannel <- err
+}
+
+// A request is an auth callback if it's a GET to "/" carrying at least one of the callback
+// parameters. Callbacks missing only one parameter still count, so they fail as before.
+func isAuthCallback(r *http.Request) bool {
+	if r.Method != http.MethodGet || r.URL.Path != "/" {
+		return false
+	}
+
+	query := r.URL.Query()
+	return query.Has("token") || query.Has("key")
 }
 
 // Extract and decrypt a token from an interactive authentication callback using our
