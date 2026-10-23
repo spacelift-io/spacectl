@@ -33,7 +33,7 @@ func TestAuthCallbackIgnoresStrayRequests(t *testing.T) {
 		{http.MethodGet, "/favicon.ico"},
 		{http.MethodGet, "/?port=1234"},
 	} {
-		req, err := http.NewRequest(probe.method, base+probe.path, nil)
+		req, err := http.NewRequestWithContext(t.Context(), probe.method, base+probe.path, nil)
 		require.NoError(t, err)
 
 		resp, err := noRedirects.Do(req)
@@ -62,7 +62,10 @@ func TestAuthCallbackFailsOnMalformedCallback(t *testing.T) {
 	}}
 
 	// A callback with a token but no key is still a real (broken) callback and should fail.
-	resp, err := noRedirects.Get(fmt.Sprintf("http://%s:%d/?token=abc", handler.Host, handler.Port))
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, fmt.Sprintf("http://%s:%d/?token=abc", handler.Host, handler.Port), nil)
+	require.NoError(t, err)
+
+	resp, err := noRedirects.Do(req)
 	require.NoError(t, err)
 	resp.Body.Close()
 
