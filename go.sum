@@ -50,8 +50,8 @@ github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e h1:fY5BOSpyZCqRo5O
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 h1:q763qf9huN11kDQavWsoZXJNW3xEE4JJyHa5Q25/sd8=
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
-github.com/cli/cli/v2 v2.103.0 h1:iSwyy7dCdv8AUMi+myP8XrMgo4ZalGUX47i8vBih+zg=
-github.com/cli/cli/v2 v2.103.0/go.mod h1:eUotmoESvJ7YjwRY9Cl9aglN4cMjRWF+WrmjJiA6h70=
+github.com/cli/cli/v2 v2.103.2 h1:FfS9tCch+UQMiX20RdAfv6QCZ1fmvixPy1qdIMpjHxE=
+github.com/cli/cli/v2 v2.103.2/go.mod h1:Z9vL4bFrEfOM7VDixVr5PgNtKvDEOc7clWhuXBeX/xk=
 github.com/cli/go-gh/v2 v2.17.0 h1:F24s1Ow/6pgWO0FXXSTi7l4YLkcuS94XPv7npEGkrQc=
 github.com/cli/go-gh/v2 v2.17.0/go.mod h1:bc2VCe0OUSOuhDz5HeQrA7RAtc/d3PtyGogBXHbcp1o=
 github.com/cli/safeexec v1.0.1 h1:e/C79PbXF4yYTN/wauC4tviMxEV13BwljGj0N9j+N00=
