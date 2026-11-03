@@ -527,6 +527,7 @@ func Command() cmd.Command {
 										flagStackID,
 										flagRun,
 										flagEnvironmentWriteOnly,
+										flagEnvironmentDescription,
 									},
 									Action:    setVar,
 									Before:    authenticated.Ensure,
