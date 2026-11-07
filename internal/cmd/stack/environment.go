@@ -28,10 +28,11 @@ const (
 // ConfigInput represents the input required to create or update a config
 // element.
 type ConfigInput struct {
-	ID        graphql.ID      `json:"id"`
-	Type      ConfigType      `json:"type"`
-	Value     graphql.String  `json:"value"`
-	WriteOnly graphql.Boolean `json:"writeOnly"`
+	ID          graphql.ID      `json:"id"`
+	Type        ConfigType      `json:"type"`
+	Value       graphql.String  `json:"value"`
+	WriteOnly   graphql.Boolean `json:"writeOnly"`
+	Description *graphql.String `json:"description,omitempty"`
 }
 
 type configElement struct {
@@ -95,6 +96,11 @@ func setVar(ctx context.Context, cliCmd *cli.Command) error {
 		return err
 	}
 
+	description, err := existingVarDescription(ctx, stackID, envName)
+	if err != nil {
+		return err
+	}
+
 	var mutation struct {
 		ConfigElement struct {
 			ID        string `graphql:"id"`
@@ -106,10 +112,11 @@ func setVar(ctx context.Context, cliCmd *cli.Command) error {
 	variables := map[string]any{
 		"stack": graphql.ID(stackID),
 		"config": ConfigInput{
-			ID:        graphql.ID(envName),
-			Type:      envVarTypeConfig,
-			Value:     graphql.String(envValue),
-			WriteOnly: graphql.Boolean(cliCmd.Bool(flagEnvironmentWriteOnly.Name)),
+			ID:          graphql.ID(envName),
+			Type:        envVarTypeConfig,
+			Value:       graphql.String(envValue),
+			WriteOnly:   graphql.Boolean(cliCmd.Bool(flagEnvironmentWriteOnly.Name)),
+			Description: description,
 		},
 	}
 
@@ -126,6 +133,35 @@ func setVar(ctx context.Context, cliCmd *cli.Command) error {
 	fmt.Printf("Write only: %t \n", mutation.ConfigElement.WriteOnly)
 
 	return nil
+}
+
+// existingVarDescription returns the description of an existing variable so
+// setvar can send it back. The API replaces the whole config element, so
+// without this an update would clear the description.
+func existingVarDescription(ctx context.Context, stackID, envName string) (*graphql.String, error) {
+	var query struct {
+		Stack *struct {
+			ConfigElement *struct {
+				Description *string `graphql:"description"`
+			} `graphql:"configElement(id: $id)"`
+		} `graphql:"stack(id: $stack)"`
+	}
+
+	variables := map[string]any{
+		"stack": graphql.ID(stackID),
+		"id":    graphql.ID(envName),
+	}
+
+	if err := authenticated.Client().Query(ctx, &query, variables); err != nil {
+		return nil, errors.Wrap(err, "failed to look up the existing environment variable")
+	}
+
+	if query.Stack == nil || query.Stack.ConfigElement == nil || query.Stack.ConfigElement.Description == nil {
+		return nil, nil
+	}
+
+	description := graphql.String(*query.Stack.ConfigElement.Description)
+	return &description, nil
 }
 
 func (e *listEnvCommand) listEnv(ctx context.Context, cliCmd *cli.Command) error {
