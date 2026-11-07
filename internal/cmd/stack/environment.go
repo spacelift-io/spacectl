@@ -96,7 +96,7 @@ func setVar(ctx context.Context, cliCmd *cli.Command) error {
 		return err
 	}
 
-	description, err := setVarDescription(ctx, cliCmd, stackID, envName)
+	description, err := existingVarDescription(ctx, stackID, envName)
 	if err != nil {
 		return err
 	}
@@ -135,15 +135,10 @@ func setVar(ctx context.Context, cliCmd *cli.Command) error {
 	return nil
 }
 
-// setVarDescription returns the description to send with setvar. The API
-// replaces the whole config element, so without this an update would clear
-// the description of an existing variable.
-func setVarDescription(ctx context.Context, cliCmd *cli.Command, stackID, envName string) (*graphql.String, error) {
-	if cliCmd.IsSet(flagEnvironmentDescription.Name) {
-		description := graphql.String(cliCmd.String(flagEnvironmentDescription.Name))
-		return &description, nil
-	}
-
+// existingVarDescription returns the description of an existing variable so
+// setvar can send it back. The API replaces the whole config element, so
+// without this an update would clear the description.
+func existingVarDescription(ctx context.Context, stackID, envName string) (*graphql.String, error) {
 	var query struct {
 		Stack *struct {
 			ConfigElement *struct {

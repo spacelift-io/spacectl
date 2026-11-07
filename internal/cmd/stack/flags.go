@@ -26,11 +26,6 @@ var flagEnvironmentWriteOnly = &cli.BoolFlag{
 	Value: false,
 }
 
-var flagEnvironmentDescription = &cli.StringFlag{
-	Name:  "description",
-	Usage: "[Optional] Description of the environment variable. If not set, the description of an existing variable is kept",
-}
-
 var flagNoFindRepositoryRoot = &cli.BoolFlag{
 	Name:  "no-find-repository-root",
 	Usage: "Indicate whether spacectl should avoid finding the repository root (containing a .git directory) before packaging it.",
