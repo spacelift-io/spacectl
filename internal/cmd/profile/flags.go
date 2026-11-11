@@ -3,6 +3,7 @@ package profile
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -77,6 +78,34 @@ var flagNoBrowser = &cli.BoolFlag{
 	Value:       false,
 	Destination: &noBrowser,
 	Sources:     cli.EnvVars("SPACECTL_NO_BROWSER"),
+}
+
+var flagProxyAuthCommand = &cli.StringSliceFlag{
+	Name:     "proxy-auth-command",
+	Usage:    "[Optional] absolute path of a command that prints a proxy auth token; repeat for each argument (no shell expansion)",
+	Required: false,
+	Action: func(_ context.Context, _ *cli.Command, command []string) error {
+		if len(command) == 0 || !filepath.IsAbs(command[0]) {
+			return fmt.Errorf("--proxy-auth-command must start with an absolute executable path")
+		}
+		return nil
+	},
+}
+
+var flagProxyAuthTokenFile = &cli.StringFlag{
+	Name:      "proxy-auth-token-file",
+	Usage:     "[Optional] absolute path of a file containing a proxy auth token",
+	Required:  false,
+	TakesFile: true,
+	Action: func(_ context.Context, cliCmd *cli.Command, path string) error {
+		if cliCmd.IsSet(flagProxyAuthCommand.Name) {
+			return fmt.Errorf("--proxy-auth-token-file and --proxy-auth-command cannot be used together")
+		}
+		if !filepath.IsAbs(path) {
+			return fmt.Errorf("--proxy-auth-token-file must be an absolute file path")
+		}
+		return nil
+	},
 }
 
 const (

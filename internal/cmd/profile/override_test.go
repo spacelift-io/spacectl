@@ -87,13 +87,35 @@ func captureStdout(t *testing.T, fn func()) string {
 	return buf.String()
 }
 
+// newProfileCommand isolates mutable proxy flag state between simulated CLI invocations.
+func newProfileCommand() *cli.Command {
+	proxyAuthCommandFlag := *flagProxyAuthCommand
+	proxyAuthTokenFileFlag := *flagProxyAuthTokenFile
+
+	parent := Command()
+	for _, subcommand := range parent.Commands {
+		if subcommand.Name != "login" {
+			continue
+		}
+		for i, flag := range subcommand.Flags {
+			switch flag {
+			case flagProxyAuthCommand:
+				subcommand.Flags[i] = &proxyAuthCommandFlag
+			case flagProxyAuthTokenFile:
+				subcommand.Flags[i] = &proxyAuthTokenFileFlag
+			}
+		}
+	}
+	return parent
+}
+
 // runLoginBefore runs `profile login` through the real command tree - so the profile
 // subtree's own Before hook runs too - far enough to exercise login's Before hook, with the
 // action stubbed out so the interactive flow never starts.
 func runLoginBefore(t *testing.T, args ...string) error {
 	t.Helper()
 
-	parent := Command()
+	parent := newProfileCommand()
 	for _, subcommand := range parent.Commands {
 		if subcommand.Name == "login" {
 			subcommand.Action = func(context.Context, *cli.Command) error { return nil }
