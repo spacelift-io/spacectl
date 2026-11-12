@@ -87,13 +87,39 @@ func captureStdout(t *testing.T, fn func()) string {
 	return buf.String()
 }
 
+// newProfileCommand isolates mutable proxy flag state between simulated CLI invocations.
+func newProfileCommand() *cli.Command {
+	proxyAuthCommandFlag := *flagProxyAuthCommand
+	proxyAuthTokenFileFlag := *flagProxyAuthTokenFile
+
+	parent := Command()
+	for _, subcommand := range parent.Commands {
+		if subcommand.Name != "login" {
+			continue
+		}
+		for _, group := range subcommand.MutuallyExclusiveFlags {
+			for _, flags := range group.Flags {
+				for i, flag := range flags {
+					switch flag {
+					case flagProxyAuthCommand:
+						flags[i] = &proxyAuthCommandFlag
+					case flagProxyAuthTokenFile:
+						flags[i] = &proxyAuthTokenFileFlag
+					}
+				}
+			}
+		}
+	}
+	return parent
+}
+
 // runLoginBefore runs `profile login` through the real command tree - so the profile
 // subtree's own Before hook runs too - far enough to exercise login's Before hook, with the
 // action stubbed out so the interactive flow never starts.
 func runLoginBefore(t *testing.T, args ...string) error {
 	t.Helper()
 
-	parent := Command()
+	parent := newProfileCommand()
 	for _, subcommand := range parent.Commands {
 		if subcommand.Name == "login" {
 			subcommand.Action = func(context.Context, *cli.Command) error { return nil }
@@ -179,6 +205,40 @@ func TestProfileOverrideIsValidated(t *testing.T) {
 			t.Fatalf("expected the override alias, got %q", strings.TrimSpace(out))
 		}
 	})
+}
+
+func TestLoginReauthenticationResolvesAlias(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		override string
+		want     string
+	}{
+		{name: "selected profile", want: "selected"},
+		{name: "overridden profile", override: "other", want: "other"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			newConfigDir(t, "selected", "other")
+			t.Setenv(session.EnvSpaceliftProfile, test.override)
+			profileAlias = ""
+			apiTokenProfile = nil
+			t.Cleanup(func() { profileAlias = ""; apiTokenProfile = nil; aliasFromArgs = false })
+
+			if err := runLoginBefore(t); err != nil {
+				t.Fatalf("could not resolve the profile for re-authentication: %v", err)
+			}
+
+			// loginAction needs the alias before looking up existing proxy auth settings.
+			if profileAlias != test.want {
+				t.Fatalf("expected alias %q before the login action, got %q", test.want, profileAlias)
+			}
+			if apiTokenProfile == nil || apiTokenProfile.Alias != profileAlias {
+				t.Fatalf("resolved alias does not match the API token profile: %+v", apiTokenProfile)
+			}
+			if aliasFromArgs {
+				t.Fatal("re-authentication should not treat the alias as an explicit selection")
+			}
+		})
+	}
 }
 
 // TestPersistAccessCredentialsSelection covers which logins change the stored selection.

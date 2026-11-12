@@ -23,11 +23,12 @@ import (
 
 func loginCommand() *cli.Command {
 	return &cli.Command{
-		Name:      "login",
-		Usage:     "Create a profile for a Spacelift account",
-		Before:    getAliasWithAPITokenProfile,
-		ArgsUsage: "<account-alias>",
-		Action:    loginAction,
+		Name:                      "login",
+		Usage:                     "Create a profile for a Spacelift account",
+		Before:                    getAliasWithAPITokenProfile,
+		ArgsUsage:                 "<account-alias>",
+		Action:                    loginAction,
+		DisableSliceFlagSeparator: true,
 		Flags: []cli.Flag{
 			flagMethod,
 			flagBindHost,
@@ -35,19 +36,38 @@ func loginCommand() *cli.Command {
 			flagEndpoint,
 			flagNoBrowser,
 		},
+		MutuallyExclusiveFlags: []cli.MutuallyExclusiveFlags{
+			{
+				Flags: [][]cli.Flag{
+					{flagProxyAuthCommand},
+					{flagProxyAuthTokenFile},
+				},
+			},
+		},
 	}
 }
 
 func loginAction(ctx context.Context, cliCmd *cli.Command) error {
 	defer printEnvWarning()
 
-	var storedCredentials session.StoredCredentials
+	var (
+		storedCredentials session.StoredCredentials
+		configFile        string
+	)
+
+	if proxyAuthTokenFile := cliCmd.String(flagProxyAuthTokenFile.Name); cliCmd.IsSet(flagProxyAuthTokenFile.Name) {
+		storedCredentials.ProxyAuth = &session.ProxyAuthConfig{TokenFile: proxyAuthTokenFile}
+	} else if proxyAuthCommand := cliCmd.StringSlice(flagProxyAuthCommand.Name); len(proxyAuthCommand) > 0 {
+		storedCredentials.ProxyAuth = &session.ProxyAuthConfig{Command: proxyAuthCommand}
+	} else if existing, _ := manager.Get(profileAlias); existing != nil && existing.Credentials != nil {
+		storedCredentials.ProxyAuth = existing.Credentials.ProxyAuth
+		configFile = manager.ConfigurationFile
+	}
 
 	// Let's try to re-authenticate user.
 	if apiTokenProfile != nil {
 		storedCredentials.Endpoint = apiTokenProfile.Credentials.Endpoint
 		storedCredentials.Type = apiTokenProfile.Credentials.Type
-		profileAlias = apiTokenProfile.Alias
 
 		return loginUsingWebBrowser(ctx, cliCmd, &storedCredentials)
 	}
@@ -82,7 +102,7 @@ func loginAction(ctx context.Context, cliCmd *cli.Command) error {
 	}
 
 	// Check if the credentials are valid before we try persisting them.
-	httpClient, err := client.GetHTTPClient()
+	httpClient, err := client.NewHTTPClientWithProxyAuth(storedCredentials.ProxyAuth, configFile, storedCredentials.Endpoint)
 	if err != nil {
 		return err
 	}
@@ -226,9 +246,8 @@ func loginUsingWebBrowser(ctx context.Context, _ *cli.Command, creds *session.St
 }
 
 func persistAccessCredentials(creds *session.StoredCredentials) error {
-	// Logging in replaces the stored credentials wholesale, but proxy_auth is
-	// configuration rather than a credential, and the login itself may have
-	// depended on it to reach Spacelift. Carry it over from the existing profile.
+	// Fresh credentials may omit proxy authentication configuration. Preserve it
+	// from this profile unless the login explicitly supplied a replacement.
 	if creds.ProxyAuth == nil {
 		if existing, _ := manager.Get(profileAlias); existing != nil && existing.Credentials != nil {
 			creds.ProxyAuth = existing.Credentials.ProxyAuth

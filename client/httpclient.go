@@ -50,6 +50,25 @@ func GetHTTPClient() (*http.Client, error) {
 	return httpClient, httpClientErr
 }
 
+// NewHTTPClientWithProxyAuth creates an independent client using TLS settings from
+// the environment and the supplied proxy authentication configuration and endpoint.
+// This allows login to authenticate a profile before its settings have been saved.
+// configFile is the path cfg was read from, or empty for explicit flag settings.
+func NewHTTPClientWithProxyAuth(cfg *session.ProxyAuthConfig, configFile, endpoint string) (*http.Client, error) {
+	httpClient := &http.Client{Timeout: 60 * time.Second}
+	if err := configureTLS(httpClient); err != nil {
+		return nil, err
+	}
+
+	transport, err := WrapWithProxyAuth(httpClient.Transport, cfg, configFile, endpoint)
+	if err != nil {
+		return nil, err
+	}
+	httpClient.Transport = transport
+
+	return httpClient, nil
+}
+
 // configureTransport sets up the transport chain on httpClient: TLS first,
 // then proxy authentication wrapping it, so that the proxy credential is
 // attached to requests sent over the TLS-configured transport.
