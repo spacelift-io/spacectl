@@ -2,214 +2,266 @@ package profile
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"reflect"
 	"runtime"
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/spacelift-io/spacectl/client/session"
 )
 
-func TestLoginProxyAuth(t *testing.T) {
+func TestLoginProxyAuthFlags(t *testing.T) {
+	for _, method := range []string{methodAPI, methodGithub} {
+		for _, source := range []string{"command", "token_file"} {
+			t.Run(method+"/"+source, func(t *testing.T) {
+				setupProxyAuthLogin(t)
+				proxyAuth := newLoginProxyAuth(t, source)
+				server := newProxyAuthLoginServer(t, method, "Bearer proxy-token", http.StatusOK)
+
+				require.NoError(t, runProxyAuthLogin(server.URL, method, proxyAuth))
+				require.Equal(t, 1, server.requests)
+				assertSavedProxyAuth(t, proxyAuth)
+			})
+		}
+	}
+}
+
+func TestLoginProxyAuthReplacesExistingSettings(t *testing.T) {
 	for _, test := range []struct {
-		name       string
-		method     string
-		existing   bool
-		source     string
-		preserve   bool
-		loginFails bool
-		configFile string
-		trustError string
+		source   string
+		previous *session.ProxyAuthConfig
 	}{
-		{name: "new API key profile", method: methodAPI, source: "command"},
-		{name: "new GitHub profile", method: methodGithub, source: "command"},
-		{name: "replaces existing token file", method: methodAPI, existing: true, source: "command"},
-		{name: "preserves existing command", method: methodAPI, existing: true, source: "command", preserve: true},
-		{name: "rejects inherited command from writable config", method: methodAPI, existing: true, source: "command", preserve: true, configFile: "writable", trustError: "writable by other users"},
-		{name: "rejects inherited command from symlinked config", method: methodAPI, existing: true, source: "command", preserve: true, configFile: "symlink", trustError: "symbolic link"},
-		{name: "explicit command ignores writable config", method: methodAPI, existing: true, source: "command", configFile: "writable"},
-		{name: "explicit command ignores symlinked config", method: methodAPI, existing: true, source: "command", configFile: "symlink"},
-		{name: "does not inherit selected profile settings", method: methodAPI},
-		{name: "failed login does not save command", method: methodAPI, source: "command", loginFails: true},
-		{name: "new API key profile with token file", method: methodAPI, source: "token_file"},
-		{name: "new GitHub profile with token file", method: methodGithub, source: "token_file"},
-		{name: "token file replaces existing command", method: methodAPI, existing: true, source: "token_file"},
-		{name: "preserves existing token file", method: methodAPI, existing: true, source: "token_file", preserve: true},
-		{name: "failed login does not save token file", method: methodAPI, source: "token_file", loginFails: true},
+		{source: "command", previous: &session.ProxyAuthConfig{TokenFile: filepath.Join(t.TempDir(), "missing-token")}},
+		{source: "token_file", previous: &session.ProxyAuthConfig{Command: []string{filepath.Join(t.TempDir(), "missing-helper")}}},
 	} {
-		t.Run(test.name, func(t *testing.T) {
-			if test.source == "command" && runtime.GOOS == "windows" {
-				t.Skip("test helper uses /bin/sh")
-			}
+		t.Run(test.source, func(t *testing.T) {
+			setupProxyAuthLogin(t)
+			proxyAuth := newLoginProxyAuth(t, test.source)
+			server := newProxyAuthLoginServer(t, methodAPI, "Bearer proxy-token", http.StatusOK)
+			createProxyAuthLoginProfile(t, server.URL, test.previous)
 
-			t.Setenv(session.EnvSpaceliftProfile, "")
-			t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
-			t.Setenv(session.EnvSpaceliftAPIKeyID, "key-id")
-			t.Setenv(session.EnvSpaceliftAPIKeySecret, "key-secret")
-			t.Setenv(session.EnvSpaceliftAPIGitHubToken, "github-token")
-			newConfigDir(t, "selected")
-			newManager(t)
-			apiTokenProfile = nil
-			t.Cleanup(func() { apiTokenProfile = nil; profileAlias = ""; aliasFromArgs = false })
+			require.NoError(t, runProxyAuthLogin(server.URL, methodAPI, proxyAuth))
+			require.Equal(t, 1, server.requests)
+			assertSavedProxyAuth(t, proxyAuth)
+		})
+	}
+}
 
-			// The selected profile must not supply proxy credentials for this login.
-			selected, err := manager.Get("selected")
-			if err != nil {
-				t.Fatal(err)
-			}
-			selected.Credentials.ProxyAuth = &session.ProxyAuthConfig{TokenFile: filepath.Join(t.TempDir(), "missing")}
-			if err := manager.Create(selected); err != nil {
-				t.Fatal(err)
-			}
+func TestLoginProxyAuthPreservesExistingSettings(t *testing.T) {
+	for _, source := range []string{"command", "token_file"} {
+		t.Run(source, func(t *testing.T) {
+			setupProxyAuthLogin(t)
+			proxyAuth := newLoginProxyAuth(t, source)
+			server := newProxyAuthLoginServer(t, methodAPI, "Bearer proxy-token", http.StatusOK)
+			createProxyAuthLoginProfile(t, server.URL, proxyAuth)
 
-			script := filepath.Join(t.TempDir(), "proxy-auth.sh")
-			if err := os.WriteFile(script, []byte(`if [ "$#" -ne 3 ] || [ "$1" != "--audience=a,b" ] || [ "$2" != "value with spaces" ] || [ "$3" != "" ]; then
+			require.NoError(t, runProxyAuthLogin(server.URL, methodAPI, nil))
+			require.Equal(t, 1, server.requests)
+			assertSavedProxyAuth(t, proxyAuth)
+		})
+	}
+}
+
+func TestLoginProxyAuthRejectsUntrustedInheritedCommand(t *testing.T) {
+	for _, configFile := range []string{"writable", "symlink"} {
+		t.Run(configFile, func(t *testing.T) {
+			setupProxyAuthLogin(t)
+			proxyAuth := newLoginProxyAuth(t, "command")
+			server := newProxyAuthLoginServer(t, methodAPI, "Bearer proxy-token", http.StatusOK)
+			createProxyAuthLoginProfile(t, server.URL, proxyAuth)
+			originalConfig := readProxyAuthLoginConfig(t)
+			wantError := makeProxyAuthLoginConfigUntrusted(t, configFile)
+
+			err := runProxyAuthLogin(server.URL, methodAPI, nil)
+			require.ErrorContains(t, err, wantError)
+			require.Zero(t, server.requests)
+			require.Equal(t, originalConfig, readProxyAuthLoginConfig(t), "rejected proxy authentication changed the profile configuration")
+		})
+	}
+}
+
+func TestLoginProxyAuthExplicitCommandIgnoresUntrustedConfig(t *testing.T) {
+	for _, configFile := range []string{"writable", "symlink"} {
+		t.Run(configFile, func(t *testing.T) {
+			setupProxyAuthLogin(t)
+			proxyAuth := newLoginProxyAuth(t, "command")
+			server := newProxyAuthLoginServer(t, methodAPI, "Bearer proxy-token", http.StatusOK)
+			createProxyAuthLoginProfile(t, server.URL, &session.ProxyAuthConfig{
+				TokenFile: filepath.Join(t.TempDir(), "missing-token"),
+			})
+			makeProxyAuthLoginConfigUntrusted(t, configFile)
+
+			require.NoError(t, runProxyAuthLogin(server.URL, methodAPI, proxyAuth))
+			require.Equal(t, 1, server.requests)
+			assertSavedProxyAuth(t, proxyAuth)
+		})
+	}
+}
+
+func TestLoginProxyAuthDoesNotInheritSelectedProfile(t *testing.T) {
+	setupProxyAuthLogin(t)
+	server := newProxyAuthLoginServer(t, methodAPI, "", http.StatusOK)
+
+	require.NoError(t, runProxyAuthLogin(server.URL, methodAPI, nil))
+	require.Equal(t, 1, server.requests)
+	assertSavedProxyAuth(t, nil)
+}
+
+func TestLoginProxyAuthFailedLoginDoesNotSaveSettings(t *testing.T) {
+	for _, source := range []string{"command", "token_file"} {
+		t.Run(source, func(t *testing.T) {
+			setupProxyAuthLogin(t)
+			proxyAuth := newLoginProxyAuth(t, source)
+			server := newProxyAuthLoginServer(t, methodAPI, "Bearer proxy-token", http.StatusForbidden)
+			originalConfig := readProxyAuthLoginConfig(t)
+
+			require.Error(t, runProxyAuthLogin(server.URL, methodAPI, proxyAuth))
+			require.Equal(t, 1, server.requests)
+			require.Equal(t, originalConfig, readProxyAuthLoginConfig(t), "failed login changed the profile configuration")
+		})
+	}
+}
+
+func setupProxyAuthLogin(t *testing.T) {
+	t.Helper()
+
+	t.Setenv(session.EnvSpaceliftProfile, "")
+	t.Setenv(session.EnvSpaceliftProxyAuthToken, "")
+	t.Setenv(session.EnvSpaceliftAPIKeyID, "key-id")
+	t.Setenv(session.EnvSpaceliftAPIKeySecret, "key-secret")
+	t.Setenv(session.EnvSpaceliftAPIGitHubToken, "github-token")
+	newConfigDir(t, "selected")
+	newManager(t)
+	apiTokenProfile = nil
+	t.Cleanup(func() { apiTokenProfile = nil; profileAlias = ""; aliasFromArgs = false })
+
+	// The selected profile must not supply proxy credentials for a login to target.
+	selected, err := manager.Get("selected")
+	require.NoError(t, err)
+	selected.Credentials.ProxyAuth = &session.ProxyAuthConfig{TokenFile: filepath.Join(t.TempDir(), "missing")}
+	require.NoError(t, manager.Create(selected))
+}
+
+func newLoginProxyAuth(t *testing.T, source string) *session.ProxyAuthConfig {
+	t.Helper()
+
+	switch source {
+	case "command":
+		if runtime.GOOS == "windows" {
+			t.Skip("test helper uses /bin/sh")
+		}
+		script := filepath.Join(t.TempDir(), "proxy-auth.sh")
+		require.NoError(t, os.WriteFile(script, []byte(`if [ "$#" -ne 3 ] || [ "$1" != "--audience=a,b" ] || [ "$2" != "value with spaces" ] || [ "$3" != "" ]; then
   exit 1
 fi
 printf 'proxy-token\n'
-`), 0o600); err != nil {
-				t.Fatal(err)
-			}
-			command := []string{"/bin/sh", script, "--audience=a,b", "value with spaces", ""}
-			tokenFile := filepath.Join(t.TempDir(), "proxy token.txt")
-			if err := os.WriteFile(tokenFile, []byte("  proxy-token\n"), 0o600); err != nil {
-				t.Fatal(err)
-			}
-			var expectedProxyAuth *session.ProxyAuthConfig
-			switch test.source {
-			case "command":
-				expectedProxyAuth = &session.ProxyAuthConfig{Command: command}
-			case "token_file":
-				expectedProxyAuth = &session.ProxyAuthConfig{TokenFile: tokenFile}
-			}
+`), 0o600))
+		return &session.ProxyAuthConfig{Command: []string{"/bin/sh", script, "--audience=a,b", "value with spaces", ""}}
+	case "token_file":
+		tokenFile := filepath.Join(t.TempDir(), "proxy token.txt")
+		require.NoError(t, os.WriteFile(tokenFile, []byte("  proxy-token\n"), 0o600))
+		return &session.ProxyAuthConfig{TokenFile: tokenFile}
+	default:
+		t.Fatalf("unknown proxy authentication source %q", source)
+		return nil
+	}
+}
 
-			requests := 0
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				requests++
-				var expectedHeader string
-				if expectedProxyAuth != nil {
-					expectedHeader = "Bearer proxy-token"
-				}
-				if got := r.Header.Get("Proxy-Authorization"); got != expectedHeader {
-					t.Errorf("Proxy-Authorization = %q, want %q", got, expectedHeader)
-				}
-				if test.loginFails {
-					http.Error(w, "login rejected", http.StatusForbidden)
-					return
-				}
-				field := "apiKeyUser"
-				if test.method == methodGithub {
-					field = "oauthUser"
-				}
-				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprintf(w, `{"data":{"%s":{"jwt":"token","validUntil":4102444800}}}`, field)
-			}))
-			defer server.Close()
+type proxyAuthLoginServer struct {
+	*httptest.Server
+	requests int
+}
 
-			if test.existing {
-				proxyAuth := selected.Credentials.ProxyAuth
-				if test.source == "token_file" {
-					proxyAuth = &session.ProxyAuthConfig{Command: []string{filepath.Join(t.TempDir(), "missing-helper")}}
-				}
-				if test.preserve {
-					proxyAuth = expectedProxyAuth
-				}
-				if err := manager.Create(&session.Profile{
-					Alias: "target",
-					Credentials: &session.StoredCredentials{
-						Type: session.CredentialsTypeAPIToken, Endpoint: server.URL, ProxyAuth: proxyAuth,
-					},
-				}); err != nil {
-					t.Fatal(err)
-				}
-				if err := manager.Select("selected"); err != nil {
-					t.Fatal(err)
-				}
-			}
-			originalConfig, err := os.ReadFile(manager.ConfigurationFile)
-			if err != nil {
-				t.Fatal(err)
-			}
-			switch test.configFile {
-			case "writable":
-				if err := os.Chmod(manager.ConfigurationFile, 0o666); err != nil {
-					t.Fatal(err)
-				}
-			case "symlink":
-				target := manager.ConfigurationFile + ".target"
-				if err := os.Rename(manager.ConfigurationFile, target); err != nil {
-					t.Fatal(err)
-				}
-				if err := os.Symlink(target, manager.ConfigurationFile); err != nil {
-					t.Fatal(err)
-				}
-			}
+func newProxyAuthLoginServer(t *testing.T, method, expectedHeader string, status int) *proxyAuthLoginServer {
+	t.Helper()
 
-			args := []string{"profile", "login", "--method", test.method, "--endpoint", server.URL}
-			if !test.preserve {
-				switch test.source {
-				case "command":
-					for _, arg := range command {
-						args = append(args, "--proxy-auth-command="+arg)
-					}
-				case "token_file":
-					args = append(args, "--proxy-auth-token-file", tokenFile)
-				}
-			}
-			args = append(args, "target")
-			err = newProfileCommand().Run(context.Background(), args)
-			if test.trustError != "" {
-				if err == nil || !strings.Contains(err.Error(), test.trustError) {
-					t.Fatalf("login error = %v, want %q", err, test.trustError)
-				}
-				if requests != 0 {
-					t.Errorf("made %d login requests, want 0", requests)
-				}
-				config, err := os.ReadFile(manager.ConfigurationFile)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if string(config) != string(originalConfig) {
-					t.Fatal("rejected proxy authentication changed the profile configuration")
-				}
-				return
-			}
-			if test.loginFails {
-				if err == nil {
-					t.Fatal("expected login to fail")
-				}
-			} else if err != nil {
-				t.Fatal(err)
-			}
-			if requests != 1 {
-				t.Errorf("made %d login requests, want 1", requests)
-			}
+	server := &proxyAuthLoginServer{}
+	server.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server.requests++
+		if got := r.Header.Get("Proxy-Authorization"); got != expectedHeader {
+			t.Errorf("Proxy-Authorization = %q, want %q", got, expectedHeader)
+		}
+		if status != http.StatusOK {
+			http.Error(w, "login rejected", status)
+			return
+		}
+		field := "apiKeyUser"
+		if method == methodGithub {
+			field = "oauthUser"
+		}
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{"data":{"%s":{"jwt":"token","validUntil":4102444800}}}`, field)
+	}))
+	t.Cleanup(server.Close)
+	return server
+}
 
-			reloaded, err := session.UserProfileManager()
-			if err != nil {
-				t.Fatal(err)
-			}
-			profile, err := reloaded.Get("target")
-			if err != nil {
-				t.Fatal(err)
-			}
-			if test.loginFails {
-				if profile != nil || reloaded.Configuration.CurrentProfileAlias != "selected" {
-					t.Fatal("failed login changed the profile configuration")
-				}
-				return
-			}
-			if profile == nil || !reflect.DeepEqual(profile.Credentials.ProxyAuth, expectedProxyAuth) {
-				encoded, _ := json.Marshal(profile)
-				t.Fatalf("unexpected saved proxy authentication: %s", encoded)
-			}
-		})
+func createProxyAuthLoginProfile(t *testing.T, endpoint string, proxyAuth *session.ProxyAuthConfig) {
+	t.Helper()
+
+	require.NoError(t, manager.Create(&session.Profile{
+		Alias: "target",
+		Credentials: &session.StoredCredentials{
+			Type: session.CredentialsTypeAPIToken, Endpoint: endpoint, ProxyAuth: proxyAuth,
+		},
+	}))
+	require.NoError(t, manager.Select("selected"))
+}
+
+func runProxyAuthLogin(endpoint, method string, proxyAuth *session.ProxyAuthConfig) error {
+	args := []string{"profile", "login", "--method", method, "--endpoint", endpoint}
+	if proxyAuth != nil {
+		for _, arg := range proxyAuth.Command {
+			args = append(args, "--proxy-auth-command="+arg)
+		}
+		if proxyAuth.TokenFile != "" {
+			args = append(args, "--proxy-auth-token-file", proxyAuth.TokenFile)
+		}
+	}
+	args = append(args, "target")
+	return newProfileCommand().Run(context.Background(), args)
+}
+
+func assertSavedProxyAuth(t *testing.T, expected *session.ProxyAuthConfig) {
+	t.Helper()
+
+	reloaded, err := session.UserProfileManager()
+	require.NoError(t, err)
+	profile, err := reloaded.Get("target")
+	require.NoError(t, err)
+	require.NotNil(t, profile)
+	require.Equal(t, expected, profile.Credentials.ProxyAuth)
+}
+
+func readProxyAuthLoginConfig(t *testing.T) []byte {
+	t.Helper()
+
+	config, err := os.ReadFile(manager.ConfigurationFile)
+	require.NoError(t, err)
+	return config
+}
+
+func makeProxyAuthLoginConfigUntrusted(t *testing.T, kind string) string {
+	t.Helper()
+
+	switch kind {
+	case "writable":
+		require.NoError(t, os.Chmod(manager.ConfigurationFile, 0o666))
+		return "writable by other users"
+	case "symlink":
+		target := manager.ConfigurationFile + ".target"
+		require.NoError(t, os.Rename(manager.ConfigurationFile, target))
+		require.NoError(t, os.Symlink(target, manager.ConfigurationFile))
+		return "symbolic link"
+	default:
+		t.Fatalf("unknown config file kind %q", kind)
+		return ""
 	}
 }
 
