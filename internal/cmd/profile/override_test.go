@@ -97,12 +97,16 @@ func newProfileCommand() *cli.Command {
 		if subcommand.Name != "login" {
 			continue
 		}
-		for i, flag := range subcommand.Flags {
-			switch flag {
-			case flagProxyAuthCommand:
-				subcommand.Flags[i] = &proxyAuthCommandFlag
-			case flagProxyAuthTokenFile:
-				subcommand.Flags[i] = &proxyAuthTokenFileFlag
+		for _, group := range subcommand.MutuallyExclusiveFlags {
+			for _, flags := range group.Flags {
+				for i, flag := range flags {
+					switch flag {
+					case flagProxyAuthCommand:
+						flags[i] = &proxyAuthCommandFlag
+					case flagProxyAuthTokenFile:
+						flags[i] = &proxyAuthTokenFileFlag
+					}
+				}
 			}
 		}
 	}
@@ -201,6 +205,40 @@ func TestProfileOverrideIsValidated(t *testing.T) {
 			t.Fatalf("expected the override alias, got %q", strings.TrimSpace(out))
 		}
 	})
+}
+
+func TestLoginReauthenticationResolvesAlias(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		override string
+		want     string
+	}{
+		{name: "selected profile", want: "selected"},
+		{name: "overridden profile", override: "other", want: "other"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			newConfigDir(t, "selected", "other")
+			t.Setenv(session.EnvSpaceliftProfile, test.override)
+			profileAlias = ""
+			apiTokenProfile = nil
+			t.Cleanup(func() { profileAlias = ""; apiTokenProfile = nil; aliasFromArgs = false })
+
+			if err := runLoginBefore(t); err != nil {
+				t.Fatalf("could not resolve the profile for re-authentication: %v", err)
+			}
+
+			// loginAction needs the alias before looking up existing proxy auth settings.
+			if profileAlias != test.want {
+				t.Fatalf("expected alias %q before the login action, got %q", test.want, profileAlias)
+			}
+			if apiTokenProfile == nil || apiTokenProfile.Alias != profileAlias {
+				t.Fatalf("resolved alias does not match the API token profile: %+v", apiTokenProfile)
+			}
+			if aliasFromArgs {
+				t.Fatal("re-authentication should not treat the alias as an explicit selection")
+			}
+		})
+	}
 }
 
 // TestPersistAccessCredentialsSelection covers which logins change the stored selection.

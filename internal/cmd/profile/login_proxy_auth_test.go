@@ -246,7 +246,7 @@ func TestLoginProxyAuthFlagsAreMutuallyExclusive(t *testing.T) {
 	} {
 		newConfigDir(t, "selected")
 		err := runLoginBefore(t, args...)
-		if err == nil || !strings.Contains(err.Error(), "cannot be used together") {
+		if err == nil || !strings.Contains(err.Error(), "option proxy-auth-command cannot be set along with option proxy-auth-token-file") {
 			t.Fatalf("expected mutually exclusive proxy auth flags to fail, got %v", err)
 		}
 	}

@@ -97,10 +97,7 @@ var flagProxyAuthTokenFile = &cli.StringFlag{
 	Usage:     "[Optional] absolute path of a file containing a proxy auth token",
 	Required:  false,
 	TakesFile: true,
-	Action: func(_ context.Context, cliCmd *cli.Command, path string) error {
-		if cliCmd.IsSet(flagProxyAuthCommand.Name) {
-			return fmt.Errorf("--proxy-auth-token-file and --proxy-auth-command cannot be used together")
-		}
+	Action: func(_ context.Context, _ *cli.Command, path string) error {
 		if !filepath.IsAbs(path) {
 			return fmt.Errorf("--proxy-auth-token-file must be an absolute file path")
 		}

@@ -46,6 +46,7 @@ func getAliasWithAPITokenProfile(ctx context.Context, cliCmd *cli.Command) (cont
 	}
 	if profile != nil && profile.Credentials.Type == session.CredentialsTypeAPIToken {
 		apiTokenProfile = profile
+		profileAlias = profile.Alias
 	} else {
 		return ctx, errors.New("command is only supported when using an existing API Token profile. Please use `spacectl profile login <alias>` instead")
 	}

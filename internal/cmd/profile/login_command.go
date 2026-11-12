@@ -35,8 +35,14 @@ func loginCommand() *cli.Command {
 			flagBindPort,
 			flagEndpoint,
 			flagNoBrowser,
-			flagProxyAuthCommand,
-			flagProxyAuthTokenFile,
+		},
+		MutuallyExclusiveFlags: []cli.MutuallyExclusiveFlags{
+			{
+				Flags: [][]cli.Flag{
+					{flagProxyAuthCommand},
+					{flagProxyAuthTokenFile},
+				},
+			},
 		},
 	}
 }
@@ -62,7 +68,6 @@ func loginAction(ctx context.Context, cliCmd *cli.Command) error {
 	if apiTokenProfile != nil {
 		storedCredentials.Endpoint = apiTokenProfile.Credentials.Endpoint
 		storedCredentials.Type = apiTokenProfile.Credentials.Type
-		profileAlias = apiTokenProfile.Alias
 
 		return loginUsingWebBrowser(ctx, cliCmd, &storedCredentials)
 	}
