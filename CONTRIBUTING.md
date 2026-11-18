@@ -8,7 +8,7 @@ The following is a set of guidelines for contributing to spacectl. These are mos
 
 ## Reporting an Issue
 
-If you spot a problem with spacectl [search if an issue already exists](https://github.com/spacelift-io/spacectl/issues). If a related issue doesn't exist, please open a new issue using [the issue form](https://github.com/spacelift-io/user-documentation/issues/new).
+If you spot a problem with spacectl [search if an issue already exists](https://github.com/spacelift-io/spacectl/issues). If a related issue doesn't exist, please open a new issue using [the issue form](https://github.com/spacelift-io/spacectl/issues/new/choose).
 
 ## Making Changes
 
