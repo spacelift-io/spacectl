@@ -271,7 +271,7 @@ func registerGetStackRunTool(s *server.MCPServer) {
 
 func registerGetStackRunLogsTool(s *server.MCPServer) {
 	stackRunLogsTool := mcp.NewTool("get_stack_run_logs",
-		mcp.WithDescription(`Retrieve logs for a specific run of a Spacelift stack. Shows output generated during the run execution, including commands, errors, and results. You can use skip and limit parameters to retrieve specific line ranges.`),
+		mcp.WithDescription(`Retrieve logs for a specific run of a Spacelift stack. Shows output generated during the run execution, including commands, errors, and results. If the run has not completed yet, returns the logs available so far instead of waiting for it to finish. You can use skip and limit parameters to retrieve specific line ranges.`),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        "Get Stack Run Logs",
 			ReadOnlyHint: new(true),
@@ -307,14 +307,20 @@ func registerGetStackRunLogsTool(s *server.MCPServer) {
 		var allLogs []string
 		var terminal *structs.RunStateTransition
 
+		collected := make(chan struct{})
 		go func() {
+			defer close(collected)
 			for line := range logLines {
 				allLogs = append(allLogs, line)
 			}
 		}()
 
-		terminal, err = logs.NewStackExplorer(stackID, runID).RunFilteredStates(ctx, logLines)
+		// Don't tail: a tool call has to return, and a run waiting for something
+		// (e.g. UNCONFIRMED) may never reach a terminal state on its own.
+		terminal, err = logs.NewStackExplorer(stackID, runID, logs.WithTail(false)).RunFilteredStates(ctx, logLines)
 		close(logLines)
+		// Wait for the collector, otherwise the last lines can be missing from allLogs.
+		<-collected
 
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to collect run logs")
@@ -327,7 +333,11 @@ func registerGetStackRunLogsTool(s *server.MCPServer) {
 		}
 
 		if terminal != nil {
-			output += fmt.Sprintf("\n\nRun completed with state: %s", terminal.State)
+			if terminal.Terminal {
+				output += fmt.Sprintf("\n\nRun completed with state: %s", terminal.State)
+			} else {
+				output += fmt.Sprintf("\n\nRun has not completed yet, current state: %s", terminal.State)
+			}
 		}
 
 		output = trimStringByLines(output, skip, limit)
